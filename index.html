@@ -118,6 +118,22 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 .activity-list .act-item{padding:8px 10px;border-bottom:1px solid #efece0;cursor:pointer;font-size:14px;}
 .activity-list .act-item:hover, .activity-list .act-item.sel{background:#f3efe2;}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);margin-top:8px;}
+.fill-zone input[type=text],.fill-zone input[type=number],.fill-zone input[type=tel],.fill-zone textarea,.fill-zone select{
+  background:#fff8e0;border:1.5px solid var(--gold);
+}
+.default-zone input[type=text],.default-zone input[type=number],input.default-input{
+  background:#eaf2fb;border:1.5px solid #4a7fb5;
+}
+.color-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-soft);margin:4px 0 14px;padding:8px 10px;background:#faf8f2;border:1px solid var(--line);border-radius:4px;}
+.color-legend span{display:flex;align-items:center;gap:6px;}
+.swatch{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.15);}
+.swatch.fill{background:#fff8e0;border-color:var(--gold);}
+.swatch.default{background:#eaf2fb;border-color:#4a7fb5;}
+.swatch.auto{background:#eef4ee;border-color:var(--green);}
+.hint{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35;}
+.help-toc{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 16px;}
+.help-toc a{font-size:12px;padding:5px 10px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--navy);text-decoration:none;}
+.staff-box{background:#eef4ee;border-left:4px solid var(--green);padding:9px 12px;font-size:13px;margin:8px 0;border-radius:0 4px 4px 0;}
 @media print{
   header.topbar,.no-print{display:none !important;}
   body{background:#fff;font-size:12px;}
@@ -137,6 +153,7 @@ table tr.total td{font-weight:700;background:#f3efe2;}
     </div>
     <div class="no-print" style="display:flex;gap:8px;">
       <button class="nav-btn lang-btn" id="langBtn" onclick="toggleLang()">हिंदी</button>
+      <button class="nav-btn" id="helpBtn" onclick="openHelpScreen()">Help</button>
       <button class="nav-btn" onclick="goDashboard()">Dashboard</button>
       <button class="nav-btn" id="saveTopBtn" onclick="saveCurrentProject()" style="display:none;">Save</button>
     </div>
@@ -165,6 +182,7 @@ function toggleLang(){
   LANG = LANG==='en' ? 'hi' : 'en';
   document.getElementById('langBtn').textContent = LANG==='en' ? 'हिंदी' : 'English';
   document.getElementById('topbarTitle').textContent = tt('appTitle');
+  document.getElementById('helpBtn').textContent = tt('helpBtn');
   if(currentScreenRenderer) currentScreenRenderer();
 }
 /* ---------------- i18n dictionary: key -> [en, hi] ---------------- */
@@ -249,9 +267,43 @@ const I18N = {
   printSave:["Print / Save as PDF","प्रिंट करें / पीडीएफ के रूप में सहेजें"],
   viewFull:["View Full Report (All Sections)","पूर्ण रिपोर्ट देखें (सभी खंड)"],
   version:["Version","संस्करण"],
-  dashTitleSub:["Offline","ऑफलाइन"]
+  dashTitleSub:["Offline","ऑफलाइन"],
+  helpBtn:["Help","सहायता"],
+  helpTitle:["User Guide & Help","उपयोगकर्ता मार्गदर्शिका व सहायता"]
 };
 function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
+function colorLegend(){
+  return `<div class="color-legend no-print">
+    <span><i class="swatch fill"></i>${LANG==='hi'?'आपको भरना है':'You must fill this'}</span>
+    <span><i class="swatch default"></i>${LANG==='hi'?'डिफ़ॉल्ट मान्यता — आप बदल सकते हैं':'Default assumption — you may change it'}</span>
+    <span><i class="swatch auto"></i>${LANG==='hi'?'ऐप द्वारा स्वतः गणना':'Automatically calculated by the app'}</span>
+  </div>`;
+}
+/* ---------------- Inline field hints ---------------- */
+const HINTS = {
+  borrowerName:["Full name as per ID proof (Aadhaar/Voter ID).","पहचान पत्र (आधार/वोटर आईडी) के अनुसार पूरा नाम लिखें।"],
+  businessName:["The name your business is or will be known by.","आपके व्यवसाय का नाम, जिससे वह जाना जाता है या जाना जाएगा।"],
+  mobile:["A mobile number the bank can reach you on.","एक मोबाइल नंबर जिस पर बैंक आपसे संपर्क कर सके।"],
+  address:["Village/town, block, district and pin code if known.","गाँव/कस्बा, ब्लॉक, जिला और पिन कोड (यदि ज्ञात हो)।"],
+  businessExperience:["Roughly how long you have been doing this work, e.g. \"2 years\" or \"New\".","आप लगभग कितने समय से यह काम कर रहे हैं, जैसे \"2 वर्ष\" या \"नया\"।"],
+  udyam:["Optional. Leave blank if you do not have Udyam registration yet.","वैकल्पिक। यदि उद्यम पंजीकरण नहीं है तो खाली छोड़ें।"],
+  gstin:["Optional. Only if your business is GST-registered.","वैकल्पिक। केवल यदि आपका व्यवसाय जीएसटी में पंजीकृत है।"],
+  bankBranch:["The bank/branch you plan to approach, if already decided.","वह बैंक/शाखा जहाँ आप ऋण हेतु संपर्क करना चाहते हैं (यदि तय हो)।"],
+  totalLoanRequired:["The full loan amount you need, in rupees — this drives the whole report.","आपको आवश्यक कुल ऋण राशि (रुपयों में) — यह पूरी रिपोर्ट का आधार है।"],
+  termLoanAmount:["Amount for machinery, shop fit-out, vehicle etc. Leave blank if unsure — the app will estimate it.","मशीनरी, दुकान की साज-सज्जा, वाहन आदि हेतु राशि। अनिश्चित होने पर खाली छोड़ें — ऐप स्वतः अनुमान लगाएगा।"],
+  wcAmount:["Amount to run day-to-day business (stock, etc). Leave blank if unsure.","दैनिक व्यवसाय संचालन (स्टॉक आदि) हेतु राशि। अनिश्चित होने पर खाली छोड़ें।"],
+  currentYearSales:["Your best estimate of total sales for one year — ask the borrower for a normal month's sales and multiply by 12, or an average of a good and a slow month.","एक वर्ष की कुल बिक्री का अनुमान — सामान्य माह की बिक्री पूछकर 12 से गुणा करें, या अच्छे व कमजोर माह का औसत लें।"],
+  currentAnnualSales:["Total sales over the last 12 months, even a rounded estimate.","पिछले 12 महीनों की कुल बिक्री, अनुमानित आंकड़ा भी चलेगा।"],
+  growthPctLabel:["A realistic yearly growth rate — 8-15% is typical for a stable small business.","एक यथार्थवादी वार्षिक वृद्धि दर — स्थिर छोटे व्यवसाय हेतु सामान्यतः 8-15%।"],
+  interestRate:["The rate the bank is likely to charge — check with the branch if unsure.","बैंक द्वारा संभावित ब्याज दर — अनिश्चित होने पर शाखा से पूछें।"],
+  repaymentPeriod:["Total years to repay the term loan.","मीयादी ऋण चुकाने की कुल अवधि (वर्षों में)।"],
+  moratorium:["Months of no repayment after disbursement, to let the business stabilise.","संवितरण के बाद, व्यवसाय स्थिर होने हेतु बिना चुकौती के महीने।"],
+  activityNameLabel:["Type the activity in your own words if it is not in the list.","यदि सूची में गतिविधि नहीं है तो अपने शब्दों में लिखें।"],
+  appBankName:["Type the exact bank name this application will be submitted to.","वह बैंक का नाम लिखें जहाँ यह आवेदन प्रस्तुत किया जाएगा।"],
+  appPlace:["Branch name and place/town.","शाखा का नाम व स्थान/कस्बा।"],
+  appDate:["Date of submission (YYYY-MM-DD).","प्रस्तुतीकरण की तिथि (YYYY-MM-DD)।"]
+};
+function hint(key){ const h = HINTS[key]; return h ? `<div class="hint">${h[LANG==='hi'?1:0]}</div>` : ''; }
 
 /* ---------------- Financial Models ---------------- */
 /* Every % is "of Sales" unless noted. Days are on a 365-day year. */
@@ -809,14 +861,15 @@ function openSettingsScreen(){
   let html = `<div class="card"><h2>${tt('settingsBtn')}</h2>
   <p class="muted">These apply as defaults to new projects. Each project can still override its own assumptions.</p>
   <h3>Working Capital – Turnover Method (Nayak Method) Parameters</h3>
-  <div class="grid">
+  ${colorLegend()}
+  <div class="grid default-zone">
     <div><label>Working Capital Requirement (% of Turnover)</label><input type="number" id="s_wcTurnoverPct" value="${s.wcTurnoverPct}"></div>
     <div><label>Borrower's NWC / Margin (% of Turnover)</label><input type="number" id="s_wcNwcPct" value="${s.wcNwcPct}"></div>
     <div><label>Bank Finance (% of Turnover)</label><input type="number" id="s_wcBankPct" value="${s.wcBankPct}"></div>
     <div><label>Promoter Margin on Fixed Assets (%)</label><input type="number" id="s_promoterMarginFixedPct" value="${s.promoterMarginFixedPct}"></div>
   </div>
   <h3>Indicative Fixed Asset Cost Split (% of Fixed Asset Requirement)</h3>
-  <div class="grid">
+  <div class="grid default-zone">
     <div><label>Land</label><input type="number" id="s_land" value="${s.fixedAssetSplit.land}"></div>
     <div><label>Building</label><input type="number" id="s_building" value="${s.fixedAssetSplit.building}"></div>
     <div><label>Machinery / Equipment</label><input type="number" id="s_machinery" value="${s.fixedAssetSplit.machinery}"></div>
@@ -826,7 +879,7 @@ function openSettingsScreen(){
     <div><label>Other Fixed Assets</label><input type="number" id="s_other" value="${s.fixedAssetSplit.other}"></div>
   </div>
   <h3>Other Parameters</h3>
-  <div class="grid">
+  <div class="grid default-zone">
     <div><label>Other Current Assets (% of Sales)</label><input type="number" id="s_otherCA" value="${s.otherCurrentAssetsPct}"></div>
     <div><label>Other Current Liabilities (% of Sales)</label><input type="number" id="s_otherCL" value="${s.otherCurrentLiabPct}"></div>
     <div><label>Owner Drawings (% of Profit After Tax)</label><input type="number" id="s_drawings" value="${s.ownerDrawingsPct}"></div>
@@ -857,6 +910,60 @@ function saveSettingsScreen(){
   goDashboard();
 }
 function val(id){ return document.getElementById(id).value; }
+
+/* ---------------- Help Screen ---------------- */
+function openHelpScreen(){
+  currentScreenRenderer = openHelpScreen;
+  document.getElementById('topbarSub').textContent = tt('helpTitle');
+  const hi = LANG==='hi';
+  const sections = [
+    ["h_start", hi?"शुरुआत कैसे करें":"Getting Started",
+      hi?`<p>यह ऐप कम पूछता है और अधिक स्वयं गणना करता है। आपको केवल <b>उधारकर्ता विवरण, व्यवसाय गतिविधि, ऋण आवश्यकता और बिक्री अनुमान</b> देना है — शेष सभी (व्यय, लाभ-हानि, तुलन पत्र, कार्यशील पूंजी, ऋण चुकौती, अनुपात) स्वतः गणना हो जाते हैं।</p>
+       <p><b>रंग पहचान:</b> पीला/सुनहरा क्षेत्र = आपको भरना है। नीला क्षेत्र = डिफ़ॉल्ट मान्यता जिसे आप चाहें तो बदल सकते हैं। बिना रंग की तालिकाएँ = ऐप द्वारा स्वतः गणना, बदलने की आवश्यकता नहीं।</p>`
+       :`<p>This app asks less and calculates more. You only need to provide <b>Borrower Details, Business Activity, Loan Requirement and Sales Projection</b> — everything else (expenses, profit &amp; loss, balance sheet, working capital, repayment, ratios) is calculated automatically.</p>
+       <p><b>Colour key:</b> Amber/gold fields = you must fill these. Blue fields = default assumptions you may change. Plain tables = calculated by the app — nothing to fill.</p>`],
+    ["h_borrower", hi?"चरण 1: उधारकर्ता विवरण":"Step 1: Borrower Details",
+      hi?`<p>उधारकर्ता का नाम, व्यवसाय का नाम, पता व मोबाइल आवश्यक हैं। उद्यम पंजीकरण व जीएसटीएन वैकल्पिक हैं — यदि उपलब्ध नहीं हैं तो खाली छोड़ दें।</p>
+       <div class="staff-box"><b>क्षेत्रीय कर्मचारी हेतु सुझाव:</b> उधारकर्ता की पहचान (आधार/वोटर आईडी) के अनुसार नाम की वर्तनी की पुष्टि करें, ताकि बाद में बैंक फॉर्म से मेल खाए।</div>`
+       :`<p>Borrower name, business name, address and mobile are essential. Udyam registration and GSTIN are optional — leave blank if not available.</p>
+       <div class="staff-box"><b>Tip for field staff:</b> Confirm the spelling of the name against the borrower's ID proof (Aadhaar/Voter ID) so it matches later bank forms.</div>`],
+    ["h_activity", hi?"चरण 2: व्यवसाय गतिविधि":"Step 2: Business Activity",
+      hi?`<p>पहले श्रेणी (व्यापार/विनिर्माण/सेवाएँ) चुनें, फिर सूची में खोजें। यदि गतिविधि सूची में नहीं है, तो "मेरी गतिविधि सूची में नहीं है" पर टिक करें, नाम लिखें और निकटतम वित्तीय मॉडल चुनें।</p>
+       <div class="staff-box"><b>क्षेत्रीय कर्मचारी हेतु सुझाव:</b> निकटतम मिलती-जुलती गतिविधि चुनना, गलत मॉडल से बेहतर है — इससे व्यय व मार्जिन के अनुमान अधिक यथार्थवादी रहते हैं।</div>`
+       :`<p>Select a category first (Trading / Manufacturing / Services), then search the list. If the activity is not listed, tick "My activity is not listed", type it in, and pick the nearest financial model.</p>
+       <div class="staff-box"><b>Tip for field staff:</b> Choosing the closest similar activity is better than an unrelated one — it keeps the expense and margin assumptions realistic.</div>`],
+    ["h_loan", hi?"चरण 3: ऋण आवश्यकता":"Step 3: Loan Requirement",
+      hi?`<p><b>मीयादी ऋण (Term Loan)</b> मशीनरी, भवन, वाहन जैसी स्थिर संपत्तियों हेतु है। <b>कार्यशील पूंजी (Working Capital)</b> रोज़मर्रा के स्टॉक व खर्च हेतु है। यदि विभाजन ज्ञात नहीं है तो केवल कुल राशि भरें — ऐप शेष अनुमान लगा लेगा।</p>`
+       :`<p><b>Term Loan</b> is for fixed assets like machinery, building or a vehicle. <b>Working Capital</b> is for day-to-day stock and expenses. If you don't know the split, just enter the total — the app will estimate the rest.</p>`],
+    ["h_sales", hi?"चरण 4: बिक्री अनुमान":"Step 4: Sales Projection",
+      hi?`<p>यह पूरी रिपोर्ट का सबसे महत्वपूर्ण इनपुट है। दो तरीके उपलब्ध हैं: (क) तीनों वर्षों की बिक्री सीधे दर्ज करें, या (ख) वर्तमान बिक्री + अपेक्षित वार्षिक वृद्धि % दें और शेष वर्ष स्वतः गणना हो जाएँ।</p>
+       <div class="staff-box"><b>क्षेत्रीय कर्मचारी हेतु सुझाव:</b> उधारकर्ता के पास लिखित बहीखाता न हो तो, सामान्य दिन/सप्ताह की बिक्री पूछें और उपयुक्त गुणांक (जैसे 30 या 52) से गुणा करें, या अच्छे व कमजोर मौसम का औसत लें।</div>`
+       :`<p>This is the single most important input in the whole report. Two modes are available: (a) enter all three years' sales directly, or (b) give current sales plus an expected annual growth % and let the app calculate the rest.</p>
+       <div class="staff-box"><b>Tip for field staff:</b> If the borrower keeps no written books, ask for a normal day's or week's sales and multiply by a reasonable factor (e.g. 30 or 52), or average a good season and a slow season.</div>`],
+    ["h_terms", hi?"चरण 5: ऋण शर्तें व ईएमआई":"Step 5: Loan Terms & EMI",
+      hi?`<p>ब्याज दर, चुकौती अवधि व स्थगन अवधि दर्ज करें। ऐप तुरंत <b>अनुमानित समान मासिक किस्त (ईएमआई)</b> दिखाता है — यह वह राशि है जो उधारकर्ता को हर महीने चुकानी होगी।</p>`
+       :`<p>Enter the interest rate, repayment period and moratorium. The app instantly shows the <b>indicative Equal Monthly Instalment (EMI)</b> — this is the amount the borrower would pay every month.</p>`],
+    ["h_assump", hi?"मान्यताएँ (Assumptions)":"Assumptions",
+      hi?`<p>चुनी गई गतिविधि के आधार पर, ऐप कर्मचारी लागत, किराया, बिजली, स्टॉक अवधि जैसी मान्यताएँ स्वतः भर देता है (नीले रंग में)। यदि वास्तविक आंकड़े अलग हों तो इन्हें बदला जा सकता है — बदलते ही पूरी रिपोर्ट तुरंत पुनर्गणित हो जाती है।</p>`
+       :`<p>Based on the selected activity, the app fills in assumptions like employee cost, rent, electricity and stock days automatically (shown in blue). These can be changed if actual figures differ — the whole report recalculates instantly.</p>`],
+    ["h_report", hi?"रिपोर्ट के भाग":"Report Sections",
+      hi?`<p>रिपोर्ट में एक <b>बैंक हेतु आवेदन पत्र</b> (बैंक नाम व स्थान संपादन-योग्य), आवरण पृष्ठ, कार्यकारी सारांश, लाभ-हानि, तुलन पत्र, नकदी प्रवाह, कार्यशील पूंजी, ऋण चुकौती अनुसूची, वित्तीय अनुपात, सम-विच्छेद विश्लेषण व एक तैयारी सूची शामिल है। "पूर्ण रिपोर्ट देखें" पर क्लिक कर सभी खंड एक साथ देखें और प्रिंट/पीडीएफ करें।</p>`
+       :`<p>The report includes a <b>Loan Application to the Bank</b> (with editable bank name and place), Cover Page, Executive Summary, P&amp;L, Balance Sheet, Cash Flow, Working Capital, Repayment Schedule, Ratios, Break-even Analysis and a Readiness Checklist. Use "View Full Report" to see every section together and print/save as PDF.</p>`],
+    ["h_data", hi?"डेटा व ऑफलाइन":"Data & Offline Use",
+      hi?`<p>यह ऐप 100% ऑफलाइन कार्य करता है — कोई इंटरनेट, लॉगिन या सर्वर आवश्यक नहीं। सभी परियोजनाएँ इसी डिवाइस/ब्राउज़र में सुरक्षित रहती हैं। किसी परियोजना का बैकअप लेने या दूसरे डिवाइस पर ले जाने हेतु "निर्यात करें" का उपयोग करें, और "परियोजना आयात करें" से वापस लोड करें।</p>`
+       :`<p>The app works 100% offline — no internet, login or server needed. All projects are saved only on this device/browser. Use "Export" to back up a project or move it to another device, and "Import Project" to load it back.</p>`]
+  ];
+  const toc = sections.map(s=>`<a href="#${s[0]}">${s[1]}</a>`).join('');
+  const body = sections.map(s=>`<div id="${s[0]}" class="section-anchor"><h3>${s[1]}</h3>${s[2]}</div>`).join('');
+  const html = `<div class="card">
+    <h2>${tt('helpTitle')}</h2>
+    <p class="muted">${hi?"यह मार्गदर्शिका उधारकर्ता और उनकी सहायता करने वाले बैंक/क्षेत्रीय कर्मचारी दोनों के लिए है।":"This guide is written for both the borrower and the bank/field staff assisting them."}</p>
+    <div class="help-toc">${toc}</div>
+    ${body}
+    <div class="btnrow"><button class="btn secondary" onclick="goDashboard()">${hi?'डैशबोर्ड':'Dashboard'}</button></div>
+  </div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
 
 /* ============================================================
    WIZARD
@@ -889,21 +996,21 @@ function renderWizard(){
 }
 function stepBorrower(){
   const b = current.borrower;
-  return `<div class="grid">
-    <div><label>${tt('borrowerName')}</label><input type="text" id="w_name" value="${escapeHtml(b.name)}"></div>
-    <div><label>${tt('businessName')}</label><input type="text" id="w_business" value="${escapeHtml(b.business)}"></div>
+  return `${colorLegend()}<div class="grid fill-zone">
+    <div><label>${tt('borrowerName')}</label><input type="text" id="w_name" value="${escapeHtml(b.name)}">${hint('borrowerName')}</div>
+    <div><label>${tt('businessName')}</label><input type="text" id="w_business" value="${escapeHtml(b.business)}">${hint('businessName')}</div>
     <div><label>${tt('constitution')}</label><select id="w_constitution">
       ${["Proprietorship","Partnership","SHG/JLG","Private Limited","LLP","Other"].map(o=>`<option ${b.constitution===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
-    <div><label>${tt('mobile')}</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}"></div>
-    <div style="grid-column:1/-1;"><label>${tt('address')}</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea></div>
+    <div><label>${tt('mobile')}</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}">${hint('mobile')}</div>
+    <div style="grid-column:1/-1;"><label>${tt('address')}</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea>${hint('address')}</div>
     <div><label>${tt('businessStatus')}</label><select id="w_existing">
       <option ${b.existing==='New'?'selected':''}>New</option><option ${b.existing==='Existing'?'selected':''}>Existing</option>
     </select></div>
-    <div><label>${tt('businessExperience')}</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}"></div>
-    <div><label>${tt('udyam')}</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}"></div>
-    <div><label>${tt('gstin')}</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}"></div>
-    <div style="grid-column:1/-1;"><label>${tt('bankBranch')}</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}"></div>
+    <div><label>${tt('businessExperience')}</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}">${hint('businessExperience')}</div>
+    <div><label>${tt('udyam')}</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}">${hint('udyam')}</div>
+    <div><label>${tt('gstin')}</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}">${hint('gstin')}</div>
+    <div style="grid-column:1/-1;"><label>${tt('bankBranch')}</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}">${hint('bankBranch')}</div>
   </div>`;
 }
 function stepActivity(){
@@ -915,13 +1022,13 @@ function stepActivity(){
     listHtml = `<div class="searchbox"><input type="text" id="actSearch" placeholder="${tt('searchActivity')}" oninput="filterActivityList()"></div>
       <div class="activity-list" id="actList">${items.map(a=>`<div class="act-item ${current.activityName===a[1]?'sel':''}" data-name="${escapeHtml(a[1])}" onclick="selectActivity('${escapeHtml(a[1]).replace(/'/g,"\\'")}','${a[2]}')">${escapeHtml(a[1])}</div>`).join('')}</div>
       <div class="chk"><input type="checkbox" id="w_customAct" ${current.customActivity?'checked':''} onchange="toggleCustomActivity()"> ${tt('notListed')}</div>
-      <div id="customActBox" class="${current.customActivity?'':'hidden'}">
-        <label>${tt('activityNameLabel')}</label><input type="text" id="w_customActName" value="${escapeHtml(current.customActivity?current.activityName:'')}">
+      <div id="customActBox" class="fill-zone ${current.customActivity?'':'hidden'}">
+        <label>${tt('activityNameLabel')}</label><input type="text" id="w_customActName" value="${escapeHtml(current.customActivity?current.activityName:'')}">${hint('activityNameLabel')}
         <label>${tt('nearestModel')}</label>
         <select id="w_customModel">${Object.keys(MODELS).map(k=>`<option value="${k}" ${current.activityModel===k?'selected':''}>${modelLabel(k)}</option>`).join('')}</select>
       </div>`;
   }
-  return `<div class="pillrow">${catPills}</div>${listHtml}
+  return `${colorLegend()}<div class="pillrow">${catPills}</div>${listHtml}
     <p class="muted small">${tt('selectedLabel')} <b>${escapeHtml(current.activityName||tt('none'))}</b> ${current.activityModel?('— '+tt('modelWord')+' '+modelLabel(current.activityModel)):''}</p>`;
 }
 function selectActivityCategory(c){ current.activityCategory=c; current.activityName=""; current.activityModel=""; current.customActivity=false; renderWizard(); }
@@ -935,31 +1042,31 @@ function filterActivityList(){
 }
 function stepLoan(){
   const l = current.loan;
-  return `<div class="grid">
-    <div><label>${tt('totalLoanRequired')}</label><input type="number" id="w_loanTotal" value="${l.total||''}"></div>
+  return `${colorLegend()}<div class="grid fill-zone">
+    <div><label>${tt('totalLoanRequired')}</label><input type="number" id="w_loanTotal" value="${l.total||''}">${hint('totalLoanRequired')}</div>
     <div><label>${tt('purposeOfLoan')}</label><select id="w_purpose">
       ${["New Business","Expansion","Working Capital","Machinery/Equipment","Vehicle","Composite Loan","Other"].map(o=>`<option ${l.purpose===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
-    <div><label>${tt('termLoanAmount')}</label><input type="number" id="w_termLoan" value="${l.termLoan||''}"></div>
-    <div><label>${tt('wcAmount')}</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}"></div>
+    <div><label>${tt('termLoanAmount')}</label><input type="number" id="w_termLoan" value="${l.termLoan||''}">${hint('termLoanAmount')}</div>
+    <div><label>${tt('wcAmount')}</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}">${hint('wcAmount')}</div>
   </div>
   <p class="muted small">${tt('loanSplitNote')}</p>`;
 }
 function stepSales(){
   const s = current.sales;
-  return `<div class="pillrow">
+  return `${colorLegend()}<div class="pillrow">
     <div class="pill ${s.mode==='direct'?'active':''}" onclick="setSalesMode('direct')">${tt('salesModeDirect')}</div>
     <div class="pill ${s.mode==='growth'?'active':''}" onclick="setSalesMode('growth')">${tt('salesModeGrowth')}</div>
   </div>
   ${s.mode==='direct' ? `
-  <div class="grid">
-    <div><label>${tt('currentYearSales')}</label><input type="number" id="w_y1" value="${s.y1||''}"></div>
+  <div class="grid fill-zone">
+    <div><label>${tt('currentYearSales')}</label><input type="number" id="w_y1" value="${s.y1||''}">${hint('currentYearSales')}</div>
     <div><label>${tt('followingYearSales')}</label><input type="number" id="w_y2" value="${s.y2||''}"></div>
     <div><label>${tt('nextYearSales')}</label><input type="number" id="w_y3" value="${s.y3||''}"></div>
   </div>` : `
-  <div class="grid">
-    <div><label>${tt('currentAnnualSales')}</label><input type="number" id="w_currentSales" value="${s.currentSales||''}"></div>
-    <div><label>${tt('growthPctLabel')}</label><input type="number" id="w_growth" value="${s.growthPct||10}"></div>
+  <div class="grid fill-zone">
+    <div><label>${tt('currentAnnualSales')}</label><input type="number" id="w_currentSales" value="${s.currentSales||''}">${hint('currentAnnualSales')}</div>
+    <div><label>${tt('growthPctLabel')}</label><input type="number" id="w_growth" value="${s.growthPct||10}">${hint('growthPctLabel')}</div>
   </div>
   <p class="muted small">${tt('growthNote')}</p>`}`;
 }
@@ -968,10 +1075,10 @@ function stepLoanTerms(){
   const t = current.loanTerms;
   const previewMonths = Math.max(t.tenureYears*12 - t.moratoriumMonths,1);
   const previewEmi = computeEMI(current.loan.termLoan||current.loan.total, t.interestRatePct, previewMonths);
-  return `<div class="grid">
-    <div><label>${tt('interestRate')}</label><input type="number" id="w_rate" value="${t.interestRatePct}" onchange="wizardTermsPreview()"></div>
-    <div><label>${tt('repaymentPeriod')}</label><input type="number" id="w_tenure" value="${t.tenureYears}" onchange="wizardTermsPreview()"></div>
-    <div><label>${tt('moratorium')}</label><input type="number" id="w_mora" value="${t.moratoriumMonths}" onchange="wizardTermsPreview()"></div>
+  return `${colorLegend()}<div class="grid fill-zone">
+    <div><label>${tt('interestRate')}</label><input type="number" id="w_rate" value="${t.interestRatePct}" onchange="wizardTermsPreview()">${hint('interestRate')}</div>
+    <div><label>${tt('repaymentPeriod')}</label><input type="number" id="w_tenure" value="${t.tenureYears}" onchange="wizardTermsPreview()">${hint('repaymentPeriod')}</div>
+    <div><label>${tt('moratorium')}</label><input type="number" id="w_mora" value="${t.moratoriumMonths}" onchange="wizardTermsPreview()">${hint('moratorium')}</div>
     <div><label>${tt('instalmentFreq')}</label><select id="w_freq">
       ${["Monthly","Quarterly"].map(o=>`<option ${t.instalmentFreq===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
@@ -1039,12 +1146,13 @@ function renderAssumptions(){
     const k = row[0]; const mod = isModified(current,k);
     return `<div class="assump-row">
       <span>${afLabel(row)} ${mod?'<span class="badge modified">'+tt('modifiedTag')+'</span>':'<span class="badge default">'+tt('defaultTag')+'</span>'}</span>
-      <span class="val"><input type="number" style="width:90px" id="asf_${k}" value="${a[k]}" onchange="assumptionChanged('${k}')"></span>
+      <span class="val"><input type="number" style="width:90px" class="default-input" id="asf_${k}" value="${a[k]}" onchange="assumptionChanged('${k}')"></span>
     </div>`;
   }).join('');
   const html = `<div class="card">
     <h2>${tt('assumptionsUsed')}</h2>
     <p class="muted">${tt('modelLabel')} <b>${modelLabel(current.activityModel)}</b> — ${tt('activityLabel')} <b>${escapeHtml(current.activityName)}</b></p>
+    ${colorLegend()}
     ${rows}
     <div class="btnrow">
       <button class="btn secondary" onclick="resetAssumptions()">${tt('resetDefaults')}</button>
@@ -1070,6 +1178,7 @@ function renderProjectCost(){
   const c = calculate(current);
   const html = `<div class="card">
     <h2>${tt('projectCostTitle')} & ${tt('meansOfFinanceTitle')}</h2>
+    ${colorLegend()}
     <p class="note-box">${tt('indicativeNote')}</p>
     <h3>${tt('projectCostTitle')}</h3>
     <table>
@@ -1177,7 +1286,7 @@ function drawReport(){
       <button class="btn secondary" onclick="showFullReport()">${tt('viewFull')}</button>
     </div>
   </div>
-  <div class="card no-print"><div class="tabs">${tabs}</div></div>
+  <div class="card no-print"><div class="tabs">${tabs}</div>${colorLegend()}</div>
   <div class="card report-page" id="reportBody">${body}</div>`;
   document.getElementById('mainArea').innerHTML = html;
 }
@@ -1214,10 +1323,10 @@ function rApplication(c){
   const app = current.application || {bankName:"",place:"",date:new Date().toISOString().slice(0,10)};
   const b = current.borrower;
   const dateDisp = app.date ? new Date(app.date).toLocaleDateString(LANG==='hi'?'hi-IN':'en-IN') : '';
-  const editForm = `<div class="no-print grid" style="margin-bottom:14px;">
-    <div><label>${LANG==='hi'?'बैंक का नाम':'Bank Name'}</label><input type="text" id="appBankName" value="${escapeHtml(app.bankName)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. सेंट्रल बैंक ऑफ इंडिया':'e.g. Central Bank of India'}"></div>
-    <div><label>${LANG==='hi'?'शाखा / स्थान':'Branch / Place'}</label><input type="text" id="appPlace" value="${escapeHtml(app.place)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. शाखा व स्थान':'e.g. Branch & Place'}"></div>
-    <div><label>${LANG==='hi'?'दिनांक':'Date'}</label><input type="text" id="appDate" value="${escapeHtml(app.date)}" onchange="applicationFieldChanged()" placeholder="YYYY-MM-DD"></div>
+  const editForm = `${colorLegend()}<div class="no-print grid fill-zone" style="margin-bottom:14px;">
+    <div><label>${LANG==='hi'?'बैंक का नाम':'Bank Name'}</label><input type="text" id="appBankName" value="${escapeHtml(app.bankName)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. सेंट्रल बैंक ऑफ इंडिया':'e.g. Central Bank of India'}">${hint('appBankName')}</div>
+    <div><label>${LANG==='hi'?'शाखा / स्थान':'Branch / Place'}</label><input type="text" id="appPlace" value="${escapeHtml(app.place)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. शाखा व स्थान':'e.g. Branch & Place'}">${hint('appPlace')}</div>
+    <div><label>${LANG==='hi'?'दिनांक':'Date'}</label><input type="text" id="appDate" value="${escapeHtml(app.date)}" onchange="applicationFieldChanged()" placeholder="YYYY-MM-DD">${hint('appDate')}</div>
   </div>`;
 
   const termLoan = c.termLoan, wcAmt = c.wcBank;
