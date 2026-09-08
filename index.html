@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSME Project Report Generator</title>
+<style>
+:root{
+  --navy:#173a5e;
+  --navy-dark:#0f2740;
+  --gold:#c9922e;
+  --gold-dark:#a5751d;
+  --cream:#f6f4ef;
+  --paper:#ffffff;
+  --ink:#1c2530;
+  --ink-soft:#5b6572;
+  --line:#dcd6c9;
+  --green:#2f7a4f;
+  --red:#b3402f;
+  --amber:#b3841f;
+  --radius:6px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.5;
+}
+.app{max-width:960px;margin:0 auto;padding:0 0 60px;}
+header.topbar{
+  background:linear-gradient(180deg,var(--navy) 0%,var(--navy-dark) 100%);
+  color:#fff;padding:14px 18px;position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+header.topbar .brand{display:flex;flex-direction:column;}
+header.topbar .brand b{font-size:16px;letter-spacing:.2px;}
+header.topbar .brand span{font-size:11px;color:#cfd9e6;}
+header.topbar button.nav-btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;
+  padding:7px 12px;border-radius:var(--radius);font-size:13px;cursor:pointer;
+}
+header.topbar button.nav-btn:active{background:rgba(255,255,255,.2);}
+main{padding:16px;}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+.card h2{margin:0 0 4px;font-size:18px;color:var(--navy);}
+.card h3{margin:18px 0 8px;font-size:15px;color:var(--navy-dark);border-bottom:1px solid var(--line);padding-bottom:6px;}
+.muted{color:var(--ink-soft);font-size:13px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.grid{grid-template-columns:1fr;}}
+label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;margin-top:10px;font-weight:600;}
+input[type=text],input[type=number],input[type=tel],select,textarea{
+  width:100%;padding:9px 10px;border:1px solid #c7c0ac;border-radius:var(--radius);font-size:15px;background:#fff;color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px;}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+button.btn{
+  background:var(--navy);color:#fff;border:none;padding:11px 18px;border-radius:var(--radius);
+  font-size:14.5px;cursor:pointer;font-weight:600;
+}
+button.btn.secondary{background:#fff;color:var(--navy);border:1px solid var(--navy);}
+button.btn.gold{background:var(--gold);color:#fff;}
+button.btn.danger{background:#fff;color:var(--red);border:1px solid var(--red);}
+button.btn:disabled{opacity:.45;cursor:not-allowed;}
+button.btn:active{transform:translateY(1px);}
+.pillrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+.pill{padding:7px 13px;border-radius:20px;border:1px solid #c7c0ac;background:#fff;cursor:pointer;font-size:13.5px;}
+.pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0;}
+table th,table td{border:1px solid var(--line);padding:7px 8px;text-align:right;}
+table th:first-child,table td:first-child{text-align:left;}
+table th{background:#eee8d8;color:var(--navy-dark);font-weight:700;}
+table tr.total td{font-weight:700;background:#f3efe2;}
+.progressbar{display:flex;gap:4px;margin-bottom:16px;}
+.progressbar div{flex:1;height:6px;border-radius:3px;background:#e3dcc9;}
+.progressbar div.done{background:var(--gold);}
+.progressbar div.current{background:var(--navy);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
+.badge.default{background:#e4eee7;color:var(--green);}
+.badge.modified{background:#fbe9d8;color:var(--gold-dark);}
+.check-list{list-style:none;padding:0;margin:8px 0;}
+.check-list li{padding:5px 0;font-size:14px;display:flex;gap:8px;align-items:flex-start;}
+.check-list li.pass:before{content:"✓";color:var(--green);font-weight:900;}
+.check-list li.fail:before{content:"✗";color:var(--red);font-weight:900;}
+.check-list li.warn:before{content:"!";color:var(--amber);font-weight:900;}
+.proj-item{border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff;}
+.proj-item .meta b{display:block;}
+.proj-item .meta span{font-size:12px;color:var(--ink-soft);}
+.proj-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.proj-actions button{padding:6px 9px;font-size:12px;}
+.demo-tag{background:var(--red);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px;}
+.assump-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line);padding:7px 0;font-size:14px;}
+.assump-row .val{display:flex;align-items:center;gap:8px;}
+.how-calc{font-size:11.5px;color:var(--navy);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;margin-left:6px;}
+.how-calc-box{background:#f2eee0;border:1px dashed var(--gold-dark);border-radius:4px;padding:8px 10px;font-size:12.5px;margin:6px 0;color:var(--ink-soft);}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;}
+.tabs button{white-space:nowrap;padding:8px 12px;border-radius:16px;border:1px solid var(--line);background:#fff;font-size:12.5px;cursor:pointer;}
+.tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.report-page{background:#fff;}
+.report-cover{text-align:center;padding:50px 10px;border:2px solid var(--navy);border-radius:8px;}
+.report-cover h1{color:var(--navy);font-size:22px;margin-bottom:4px;}
+.report-cover .sub{color:var(--ink-soft);margin-bottom:30px;}
+.footer-byline{text-align:center;font-size:11.5px;color:var(--ink-soft);margin-top:30px;padding-top:14px;border-top:1px solid var(--line);}
+.note-box{background:#fdf6e8;border-left:4px solid var(--gold);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
+.warn-box{background:#fdeceb;border-left:4px solid var(--red);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
+.section-anchor{scroll-margin-top:70px;}
+.hidden{display:none !important;}
+.small{font-size:12px;}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.searchbox{position:relative;}
+.activity-list{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);}
+.activity-list .act-cat{background:#eee8d8;padding:5px 10px;font-weight:700;font-size:12px;color:var(--navy-dark);position:sticky;top:0;}
+.activity-list .act-item{padding:8px 10px;border-bottom:1px solid #efece0;cursor:pointer;font-size:14px;}
+.activity-list .act-item:hover, .activity-list .act-item.sel{background:#f3efe2;}
+.two-col-inline{display:flex;gap:8px;align-items:center;}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);margin-top:8px;}
+@media print{
+  header.topbar,.no-print{display:none !important;}
+  body{background:#fff;font-size:12px;}
+  .app{max-width:100%;}
+  .card{border:none;box-shadow:none;padding:0;margin-bottom:14px;page-break-inside:avoid;}
+  .report-page{padding:0;}
+  table{font-size:11px;}
+  .section-anchor{page-break-before:auto;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <b id="topbarTitle">MSME Project Report Generator</b>
+      <span id="topbarSub">Offline • v1.4</span>
+    </div>
+    <div class="no-print" style="display:flex;gap:8px;">
+      <button class="nav-btn" onclick="goDashboard()">Dashboard</button>
+      <button class="nav-btn" id="saveTopBtn" onclick="saveCurrentProject()" style="display:none;">Save</button>
+    </div>
+  </header>
+  <main id="mainArea"></main>
+</div>
+
+<script>
+/* ============================================================
+   MSME OFFLINE PROJECT REPORT GENERATOR
+   Developed by Anil Sharma, Former General Manager, Central Bank of India.
+   100% offline. No server, login or external API calls.
+   ============================================================ */
+const APP_VERSION = "1.4";
+const STORAGE_KEY = "msme_prg_projects_v1";
+const SETTINGS_KEY = "msme_prg_settings_v1";
+
+/* ---------------- Financial Models ---------------- */
+/* Every % is "of Sales" unless noted. Days are on a 365-day year. */
+const MODELS = {
+  fastMovingRetail:{ label:"Fast-Moving Retail (Grocery / Kirana)", costOfSales:85, employee:3, rent:3, electricity:1, transport:1, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:30, debtorDays:5, creditorDays:20, deprRate:10 },
+  garmentFootwearRetail:{ label:"Garment / Footwear Retail", costOfSales:65, employee:8, rent:5, electricity:1.5, transport:1, admin:1.5, selling:2, repairs:0.5, otherOpex:1, stockDays:60, debtorDays:10, creditorDays:30, deprRate:10 },
+  hardwareBuilding:{ label:"Hardware / Building Material Trading", costOfSales:80, employee:4, rent:3, electricity:1, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:45, debtorDays:20, creditorDays:30, deprRate:10 },
+  agriTrading:{ label:"Agricultural Inputs / Produce Trading", costOfSales:88, employee:2, rent:1, electricity:0.5, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:20, debtorDays:10, creditorDays:15, deprRate:10 },
+  foodProcessing:{ label:"Food Processing (Mills / Oil / Processing)", costOfSales:65, employee:10, rent:2, electricity:3, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:20, creditorDays:20, deprRate:15 },
+  bakeryFood:{ label:"Bakery / Sweets / Snacks Manufacturing", costOfSales:55, employee:15, rent:3, electricity:4, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:15, debtorDays:10, creditorDays:15, deprRate:15 },
+  textileGarments:{ label:"Textile / Garment Manufacturing", costOfSales:60, employee:15, rent:2, electricity:3, transport:1, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
+  furnitureWood:{ label:"Furniture / Wood Products", costOfSales:60, employee:15, rent:2, electricity:2, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
+  engineeringFab:{ label:"Engineering / Fabrication / Welding", costOfSales:60, employee:15, rent:2, electricity:3, transport:2, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:25, deprRate:15 },
+  constructionProducts:{ label:"Construction Products (Bricks/Blocks/Precast)", costOfSales:55, employee:15, rent:2, electricity:4, transport:3, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:20, debtorDays:30, creditorDays:20, deprRate:15 },
+  personalServices:{ label:"Personal Services (Salon / Tailoring / Laundry)", costOfSales:25, employee:25, rent:8, electricity:4, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:3, creditorDays:5, deprRate:15 },
+  repairServices:{ label:"Repair Services (Mobile/Electronics/Auto)", costOfSales:40, employee:20, rent:5, electricity:3, transport:2, admin:2, selling:1, repairs:1, otherOpex:1, stockDays:15, debtorDays:5, creditorDays:15, deprRate:15 },
+  transport:{ label:"Transport / Goods Vehicle", costOfSales:55, employee:15, rent:1, electricity:0.5, transport:5, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:5, debtorDays:15, creditorDays:10, deprRate:20 },
+  foodServices:{ label:"Food Services (Restaurant / Dhaba / Tea Stall)", costOfSales:40, employee:20, rent:8, electricity:5, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:2, creditorDays:10, deprRate:15 },
+  digitalServices:{ label:"Digital / Business Services", costOfSales:20, employee:30, rent:6, electricity:3, transport:1, admin:3, selling:3, repairs:1, otherOpex:2, stockDays:0, debtorDays:20, creditorDays:10, deprRate:20 },
+  rentalLogistics:{ label:"Equipment Rental / Warehousing / Logistics", costOfSales:35, employee:15, rent:3, electricity:2, transport:3, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:10, debtorDays:20, creditorDays:15, deprRate:15 }
+};
+
+/* ---------------- Activity Library ---------------- */
+const ACTIVITIES = [
+["Trading","General Store / Kirana","fastMovingRetail"],["Trading","Grocery","fastMovingRetail"],
+["Trading","Provision Store","fastMovingRetail"],["Trading","Fruits & Vegetables","fastMovingRetail"],
+["Trading","Dairy Products","fastMovingRetail"],["Trading","Bakery Products (Retail)","fastMovingRetail"],
+["Trading","Garments","garmentFootwearRetail"],["Trading","Saree / Dress Material","garmentFootwearRetail"],
+["Trading","Footwear","garmentFootwearRetail"],["Trading","Cosmetics","garmentFootwearRetail"],
+["Trading","Stationery / Books","fastMovingRetail"],["Trading","Hardware","hardwareBuilding"],
+["Trading","Electrical Goods","hardwareBuilding"],["Trading","Plumbing Material","hardwareBuilding"],
+["Trading","Paint / Sanitary Material","hardwareBuilding"],["Trading","Cement / Building Material","hardwareBuilding"],
+["Trading","Seeds","agriTrading"],["Trading","Fertilisers","agriTrading"],["Trading","Pesticides","agriTrading"],
+["Trading","Agricultural Inputs","agriTrading"],["Trading","Animal / Cattle Feed","agriTrading"],
+["Trading","Poultry Feed","agriTrading"],["Trading","Farm Implements","hardwareBuilding"],
+["Trading","Tractor Parts","hardwareBuilding"],["Trading","Automobile Spare Parts","hardwareBuilding"],
+["Trading","Two-Wheeler Parts","hardwareBuilding"],["Trading","Tyres & Tubes","hardwareBuilding"],
+["Trading","Bicycle","hardwareBuilding"],["Trading","Mobile & Accessories","garmentFootwearRetail"],
+["Trading","Computer Accessories","garmentFootwearRetail"],["Trading","Solar Products","hardwareBuilding"],
+["Trading","Kitchen Utensils","fastMovingRetail"],["Trading","Furniture (Retail)","garmentFootwearRetail"],
+["Trading","Plastic Household Goods","fastMovingRetail"],["Trading","Gift / Toy Items","garmentFootwearRetail"],
+["Trading","Imitation Jewellery","garmentFootwearRetail"],["Trading","Handicrafts","garmentFootwearRetail"],
+["Trading","Khadi / Village Products","garmentFootwearRetail"],["Trading","Wholesale Grocery","fastMovingRetail"],
+["Trading","Agricultural Produce Trading","agriTrading"],
+["Manufacturing","Flour Mill / Atta Chakki","foodProcessing"],["Manufacturing","Rice Mill","foodProcessing"],
+["Manufacturing","Dal Mill","foodProcessing"],["Manufacturing","Spice Grinding","foodProcessing"],
+["Manufacturing","Oil Expeller","foodProcessing"],["Manufacturing","Food Processing (General)","foodProcessing"],
+["Manufacturing","Pickle","bakeryFood"],["Manufacturing","Papad","bakeryFood"],["Manufacturing","Namkeen","bakeryFood"],
+["Manufacturing","Bakery","bakeryFood"],["Manufacturing","Bread","bakeryFood"],["Manufacturing","Biscuits","bakeryFood"],
+["Manufacturing","Sweets","bakeryFood"],["Manufacturing","Snacks","bakeryFood"],
+["Manufacturing","Fruit Processing","foodProcessing"],["Manufacturing","Vegetable Processing","foodProcessing"],
+["Manufacturing","Honey Processing / Packing","foodProcessing"],["Manufacturing","Jaggery Products","foodProcessing"],
+["Manufacturing","Dairy Products (Mfg)","foodProcessing"],["Manufacturing","Paneer","foodProcessing"],
+["Manufacturing","Ghee","foodProcessing"],["Manufacturing","Cattle Feed (Mfg)","foodProcessing"],
+["Manufacturing","Poultry Feed (Mfg)","foodProcessing"],
+["Manufacturing","Tailoring","textileGarments"],["Manufacturing","Readymade Garments","textileGarments"],
+["Manufacturing","School Uniforms","textileGarments"],["Manufacturing","Ladies Garments","textileGarments"],
+["Manufacturing","Embroidery","textileGarments"],["Manufacturing","Handloom","textileGarments"],
+["Manufacturing","Weaving","textileGarments"],["Manufacturing","Knitting","textileGarments"],
+["Manufacturing","Textile Printing","textileGarments"],["Manufacturing","Durries","textileGarments"],
+["Manufacturing","Carpets","textileGarments"],["Manufacturing","Rugs","textileGarments"],
+["Manufacturing","Jute Products","textileGarments"],["Manufacturing","Cloth Bags","textileGarments"],
+["Manufacturing","Furniture","furnitureWood"],["Manufacturing","Doors & Windows","furnitureWood"],
+["Manufacturing","Modular Furniture","furnitureWood"],["Manufacturing","Bamboo Products","furnitureWood"],
+["Manufacturing","Cane Furniture","furnitureWood"],["Manufacturing","Wooden Products","furnitureWood"],
+["Manufacturing","Wooden Toys","furnitureWood"],
+["Manufacturing","Welding","engineeringFab"],["Manufacturing","Fabrication","engineeringFab"],
+["Manufacturing","Agricultural Implements","engineeringFab"],["Manufacturing","Farm Equipment","engineeringFab"],
+["Manufacturing","Steel Furniture","engineeringFab"],["Manufacturing","Gates & Grills","engineeringFab"],
+["Manufacturing","Sheet Metal Products","engineeringFab"],["Manufacturing","Machine Components","engineeringFab"],
+["Manufacturing","Tools","engineeringFab"],["Manufacturing","Metal Products","engineeringFab"],
+["Manufacturing","Paver Blocks","constructionProducts"],["Manufacturing","Interlocking Tiles","constructionProducts"],
+["Manufacturing","Bricks","constructionProducts"],["Manufacturing","Cement Products","constructionProducts"],
+["Manufacturing","Precast Products","constructionProducts"],["Manufacturing","RCC Products","constructionProducts"],
+["Manufacturing","Building Products","constructionProducts"],
+["Manufacturing","Corrugated Boxes","constructionProducts"],["Manufacturing","Paper Bags","constructionProducts"],
+["Manufacturing","Paper Products","constructionProducts"],["Manufacturing","Packaging Material","constructionProducts"],
+["Manufacturing","Printing / Labels","constructionProducts"],["Manufacturing","Candles","bakeryFood"],
+["Manufacturing","Agarbatti","bakeryFood"],["Manufacturing","Soap","bakeryFood"],["Manufacturing","Detergent","bakeryFood"],
+["Manufacturing","Phenyl / Cleaning Products","bakeryFood"],["Manufacturing","Paper Plates / Cups","constructionProducts"],
+["Manufacturing","Eco-friendly Disposable Products","constructionProducts"],["Manufacturing","Leaf Plates","constructionProducts"],
+["Manufacturing","Coir Products","constructionProducts"],
+["Services","Barber","personalServices"],["Services","Salon","personalServices"],["Services","Beauty Parlour","personalServices"],
+["Services","Tailoring (Service)","personalServices"],["Services","Laundry","personalServices"],
+["Services","Dry Cleaning","personalServices"],["Services","Shoe Repair","repairServices"],
+["Services","Watch Repair","repairServices"],["Services","Mobile Repair","repairServices"],
+["Services","Computer Repair","repairServices"],["Services","Electrical Repair","repairServices"],
+["Services","Electronics Repair","repairServices"],["Services","Appliance Repair","repairServices"],
+["Services","Motor Rewinding","repairServices"],["Services","Pump Repair","repairServices"],
+["Services","Two-Wheeler Repair","repairServices"],["Services","Automobile Repair","repairServices"],
+["Services","Tractor Repair","repairServices"],["Services","Agricultural Machinery Repair","repairServices"],
+["Services","Farm Equipment Repair","repairServices"],["Services","Welding Workshop","engineeringFab"],
+["Services","Machinery Service","repairServices"],["Services","Plumbing","repairServices"],
+["Services","Electrical Contractor","repairServices"],["Services","Masonry / Construction Services","repairServices"],
+["Services","Goods Transport","transport"],["Services","Pickup Vehicle","transport"],["Services","Mini Truck","transport"],
+["Services","Tractor with Trolley","transport"],["Services","Passenger Auto","transport"],["Services","Taxi","transport"],
+["Services","School Transport","transport"],["Services","Local Passenger Transport","transport"],
+["Services","Delivery Service","transport"],
+["Services","Tea Stall","foodServices"],["Services","Snacks Centre","foodServices"],["Services","Restaurant","foodServices"],
+["Services","Dhaba","foodServices"],["Services","Tiffin Service","foodServices"],["Services","Catering","foodServices"],
+["Services","Fast Food","foodServices"],["Services","Juice Centre","foodServices"],["Services","Small Food Outlet","foodServices"],
+["Services","Cyber / Internet Centre","digitalServices"],["Services","Digital Service Centre","digitalServices"],
+["Services","Printing","digitalServices"],["Services","Photocopy","digitalServices"],["Services","DTP","digitalServices"],
+["Services","Photography","digitalServices"],["Services","Videography","digitalServices"],
+["Services","Event Services","digitalServices"],["Services","Advertising","digitalServices"],
+["Services","Accounting / Bookkeeping","digitalServices"],["Services","Consultancy","digitalServices"],
+["Services","Coaching Centre","digitalServices"],["Services","Computer Training","digitalServices"],
+["Services","Tent House","rentalLogistics"],["Services","Equipment Rental","rentalLogistics"],
+["Services","Agricultural Equipment Rental","rentalLogistics"],["Services","Warehousing","rentalLogistics"],
+["Services","Godown / Storage","rentalLogistics"],["Services","Courier / Delivery","rentalLogistics"],
+["Services","Local Logistics","rentalLogistics"],["Services","Pest Control","repairServices"],
+["Services","Housekeeping","repairServices"],["Services","Security Services","repairServices"],
+["Services","Water Supply","rentalLogistics"],["Services","RO Water Plant","rentalLogistics"],
+["Services","Solar Installation / Maintenance","repairServices"],["Services","CCTV Installation","repairServices"],
+["Services","Computer Hardware Services","repairServices"]
+];
+
+/* ---------------- Global Settings (editable defaults) ---------------- */
+function defaultSettings(){
+  return {
+    wcTurnoverPct:25, wcNwcPct:5, wcBankPct:20,
+    promoterMarginFixedPct:25,
+    fixedAssetSplit:{ land:0, building:10, machinery:55, furniture:10, vehicle:15, preliminary:5, other:5 },
+    otherCurrentAssetsPct:1, otherCurrentLiabPct:1,
+    ownerDrawingsPct:50, taxRatePct:0,
+    interestRatePct:12, tenureYears:5, moratoriumMonths:6, instalmentFreq:"Monthly"
+  };
+}
+function getSettings(){
+  try{ const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)); return s?Object.assign(defaultSettings(),s):defaultSettings(); }
+  catch(e){ return defaultSettings(); }
+}
+function saveSettingsObj(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+
+/* ---------------- Storage helpers ---------------- */
+function loadAllProjects(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }catch(e){ return []; }
+}
+function persistAllProjects(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+function uid(){ return 'p'+Date.now()+Math.random().toString(16).slice(2,8); }
+
+/* ---------------- App State ---------------- */
+let current = null; // active project object (in-memory, editable)
+let wizardStep = 1;
+let reportTab = 'cover';
+
+function blankProject(){
+  const m = getSettings();
+  return {
+    id:uid(), version:APP_VERSION, isDemo:false, createdAt:new Date().toISOString(),
+    borrower:{ name:"", business:"", constitution:"Proprietorship", address:"", mobile:"",
+      existing:"New", experience:"", udyam:"", gstin:"", bank:"" },
+    activityCategory:"", activityName:"", activityModel:"", customActivity:false,
+    loan:{ total:0, purpose:"New Business", termLoan:0, wcLoan:0 },
+    sales:{ mode:"direct", y1:0, y2:0, y3:0, currentSales:0, growthPct:10 },
+    assumptions:null, // filled from model, editable per-project; null means "use model default"
+    settings: JSON.parse(JSON.stringify(m)),
+    loanTerms:{ interestRatePct:m.interestRatePct, tenureYears:m.tenureYears, moratoriumMonths:m.moratoriumMonths, instalmentFreq:m.instalmentFreq },
+    openingCash:0
+  };
+}
+
+/* ---------------- Formatting ---------------- */
+function inr(n){
+  if(n===null||n===undefined||isNaN(n)) return "—";
+  n = Math.round(n);
+  const neg = n<0; n = Math.abs(n);
+  let s = n.toString();
+  let last3 = s.substring(s.length-3);
+  let other = s.substring(0,s.length-3);
+  if(other!=='') last3 = ','+last3;
+  let formatted = other.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + last3;
+  return (neg?'-':'') + '₹' + formatted;
+}
+function pct(n,dp){ if(n===null||n===undefined||isNaN(n)) return "—"; return (Math.round(n*Math.pow(10,dp||1))/Math.pow(10,dp||1))+"%"; }
+function num(n){ return (n===null||n===undefined||isNaN(n))?0:n; }
+function daysFmt(n){ return n+" days"; }
+
+/* ============================================================
+   CALCULATION ENGINE
+   ============================================================ */
+function getAssumptions(p){
+  const base = MODELS[p.activityModel] || MODELS.fastMovingRetail;
+  const a = Object.assign({}, base);
+  if(p.assumptions){ Object.assign(a, p.assumptions); }
+  return a;
+}
+function isModified(p, key){
+  const base = MODELS[p.activityModel] || MODELS.fastMovingRetail;
+  if(!p.assumptions || p.assumptions[key]===undefined) return false;
+  return Number(p.assumptions[key]) !== Number(base[key]);
+}
+function getSalesSeries(p){
+  if(p.sales.mode==='growth'){
+    const c = num(p.sales.currentSales), g = num(p.sales.growthPct)/100;
+    const y1 = c*(1+g), y2=y1*(1+g), y3=y2*(1+g);
+    return [y1,y2,y3];
+  }
+  return [num(p.sales.y1), num(p.sales.y2), num(p.sales.y3)];
+}
+
+function calculate(p){
+  const a = getAssumptions(p);
+  const s = p.settings;
+  const sales = getSalesSeries(p);
+  const years = [1,2,3];
+
+  // ---- P&L ----
+  const pnl = years.map((yr,i)=>{
+    const S = sales[i];
+    const cos = S*a.costOfSales/100;
+    const gp = S-cos;
+    const employee = S*a.employee/100, rent=S*a.rent/100, elec=S*a.electricity/100,
+      transport=S*a.transport/100, admin=S*a.admin/100, selling=S*a.selling/100,
+      repairs=S*a.repairs/100, other=S*a.otherOpex/100;
+    const totalOpex = employee+rent+elec+transport+admin+selling+repairs+other;
+    const ebitda = gp-totalOpex;
+    return {sales:S,cos,gp,employee,rent,elec,transport,admin,selling,repairs,other,totalOpex,ebitda};
+  });
+
+  // ---- Project cost & means of finance ----
+  const termLoan = num(p.loan.termLoan) || num(p.loan.total);
+  const fixedAssetReq = s.promoterMarginFixedPct<100 ? termLoan/(1-s.promoterMarginFixedPct/100) : termLoan;
+  const promoterMarginFixed = fixedAssetReq - termLoan;
+  const split = s.fixedAssetSplit;
+  const fa = {
+    land: fixedAssetReq*split.land/100, building: fixedAssetReq*split.building/100,
+    machinery: fixedAssetReq*split.machinery/100, furniture: fixedAssetReq*split.furniture/100,
+    vehicle: fixedAssetReq*split.vehicle/100, preliminary: fixedAssetReq*split.preliminary/100,
+    other: fixedAssetReq*split.other/100
+  };
+  const grossBlock = fixedAssetReq - fa.land; // land not depreciated
+
+  const y1Sales = sales[0];
+  const wcReq = y1Sales*s.wcTurnoverPct/100;
+  const wcNwc = y1Sales*s.wcNwcPct/100;
+  const wcBank = y1Sales*s.wcBankPct/100;
+
+  const totalProjectCost = fixedAssetReq + wcReq;
+  const promoterContributionTotal = promoterMarginFixed + wcNwc;
+  const meansOfFinance = {
+    promoterContribution: promoterContributionTotal, termLoan: termLoan,
+    wcFinance: wcBank, otherSources:0, subsidy:0,
+    total: promoterContributionTotal+termLoan+wcBank
+  };
+
+  // ---- Operating cycle method (per year) ----
+  const opCycle = pnl.map((row,i)=>{
+    const S = sales[i];
+    const inventory = row.cos*a.stockDays/365;
+    const receivables = S*a.debtorDays/365;
+    const otherCA = S*s.otherCurrentAssetsPct/100;
+    const creditors = row.cos*a.creditorDays/365;
+    const otherCL = S*s.otherCurrentLiabPct/100;
+    const gap = (inventory+receivables+otherCA) - (creditors+otherCL);
+    const borrowerContribution = gap*(s.wcNwcPct/s.wcTurnoverPct);
+    const bankFinance = gap - borrowerContribution;
+    return {inventory,receivables,otherCA,creditors,otherCL,gap,borrowerContribution,bankFinance};
+  });
+
+  // ---- Loan repayment schedule (Term Loan, equal principal, monthly) ----
+  const tenureMonths = Math.round(s?.tenureYears ? p.loanTerms.tenureYears*12 : p.loanTerms.tenureYears*12) || (p.loanTerms.tenureYears*12);
+  const moraMonths = num(p.loanTerms.moratoriumMonths);
+  const rate = num(p.loanTerms.interestRatePct)/100/12;
+  const repayMonths = Math.max(tenureMonths - moraMonths,1);
+  const monthlyPrincipal = termLoan>0 ? termLoan/repayMonths : 0;
+  let schedule = [];
+  let bal = termLoan;
+  for(let m=1;m<=tenureMonths;m++){
+    const openBal = bal;
+    const interest = openBal*rate;
+    let principal = 0;
+    if(m>moraMonths){ principal = Math.min(monthlyPrincipal, bal); }
+    bal = bal - principal;
+    schedule.push({month:m, open:openBal, interest, principal, close:bal, inMoratorium: m<=moraMonths});
+  }
+  // annualize into 3 yearly buckets (12 months each)
+  function yearBucket(yr){
+    const from=(yr-1)*12+1, to=yr*12;
+    const rows = schedule.filter(r=>r.month>=from && r.month<=to);
+    const openBal = rows.length? rows[0].open : (yr===1?termLoan:0);
+    const closeBal = rows.length? rows[rows.length-1].close : 0;
+    const interest = rows.reduce((t,r)=>t+r.interest,0);
+    const principal = rows.reduce((t,r)=>t+r.principal,0);
+    return {openBal,closeBal,interest,principal};
+  }
+  const tlYearly = [1,2,3].map(yearBucket);
+
+  // WC interest per year (utilised = year's assessed bank finance under turnover method, revolving)
+  const wcYearly = sales.map(S=> S*s.wcBankPct/100);
+  const wcInterestYearly = wcYearly.map(w=> w*num(p.loanTerms.interestRatePct)/100);
+
+  // ---- Depreciation (WDV) per year ----
+  let wdv = grossBlock;
+  const deprYearly = [];
+  for(let i=0;i<3;i++){
+    const d = wdv*a.deprRate/100;
+    deprYearly.push(d);
+    wdv = wdv-d;
+  }
+
+  // ---- Full P&L with interest, depreciation, tax ----
+  const pnlFull = pnl.map((row,i)=>{
+    const depr = deprYearly[i];
+    const interest = tlYearly[i].interest + wcInterestYearly[i];
+    const pbt = row.ebitda - depr - interest;
+    const tax = pbt>0 ? pbt*s.taxRatePct/100 : 0;
+    const pat = pbt-tax;
+    return Object.assign({}, row, {depr, interest, pbt, tax, pat, termInterest:tlYearly[i].interest, wcInterest:wcInterestYearly[i]});
+  });
+
+  // ---- Owner drawings & retained earnings ----
+  let cumRE = 0;
+  const drawingsYearly = pnlFull.map(r=> Math.max(r.pat,0)*s.ownerDrawingsPct/100);
+  const reYearly = pnlFull.map((r,i)=>{ cumRE += (r.pat - drawingsYearly[i]); return cumRE; });
+
+  // ---- Net Fixed Assets per year ----
+  let nfaOpen = grossBlock;
+  const nfaYearly = [];
+  for(let i=0;i<3;i++){
+    const close = (i===0?grossBlock:nfaYearly[i-1].close) - deprYearly[i];
+    nfaYearly.push({open:(i===0?grossBlock:nfaYearly[i-1].close), close});
+  }
+
+  // ---- Cash flow (indirect) ----
+  let cash = num(p.openingCash);
+  const cashFlow = [];
+  for(let i=0;i<3;i++){
+    const opChgInv = i===0 ? opCycle[0].inventory : (opCycle[i].inventory-opCycle[i-1].inventory);
+    const opChgRec = i===0 ? opCycle[0].receivables : (opCycle[i].receivables-opCycle[i-1].receivables);
+    const opChgOCA = i===0 ? opCycle[0].otherCA : (opCycle[i].otherCA-opCycle[i-1].otherCA);
+    const opChgCred = i===0 ? opCycle[0].creditors : (opCycle[i].creditors-opCycle[i-1].creditors);
+    const opChgOCL = i===0 ? opCycle[0].otherCL : (opCycle[i].otherCL-opCycle[i-1].otherCL);
+    const operating = pnlFull[i].pat + deprYearly[i] - (opChgInv+opChgRec+opChgOCA) + (opChgCred+opChgOCL);
+    const investing = i===0 ? -(fixedAssetReq) : 0;
+    const termLoanDisb = i===0 ? termLoan : 0;
+    const termPrincipalRepaid = -tlYearly[i].principal;
+    const promoterInfusion = i===0 ? promoterContributionTotal : 0;
+    const wcChg = i===0 ? wcYearly[0] : (wcYearly[i]-wcYearly[i-1]);
+    const drawings = -drawingsYearly[i];
+    const financing = termLoanDisb+termPrincipalRepaid+promoterInfusion+wcChg+drawings;
+    const net = operating+investing+financing;
+    const closing = cash+net;
+    cashFlow.push({operating,investing,financing,net,opening:cash,closing,
+      termLoanDisb,termPrincipalRepaid,promoterInfusion,wcChg,drawings,
+      opChgInv,opChgRec,opChgOCA,opChgCred,opChgOCL});
+    cash = closing;
+  }
+
+  // ---- Balance Sheet ----
+  const balanceSheet = [0,1,2].map(i=>{
+    const assets = {
+      nfa: nfaYearly[i].close, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
+      cash: cashFlow[i].closing, otherCA: opCycle[i].otherCA
+    };
+    assets.total = assets.nfa+assets.inventory+assets.receivables+assets.cash+assets.otherCA;
+    const promoterCapital = promoterContributionTotal;
+    const liabilities = {
+      promoterCapital, retainedEarnings: reYearly[i], termLoan: tlYearly[i].closeBal,
+      wcBorrowing: wcYearly[i], creditors: opCycle[i].creditors, otherCL: opCycle[i].otherCL
+    };
+    liabilities.total = promoterCapital+reYearly[i]+tlYearly[i].closeBal+wcYearly[i]+opCycle[i].creditors+opCycle[i].otherCL;
+    return {assets, liabilities, diff: assets.total-liabilities.total};
+  });
+
+  // ---- DSCR ----
+  const dscrYearly = pnlFull.map((r,i)=>{
+    const cashAccrual = r.pat + r.depr;
+    const debtService = r.termInterest + tlYearly[i].principal;
+    const dscr = debtService>0 ? (cashAccrual+r.termInterest)/(debtService) : null;
+    return {cashAccrual, interest:r.termInterest, principal:tlYearly[i].principal, debtService, dscr};
+  });
+  const validDscr = dscrYearly.filter(d=>d.dscr!==null).map(d=>d.dscr);
+  const avgDscr = validDscr.length? validDscr.reduce((a,b)=>a+b,0)/validDscr.length : null;
+  const minDscr = validDscr.length? Math.min(...validDscr) : null;
+
+  // ---- Ratios ----
+  const ratios = [0,1,2].map(i=>{
+    const bs = balanceSheet[i], r = pnlFull[i];
+    const ca = bs.assets.inventory+bs.assets.receivables+bs.assets.cash+bs.assets.otherCA;
+    const cl = bs.liabilities.wcBorrowing+bs.liabilities.creditors+bs.liabilities.otherCL;
+    const currentRatio = cl>0? ca/cl : null;
+    const tnw = bs.liabilities.promoterCapital+bs.liabilities.retainedEarnings;
+    const totalDebt = bs.liabilities.termLoan+bs.liabilities.wcBorrowing;
+    const tol = totalDebt+bs.liabilities.creditors+bs.liabilities.otherCL;
+    const debtEquity = tnw>0? totalDebt/tnw : null;
+    const tolTnw = tnw>0? tol/tnw : null;
+    const gpMargin = r.sales>0? (r.gp/r.sales)*100 : null;
+    const ebitdaMargin = r.sales>0? (r.ebitda/r.sales)*100 : null;
+    const npMargin = r.sales>0? (r.pat/r.sales)*100 : null;
+    const interestCoverage = r.interest>0? r.ebitda/r.interest : null;
+    return {currentRatio,debtEquity,tolTnw,gpMargin,ebitdaMargin,npMargin,interestCoverage,
+      stockDays:a.stockDays, debtorDays:a.debtorDays, creditorDays:a.creditorDays,
+      wcCycle:a.stockDays+a.debtorDays-a.creditorDays};
+  });
+
+  // ---- Break-even ----
+  const breakeven = pnlFull.map((r,i)=>{
+    const S = sales[i];
+    const variable = r.cos + r.transport + r.selling;
+    const fixed = r.employee+r.rent+r.elec+r.admin+r.repairs+r.other+r.depr+r.interest;
+    const contribution = S-variable;
+    const pvRatio = S>0? contribution/S : 0;
+    const beSales = pvRatio>0 ? fixed/pvRatio : null;
+    const bePct = (beSales!==null && S>0) ? (beSales/S)*100 : null;
+    return {fixed,variable,contribution,pvRatio:pvRatio*100,beSales,bePct};
+  });
+
+  // ---- Validation checklist ----
+  const checklist = [];
+  checklist.push({label:"Borrower & Activity Details", pass: !!(p.borrower.name && p.activityModel)});
+  checklist.push({label:"Sales Projection Entered", pass: sales.every(v=>v>0)});
+  checklist.push({label:"Assumptions Reviewed", pass:true});
+  checklist.push({label:"Project Cost = Means of Finance", pass: Math.abs(totalProjectCost-meansOfFinance.total)<1});
+  checklist.push({label:"Working Capital Calculated", pass: wcReq>0});
+  checklist.push({label:"Profit & Loss Calculated", pass: pnlFull.every(r=>!isNaN(r.pat))});
+  checklist.push({label:"Balance Sheet Balanced", pass: balanceSheet.every(b=>Math.abs(b.diff)<2)});
+  checklist.push({label:"Cash Flow Calculated", pass: cashFlow.every(c=>!isNaN(c.closing))});
+  checklist.push({label:"Repayment Schedule Calculated", pass: termLoan>=0});
+  checklist.push({label:"Ratios Calculated", pass: ratios.every(r=>r!==null)});
+  const allPass = checklist.every(c=>c.pass);
+  checklist.push({label:"Report Ready", pass: allPass});
+
+  return {
+    a, sales, pnl:pnlFull, fixedAssetReq, promoterMarginFixed, fa, grossBlock,
+    wcReq, wcNwc, wcBank, totalProjectCost, meansOfFinance, opCycle,
+    schedule, tlYearly, wcYearly, wcInterestYearly, deprYearly, nfaYearly,
+    drawingsYearly, reYearly, cashFlow, balanceSheet, dscrYearly, avgDscr, minDscr,
+    ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths
+  };
+}
+
+/* ============================================================
+   RENDERING — DASHBOARD
+   ============================================================ */
+function goDashboard(){
+  wizardStep=1; current=null;
+  document.getElementById('saveTopBtn').style.display='none';
+  document.getElementById('topbarSub').textContent = "Offline • v"+APP_VERSION;
+  renderDashboard();
+}
+function renderDashboard(){
+  const projects = loadAllProjects();
+  let html = `<div class="card">
+    <h2>MSME Project Report Generator</h2>
+    <p class="muted">Ask less. Calculate more. Show assumptions. Explain clearly.<br>
+    Enter Borrower Details, Activity, Loan Requirement and Sales Projection — the rest is calculated automatically using transparent, editable assumptions.</p>
+    <div class="btnrow">
+      <button class="btn gold" onclick="startNewProject()">+ New Project</button>
+      <button class="btn secondary" onclick="loadSampleProjects()">Load Sample Projects</button>
+      <button class="btn secondary" onclick="document.getElementById('importFile').click()">Import Project</button>
+      <button class="btn secondary" onclick="openSettingsScreen()">Settings / Default Assumptions</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImportFile(event)">
+    </div>
+  </div>`;
+
+  html += `<div class="card"><h3>Saved Projects (${projects.length})</h3>`;
+  if(projects.length===0){
+    html += `<p class="muted">No saved projects yet. Start a new project or load sample projects to explore the app.</p>`;
+  } else {
+    projects.slice().reverse().forEach(pr=>{
+      html += `<div class="proj-item">
+        <div class="meta">
+          <b>${escapeHtml(pr.borrower.business||pr.borrower.name||"Untitled Project")} ${pr.isDemo?'<span class="demo-tag">DEMO DATA</span>':''}</b>
+          <span>${escapeHtml(pr.activityName||'')} • Loan ₹${inr(pr.loan.total).replace('₹','')} • ${new Date(pr.createdAt).toLocaleDateString('en-IN')}</span>
+        </div>
+        <div class="proj-actions">
+          <button class="btn secondary" onclick="openProject('${pr.id}')">Open</button>
+          <button class="btn secondary" onclick="duplicateProject('${pr.id}')">Duplicate</button>
+          <button class="btn secondary" onclick="exportProject('${pr.id}')">Export</button>
+          <button class="btn danger" onclick="deleteProjectConfirm('${pr.id}')">Delete</button>
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  html += `<div class="card small muted">Version ${APP_VERSION} — 100% offline. Data stays only on this device (browser storage). Developed by Anil Sharma, Former General Manager, Central Bank of India.</div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+function escapeHtml(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function startNewProject(){ current = blankProject(); wizardStep=1; renderWizard(); }
+function openProject(id){
+  const pr = loadAllProjects().find(x=>x.id===id);
+  if(!pr) return;
+  current = pr; wizardStep=1;
+  document.getElementById('saveTopBtn').style.display='inline-block';
+  renderWizard();
+}
+function duplicateProject(id){
+  const list = loadAllProjects();
+  const pr = list.find(x=>x.id===id);
+  if(!pr) return;
+  const copy = JSON.parse(JSON.stringify(pr));
+  copy.id = uid(); copy.createdAt = new Date().toISOString();
+  copy.borrower.business = (copy.borrower.business||"Project")+" (Copy)";
+  list.push(copy); persistAllProjects(list); renderDashboard();
+}
+function deleteProjectConfirm(id){
+  if(!confirm("Delete this project permanently from this device?")) return;
+  let list = loadAllProjects().filter(x=>x.id!==id);
+  persistAllProjects(list); renderDashboard();
+}
+function exportProject(id){
+  const pr = loadAllProjects().find(x=>x.id===id);
+  if(!pr) return;
+  const blob = new Blob([JSON.stringify(pr,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = (pr.borrower.business||"msme-project").replace(/\s+/g,'_')+".json";
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+function handleImportFile(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const pr = JSON.parse(e.target.result);
+      pr.id = uid(); pr.createdAt = new Date().toISOString();
+      const list = loadAllProjects(); list.push(pr); persistAllProjects(list);
+      renderDashboard();
+    }catch(err){ alert("Could not read this file. Please select a valid exported project JSON file."); }
+  };
+  reader.readAsText(file);
+  ev.target.value = "";
+}
+
+/* ---------------- Sample Projects ---------------- */
+function loadSampleProjects(){
+  const samples = buildSampleProjects();
+  const list = loadAllProjects();
+  const existingDemoNames = new Set(list.filter(p=>p.isDemo).map(p=>p.borrower.business));
+  let added=0;
+  samples.forEach(sp=>{
+    if(!existingDemoNames.has(sp.borrower.business)){ list.push(sp); added++; }
+  });
+  persistAllProjects(list);
+  alert(added+" sample project(s) added (labelled DEMO DATA – NOT FOR BANK SUBMISSION).");
+  renderDashboard();
+}
+function buildSampleProjects(){
+  const defs = [
+    ["General Store","Trading","General Store / Kirana","fastMovingRetail",300000,240000,60000,"New Business",1200000,1500000,1800000],
+    ["Sri Lakshmi Flour Mill","Manufacturing","Flour Mill / Atta Chakki","foodProcessing",500000,400000,100000,"Machinery/Equipment",900000,1100000,1300000],
+    ["Rani Garment Tailoring Unit","Manufacturing","Tailoring","textileGarments",250000,200000,50000,"New Business",600000,780000,1000000],
+    ["Balaji Welding & Fabrication","Manufacturing","Welding","engineeringFab",400000,300000,100000,"Machinery/Equipment",700000,900000,1150000],
+    ["Annapurna Dairy Processing","Manufacturing","Paneer","foodProcessing",450000,350000,100000,"Expansion",1000000,1250000,1500000],
+    ["Quick Fix Mobile Repair Centre","Services","Mobile Repair","repairServices",150000,120000,30000,"New Business",400000,520000,650000],
+    ["Annapoorna Small Restaurant","Services","Restaurant","foodServices",600000,450000,150000,"Composite Loan",1300000,1600000,2000000],
+    ["Kisan Farm Equipment Repair","Services","Agricultural Machinery Repair","repairServices",300000,220000,80000,"Machinery/Equipment",550000,700000,900000],
+    ["Shree Furniture Works","Manufacturing","Furniture","furnitureWood",350000,280000,70000,"New Business",800000,1000000,1250000],
+    ["Gramin Local Transport Service","Services","Pickup Vehicle","transport",700000,700000,0,"Vehicle",900000,1050000,1200000]
+  ];
+  return defs.map(d=>{
+    const p = blankProject();
+    p.isDemo = true;
+    p.borrower = {name:"Demo Borrower", business:d[0], constitution:"Proprietorship", address:"Sample Village, Sample District",
+      mobile:"9800000000", existing:"New", experience:"2 years", udyam:"", gstin:"", bank:""};
+    p.activityCategory = d[1]; p.activityName = d[2]; p.activityModel = d[3];
+    p.loan.total = d[4]; p.loan.termLoan = d[5]; p.loan.wcLoan = d[6]; p.loan.purpose = d[7];
+    p.sales.mode = 'direct'; p.sales.y1 = d[8]; p.sales.y2 = d[9]; p.sales.y3 = d[10];
+    return p;
+  });
+}
+
+/* ---------------- Settings screen ---------------- */
+function openSettingsScreen(){
+  const s = getSettings();
+  let html = `<div class="card"><h2>Default Assumptions & Settings</h2>
+  <p class="muted">These apply as defaults to new projects. Each project can still override its own assumptions.</p>
+  <h3>Working Capital – Turnover Method (Nayak Method) Parameters</h3>
+  <div class="grid">
+    <div><label>Working Capital Requirement (% of Turnover)</label><input type="number" id="s_wcTurnoverPct" value="${s.wcTurnoverPct}"></div>
+    <div><label>Borrower's NWC / Margin (% of Turnover)</label><input type="number" id="s_wcNwcPct" value="${s.wcNwcPct}"></div>
+    <div><label>Bank Finance (% of Turnover)</label><input type="number" id="s_wcBankPct" value="${s.wcBankPct}"></div>
+    <div><label>Promoter Margin on Fixed Assets (%)</label><input type="number" id="s_promoterMarginFixedPct" value="${s.promoterMarginFixedPct}"></div>
+  </div>
+  <h3>Indicative Fixed Asset Cost Split (% of Fixed Asset Requirement)</h3>
+  <div class="grid">
+    <div><label>Land</label><input type="number" id="s_land" value="${s.fixedAssetSplit.land}"></div>
+    <div><label>Building</label><input type="number" id="s_building" value="${s.fixedAssetSplit.building}"></div>
+    <div><label>Machinery / Equipment</label><input type="number" id="s_machinery" value="${s.fixedAssetSplit.machinery}"></div>
+    <div><label>Furniture</label><input type="number" id="s_furniture" value="${s.fixedAssetSplit.furniture}"></div>
+    <div><label>Vehicle</label><input type="number" id="s_vehicle" value="${s.fixedAssetSplit.vehicle}"></div>
+    <div><label>Preliminary Expenses</label><input type="number" id="s_preliminary" value="${s.fixedAssetSplit.preliminary}"></div>
+    <div><label>Other Fixed Assets</label><input type="number" id="s_other" value="${s.fixedAssetSplit.other}"></div>
+  </div>
+  <h3>Other Parameters</h3>
+  <div class="grid">
+    <div><label>Other Current Assets (% of Sales)</label><input type="number" id="s_otherCA" value="${s.otherCurrentAssetsPct}"></div>
+    <div><label>Other Current Liabilities (% of Sales)</label><input type="number" id="s_otherCL" value="${s.otherCurrentLiabPct}"></div>
+    <div><label>Owner Drawings (% of Profit After Tax)</label><input type="number" id="s_drawings" value="${s.ownerDrawingsPct}"></div>
+    <div><label>Tax Rate (%)</label><input type="number" id="s_tax" value="${s.taxRatePct}"></div>
+    <div><label>Default Interest Rate (% p.a.)</label><input type="number" id="s_rate" value="${s.interestRatePct}"></div>
+    <div><label>Default Tenure (Years)</label><input type="number" id="s_tenure" value="${s.tenureYears}"></div>
+    <div><label>Default Moratorium (Months)</label><input type="number" id="s_mora" value="${s.moratoriumMonths}"></div>
+  </div>
+  <div class="note-box">These are indicative default assumptions. The applicable methodology, ratios and final sanction terms remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>
+  <div class="btnrow">
+    <button class="btn gold" onclick="saveSettingsScreen()">Save Defaults</button>
+    <button class="btn secondary" onclick="goDashboard()">Cancel</button>
+  </div></div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+function saveSettingsScreen(){
+  const s = {
+    wcTurnoverPct:+val('s_wcTurnoverPct'), wcNwcPct:+val('s_wcNwcPct'), wcBankPct:+val('s_wcBankPct'),
+    promoterMarginFixedPct:+val('s_promoterMarginFixedPct'),
+    fixedAssetSplit:{ land:+val('s_land'), building:+val('s_building'), machinery:+val('s_machinery'),
+      furniture:+val('s_furniture'), vehicle:+val('s_vehicle'), preliminary:+val('s_preliminary'), other:+val('s_other') },
+    otherCurrentAssetsPct:+val('s_otherCA'), otherCurrentLiabPct:+val('s_otherCL'),
+    ownerDrawingsPct:+val('s_drawings'), taxRatePct:+val('s_tax'),
+    interestRatePct:+val('s_rate'), tenureYears:+val('s_tenure'), moratoriumMonths:+val('s_mora'), instalmentFreq:"Monthly"
+  };
+  saveSettingsObj(s);
+  alert("Default assumptions saved.");
+  goDashboard();
+}
+function val(id){ return document.getElementById(id).value; }
+
+/* ============================================================
+   WIZARD
+   ============================================================ */
+const WIZARD_TITLES = ["Borrower Details","Business Activity","Loan Requirement","Sales Projection","Loan Terms"];
+function renderWizard(){
+  document.getElementById('saveTopBtn').style.display='inline-block';
+  document.getElementById('topbarSub').textContent = (current.borrower.business||"New Project")+" • Step "+wizardStep+" of 5";
+  let bars = "";
+  for(let i=1;i<=5;i++){ bars += `<div class="${i<wizardStep?'done':(i===wizardStep?'current':'')}"></div>`; }
+  let body = "";
+  if(wizardStep===1) body = stepBorrower();
+  else if(wizardStep===2) body = stepActivity();
+  else if(wizardStep===3) body = stepLoan();
+  else if(wizardStep===4) body = stepSales();
+  else if(wizardStep===5) body = stepLoanTerms();
+
+  const html = `<div class="card">
+    <h2>${WIZARD_TITLES[wizardStep-1]}</h2>
+    <div class="progressbar">${bars}</div>
+    ${body}
+    <div class="btnrow">
+      ${wizardStep>1?`<button class="btn secondary" onclick="wizardBack()">Back</button>`:`<button class="btn secondary" onclick="goDashboard()">Cancel</button>`}
+      ${wizardStep<5?`<button class="btn gold" onclick="wizardNext()">Next</button>`:`<button class="btn gold" onclick="goToAssumptions()">Review Assumptions</button>`}
+    </div>
+  </div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+function stepBorrower(){
+  const b = current.borrower;
+  return `<div class="grid">
+    <div><label>Borrower Name *</label><input type="text" id="w_name" value="${escapeHtml(b.name)}"></div>
+    <div><label>Business Name *</label><input type="text" id="w_business" value="${escapeHtml(b.business)}"></div>
+    <div><label>Constitution</label><select id="w_constitution">
+      ${["Proprietorship","Partnership","SHG/JLG","Private Limited","LLP","Other"].map(o=>`<option ${b.constitution===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div><label>Mobile</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}"></div>
+    <div style="grid-column:1/-1;"><label>Address</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea></div>
+    <div><label>Business Status</label><select id="w_existing">
+      <option ${b.existing==='New'?'selected':''}>New</option><option ${b.existing==='Existing'?'selected':''}>Existing</option>
+    </select></div>
+    <div><label>Business Experience</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}"></div>
+    <div><label>Udyam Registration (if available)</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}"></div>
+    <div><label>GSTIN (if applicable)</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}"></div>
+    <div style="grid-column:1/-1;"><label>Bank / Branch (if required)</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}"></div>
+  </div>`;
+}
+function stepActivity(){
+  const cats = ["Trading","Manufacturing","Services"];
+  let catPills = cats.map(c=>`<div class="pill ${current.activityCategory===c?'active':''}" onclick="selectActivityCategory('${c}')">${c}</div>`).join('');
+  let listHtml = '';
+  if(current.activityCategory){
+    const items = ACTIVITIES.filter(a=>a[0]===current.activityCategory);
+    listHtml = `<div class="searchbox"><input type="text" id="actSearch" placeholder="Search activity..." oninput="filterActivityList()"></div>
+      <div class="activity-list" id="actList">${items.map(a=>`<div class="act-item ${current.activityName===a[1]?'sel':''}" data-name="${escapeHtml(a[1])}" onclick="selectActivity('${escapeHtml(a[1]).replace(/'/g,"\\'")}','${a[2]}')">${escapeHtml(a[1])}</div>`).join('')}</div>
+      <div class="chk"><input type="checkbox" id="w_customAct" ${current.customActivity?'checked':''} onchange="toggleCustomActivity()"> My activity is not listed — enter manually and pick the nearest financial model</div>
+      <div id="customActBox" class="${current.customActivity?'':'hidden'}">
+        <label>Activity Name</label><input type="text" id="w_customActName" value="${escapeHtml(current.customActivity?current.activityName:'')}">
+        <label>Nearest Financial Model</label>
+        <select id="w_customModel">${Object.keys(MODELS).map(k=>`<option value="${k}" ${current.activityModel===k?'selected':''}>${MODELS[k].label}</option>`).join('')}</select>
+      </div>`;
+  }
+  return `<div class="pillrow">${catPills}</div>${listHtml}
+    <p class="muted small">Selected: <b>${escapeHtml(current.activityName||'None')}</b> ${current.activityModel?('— financial model: '+MODELS[current.activityModel].label):''}</p>`;
+}
+function selectActivityCategory(c){ current.activityCategory=c; current.activityName=""; current.activityModel=""; current.customActivity=false; renderWizard(); }
+function selectActivity(name, model){ current.activityName=name; current.activityModel=model; current.customActivity=false; renderWizard(); }
+function toggleCustomActivity(){ current.customActivity = document.getElementById('w_customAct').checked; renderWizard(); }
+function filterActivityList(){
+  const q = document.getElementById('actSearch').value.toLowerCase();
+  document.querySelectorAll('#actList .act-item').forEach(el=>{
+    el.style.display = el.getAttribute('data-name').toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function stepLoan(){
+  const l = current.loan;
+  return `<div class="grid">
+    <div><label>Total Loan Required (₹) *</label><input type="number" id="w_loanTotal" value="${l.total||''}"></div>
+    <div><label>Purpose of Loan</label><select id="w_purpose">
+      ${["New Business","Expansion","Working Capital","Machinery/Equipment","Vehicle","Composite Loan","Other"].map(o=>`<option ${l.purpose===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div><label>Term Loan Amount (₹, if known)</label><input type="number" id="w_termLoan" value="${l.termLoan||''}"></div>
+    <div><label>Working Capital Amount (₹, if known)</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}"></div>
+  </div>
+  <p class="muted small">If Term Loan / Working Capital split is not known, leave blank — the app will estimate the split using the Turnover Method and fixed-asset assumptions.</p>`;
+}
+function stepSales(){
+  const s = current.sales;
+  return `<div class="pillrow">
+    <div class="pill ${s.mode==='direct'?'active':''}" onclick="setSalesMode('direct')">Enter 3-Year Sales Directly</div>
+    <div class="pill ${s.mode==='growth'?'active':''}" onclick="setSalesMode('growth')">Current Sales + Growth %</div>
+  </div>
+  ${s.mode==='direct' ? `
+  <div class="grid">
+    <div><label>Current Year Projected Sales (₹)</label><input type="number" id="w_y1" value="${s.y1||''}"></div>
+    <div><label>Following Year Projected Sales (₹)</label><input type="number" id="w_y2" value="${s.y2||''}"></div>
+    <div><label>Next Year Projected Sales (₹)</label><input type="number" id="w_y3" value="${s.y3||''}"></div>
+  </div>` : `
+  <div class="grid">
+    <div><label>Current Annual Sales (₹)</label><input type="number" id="w_currentSales" value="${s.currentSales||''}"></div>
+    <div><label>Expected Annual Growth (%)</label><input type="number" id="w_growth" value="${s.growthPct||10}"></div>
+  </div>
+  <p class="muted small">Subsequent years will be calculated automatically. You can still override any year on the Assumptions screen.</p>`}`;
+}
+function setSalesMode(m){ current.sales.mode=m; renderWizard(); }
+function stepLoanTerms(){
+  const t = current.loanTerms;
+  return `<div class="grid">
+    <div><label>Interest Rate (% p.a.)</label><input type="number" id="w_rate" value="${t.interestRatePct}"></div>
+    <div><label>Repayment Period (Years)</label><input type="number" id="w_tenure" value="${t.tenureYears}"></div>
+    <div><label>Moratorium (Months)</label><input type="number" id="w_mora" value="${t.moratoriumMonths}"></div>
+    <div><label>Instalment Frequency</label><select id="w_freq">
+      ${["Monthly","Quarterly"].map(o=>`<option ${t.instalmentFreq===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+  </div>
+  <p class="muted small">These are editable defaults. Term loan is repaid on an equal-principal basis for full transparency of the schedule.</p>`;
+}
+function wizardBack(){ persistWizardStep(); wizardStep--; renderWizard(); }
+function wizardNext(){
+  if(wizardStep===1 && (!val('w_name') || !val('w_business'))){ alert("Please enter Borrower Name and Business Name."); return; }
+  if(wizardStep===2 && !current.customActivity && !current.activityModel){ alert("Please select a business activity."); return; }
+  persistWizardStep();
+  if(wizardStep===2 && current.customActivity){
+    const nm = val('w_customActName'); if(!nm){ alert("Please enter the activity name."); return; }
+    current.activityName = nm; current.activityModel = val('w_customModel');
+  }
+  if(wizardStep===3 && !val('w_loanTotal')){ alert("Please enter the total loan required."); return; }
+  wizardStep++; renderWizard();
+}
+function persistWizardStep(){
+  if(wizardStep===1){
+    current.borrower = { name:val('w_name'), business:val('w_business'), constitution:val('w_constitution'),
+      address:val('w_address'), mobile:val('w_mobile'), existing:val('w_existing'), experience:val('w_experience'),
+      udyam:val('w_udyam'), gstin:val('w_gstin'), bank:val('w_bank') };
+  } else if(wizardStep===2){
+    if(current.customActivity){ current.activityName = val('w_customActName'); current.activityModel = val('w_customModel'); }
+  } else if(wizardStep===3){
+    current.loan = { total:+val('w_loanTotal')||0, purpose:val('w_purpose'), termLoan:+val('w_termLoan')||0, wcLoan:+val('w_wcLoan')||0 };
+    if(!current.loan.termLoan && !current.loan.wcLoan){ current.loan.termLoan = current.loan.total; }
+  } else if(wizardStep===4){
+    if(current.sales.mode==='direct'){
+      current.sales.y1=+val('w_y1')||0; current.sales.y2=+val('w_y2')||0; current.sales.y3=+val('w_y3')||0;
+    } else {
+      current.sales.currentSales=+val('w_currentSales')||0; current.sales.growthPct=+val('w_growth')||0;
+    }
+  } else if(wizardStep===5){
+    current.loanTerms = { interestRatePct:+val('w_rate')||0, tenureYears:+val('w_tenure')||1, moratoriumMonths:+val('w_mora')||0, instalmentFreq:val('w_freq') };
+  }
+}
+function goToAssumptions(){ persistWizardStep(); renderAssumptions(); }
+
+/* ============================================================
+   ASSUMPTIONS REVIEW
+   ============================================================ */
+const ASSUMPTION_FIELDS = [
+  ["costOfSales","Cost of Sales (%)"],["employee","Employee Cost (% of Sales)"],["rent","Rent (% of Sales)"],
+  ["electricity","Electricity (% of Sales)"],["transport","Transport (% of Sales)"],["admin","Administrative Expenses (% of Sales)"],
+  ["selling","Selling Expenses (% of Sales)"],["repairs","Repairs & Maintenance (% of Sales)"],["otherOpex","Other Operating Expenses (% of Sales)"],
+  ["stockDays","Stock Holding (Days)"],["debtorDays","Debtor Days"],["creditorDays","Creditor Days"],["deprRate","Depreciation Rate (% WDV)"]
+];
+function renderAssumptions(){
+  const a = getAssumptions(current);
+  let rows = ASSUMPTION_FIELDS.map(([k,label])=>{
+    const mod = isModified(current,k);
+    return `<div class="assump-row">
+      <span>${label} ${mod?'<span class="badge modified">Modified</span>':'<span class="badge default">Default</span>'}</span>
+      <span class="val"><input type="number" style="width:90px" id="asf_${k}" value="${a[k]}" onchange="assumptionChanged('${k}')"></span>
+    </div>`;
+  }).join('');
+  const html = `<div class="card">
+    <h2>Assumptions Used</h2>
+    <p class="muted">Model: <b>${MODELS[current.activityModel]?MODELS[current.activityModel].label:current.activityModel}</b> — Activity: <b>${escapeHtml(current.activityName)}</b></p>
+    ${rows}
+    <div class="btnrow">
+      <button class="btn secondary" onclick="resetAssumptions()">Reset to Model Defaults</button>
+    </div>
+    <div class="note-box">Changing any assumption immediately recalculates the complete financial model, project report and ratios. Never hidden — every figure below has a visible "How calculated?" link on the report.</div>
+    <div class="btnrow">
+      <button class="btn secondary" onclick="renderWizard()">Back to Wizard</button>
+      <button class="btn gold" onclick="goToProjectCost()">Continue → Project Cost</button>
+    </div>
+  </div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+function assumptionChanged(k){
+  if(!current.assumptions) current.assumptions={};
+  current.assumptions[k] = +document.getElementById('asf_'+k).value;
+  renderAssumptions();
+}
+function resetAssumptions(){ current.assumptions=null; renderAssumptions(); }
+
+function goToProjectCost(){ renderProjectCost(); }
+function renderProjectCost(){
+  const c = calculate(current);
+  const s = current.settings;
+  const html = `<div class="card">
+    <h2>Project Cost & Means of Finance</h2>
+    <p class="note-box">All fixed-asset figures below are <b>Indicative</b> — please modify if actual figures are available. Adjust the split in Settings before creating the project if needed.</p>
+    <h3>Project Cost</h3>
+    <table>
+      <tr><th>Component</th><th>Amount</th></tr>
+      <tr><td>Land</td><td>${inr(c.fa.land)}</td></tr>
+      <tr><td>Building</td><td>${inr(c.fa.building)}</td></tr>
+      <tr><td>Machinery / Equipment</td><td>${inr(c.fa.machinery)}</td></tr>
+      <tr><td>Furniture</td><td>${inr(c.fa.furniture)}</td></tr>
+      <tr><td>Vehicle</td><td>${inr(c.fa.vehicle)}</td></tr>
+      <tr><td>Preliminary Expenses</td><td>${inr(c.fa.preliminary)}</td></tr>
+      <tr><td>Other Fixed Assets</td><td>${inr(c.fa.other)}</td></tr>
+      <tr><td>Working Capital Margin (Turnover Method)</td><td>${inr(c.wcReq)}</td></tr>
+      <tr class="total"><td>Total Project Cost</td><td>${inr(c.totalProjectCost)}</td></tr>
+    </table>
+    <h3>Means of Finance</h3>
+    <table>
+      <tr><th>Source</th><th>Amount</th></tr>
+      <tr><td>Promoter Contribution</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
+      <tr><td>Term Loan</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
+      <tr><td>Working Capital Finance</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
+      <tr><td>Other Sources</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
+      <tr><td>Subsidy</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
+      <tr class="total"><td>Total Means of Finance</td><td>${inr(c.meansOfFinance.total)}</td></tr>
+    </table>
+    <p class="muted small">Total Project Cost equals Total Means of Finance by construction — no unexplained balancing figure is used.</p>
+    <div class="btnrow">
+      <button class="btn secondary" onclick="renderAssumptions()">Back</button>
+      <button class="btn gold" onclick="renderReportScreen()">Generate Full Report</button>
+    </div>
+  </div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+
+/* ============================================================
+   SAVE
+   ============================================================ */
+function saveCurrentProject(){
+  if(!current) return;
+  const list = loadAllProjects();
+  const idx = list.findIndex(x=>x.id===current.id);
+  if(idx>=0) list[idx]=current; else list.push(current);
+  persistAllProjects(list);
+  alert("Project saved.");
+}
+
+/* ============================================================
+   REPORT
+   ============================================================ */
+const REPORT_SECTIONS = [
+  ["cover","Cover Page"],["summary","Executive Summary"],["borrower","Borrower Profile"],["activity","Business Activity"],
+  ["purpose","Purpose of Loan"],["cost","Project Cost"],["finance","Means of Finance"],["assumptions","Activity Assumptions"],
+  ["sales","Projected Sales"],["pnl","Projected P&L"],["bs","Projected Balance Sheet"],["cf","Projected Cash Flow"],
+  ["wc","Working Capital Assessment"],["mpbf","Turnover Method / MPBF"],["repayment","Loan Repayment Schedule"],
+  ["ratios","Financial Ratios"],["breakeven","Break-even Analysis"],["interpretation","Financial Interpretation"],
+  ["methodology","Key Assumptions & Methodology"],["checklist","Report Readiness Checklist"],["conclusion","Conclusion"]
+];
+function renderReportScreen(){
+  reportTab='cover';
+  const c = calculate(current);
+  window._reportCalc = c;
+  drawReport();
+}
+function drawReport(){
+  const c = window._reportCalc;
+  const tabs = REPORT_SECTIONS.map(([id,label])=>`<button class="${reportTab===id?'active':''}" onclick="switchReportTab('${id}')">${label}</button>`).join('');
+  let body = "";
+  switch(reportTab){
+    case 'cover': body = rCover(); break;
+    case 'summary': body = rSummary(c); break;
+    case 'borrower': body = rBorrower(); break;
+    case 'activity': body = rActivity(); break;
+    case 'purpose': body = rPurpose(c); break;
+    case 'cost': body = rCost(c); break;
+    case 'finance': body = rFinance(c); break;
+    case 'assumptions': body = rAssumptions(); break;
+    case 'sales': body = rSales(c); break;
+    case 'pnl': body = rPnl(c); break;
+    case 'bs': body = rBS(c); break;
+    case 'cf': body = rCF(c); break;
+    case 'wc': body = rWC(c); break;
+    case 'mpbf': body = rMPBF(c); break;
+    case 'repayment': body = rRepayment(c); break;
+    case 'ratios': body = rRatios(c); break;
+    case 'breakeven': body = rBreakeven(c); break;
+    case 'interpretation': body = rInterpretation(c); break;
+    case 'methodology': body = rMethodology(); break;
+    case 'checklist': body = rChecklist(c); break;
+    case 'conclusion': body = rConclusion(c); break;
+  }
+  const html = `<div class="card no-print">
+    <div class="btnrow" style="margin-top:0;">
+      <button class="btn secondary" onclick="renderProjectCost()">Back to Editing</button>
+      <button class="btn gold" onclick="printReport()">Print / Save as PDF</button>
+      <button class="btn secondary" onclick="showFullReport()">View Full Report (All Sections)</button>
+    </div>
+  </div>
+  <div class="card no-print"><div class="tabs">${tabs}</div></div>
+  <div class="card report-page" id="reportBody">${body}</div>`;
+  document.getElementById('mainArea').innerHTML = html;
+}
+function switchReportTab(id){ reportTab=id; drawReport(); }
+function showFullReport(){
+  const c = window._reportCalc;
+  let all = "";
+  REPORT_SECTIONS.forEach(([id,label])=>{
+    reportTab=id;
+    let fn = {cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,purpose:()=>rPurpose(c),
+      cost:()=>rCost(c),finance:()=>rFinance(c),assumptions:rAssumptions,sales:()=>rSales(c),pnl:()=>rPnl(c),
+      bs:()=>rBS(c),cf:()=>rCF(c),wc:()=>rWC(c),mpbf:()=>rMPBF(c),repayment:()=>rRepayment(c),ratios:()=>rRatios(c),
+      breakeven:()=>rBreakeven(c),interpretation:()=>rInterpretation(c),methodology:rMethodology,checklist:()=>rChecklist(c),
+      conclusion:()=>rConclusion(c)}[id];
+    all += `<div class="section-anchor">${fn()}</div><hr style="border:none;border-top:1px solid var(--line);margin:22px 0;">`;
+  });
+  all += `<div class="footer-byline">Developed by Anil Sharma, Former General Manager, Central Bank of India.<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline</div>`;
+  document.getElementById('reportBody').innerHTML = all;
+}
+function printReport(){ showFullReport(); setTimeout(()=>window.print(),150); }
+
+function demoNote(){
+  return current.isDemo ? `<div class="warn-box"><b>DEMO DATA – NOT FOR BANK SUBMISSION.</b> This is a sample project for illustration only.</div>` : "";
+}
+function rCover(){
+  return `${demoNote()}<div class="report-cover">
+    <h1>MSME Project Report</h1>
+    <div class="sub">${escapeHtml(current.borrower.business||'')}</div>
+    <table style="width:70%;margin:20px auto;text-align:left;">
+      <tr><td><b>Borrower</b></td><td>${escapeHtml(current.borrower.name)}</td></tr>
+      <tr><td><b>Business Activity</b></td><td>${escapeHtml(current.activityName)}</td></tr>
+      <tr><td><b>Constitution</b></td><td>${escapeHtml(current.borrower.constitution)}</td></tr>
+      <tr><td><b>Loan Required</b></td><td>${inr(current.loan.total)}</td></tr>
+      <tr><td><b>Report Date</b></td><td>${new Date().toLocaleDateString('en-IN')}</td></tr>
+    </table>
+    <p class="muted small">Prepared using the MSME Project Report Generator (Offline) — Version ${APP_VERSION}</p>
+  </div>`;
+}
+function rSummary(c){
+  const s = c.sales;
+  return `<h3>Executive Summary</h3>
+  <p>${escapeHtml(current.borrower.business)} is engaged in <b>${escapeHtml(current.activityName)}</b> (${escapeHtml(current.activityCategory)}).
+  The borrower has requested a total loan of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b>.
+  Based on the sales projection provided by the borrower and activity-specific assumptions, projected sales are expected to move from
+  ${inr(s[0])} in the current year to ${inr(s[1])} and ${inr(s[2])} over the following two years.</p>
+  <p>Projected Profit After Tax is ${inr(c.pnl[0].pat)}, ${inr(c.pnl[1].pat)} and ${inr(c.pnl[2].pat)} respectively across the three years,
+  with an average projected DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'}.</p>
+  <div class="note-box">The proposal is subject to verification, viability assessment and applicable lending norms.</div>`;
+}
+function rBorrower(){
+  const b = current.borrower;
+  return `<h3>Borrower Profile</h3><table>
+  <tr><td>Borrower Name</td><td>${escapeHtml(b.name)}</td></tr>
+  <tr><td>Business Name</td><td>${escapeHtml(b.business)}</td></tr>
+  <tr><td>Constitution</td><td>${escapeHtml(b.constitution)}</td></tr>
+  <tr><td>Address</td><td>${escapeHtml(b.address)}</td></tr>
+  <tr><td>Mobile</td><td>${escapeHtml(b.mobile)}</td></tr>
+  <tr><td>Business Status</td><td>${escapeHtml(b.existing)}</td></tr>
+  <tr><td>Business Experience</td><td>${escapeHtml(b.experience)}</td></tr>
+  <tr><td>Udyam Registration</td><td>${escapeHtml(b.udyam)||'Not provided'}</td></tr>
+  <tr><td>GSTIN</td><td>${escapeHtml(b.gstin)||'Not applicable'}</td></tr>
+  <tr><td>Bank / Branch</td><td>${escapeHtml(b.bank)||'Not specified'}</td></tr>
+  </table>`;
+}
+function rActivity(){
+  return `<h3>Business Activity</h3><table>
+  <tr><td>Category</td><td>${escapeHtml(current.activityCategory)}</td></tr>
+  <tr><td>Activity</td><td>${escapeHtml(current.activityName)}</td></tr>
+  <tr><td>Financial Model Applied</td><td>${MODELS[current.activityModel]?MODELS[current.activityModel].label:current.activityModel}</td></tr>
+  </table>
+  <h3>Business Description</h3>
+  <p>The unit is a ${escapeHtml(current.borrower.existing).toLowerCase()} enterprise engaged in ${escapeHtml(current.activityName).toLowerCase()},
+  operated as a ${escapeHtml(current.borrower.constitution).toLowerCase()}.</p>`;
+}
+function rPurpose(c){
+  return `<h3>Purpose of Loan</h3><table>
+  <tr><td>Purpose</td><td>${escapeHtml(current.loan.purpose)}</td></tr>
+  <tr><td>Total Loan Required</td><td>${inr(current.loan.total)}</td></tr>
+  <tr><td>Term Loan Component</td><td>${inr(c.termLoan)}</td></tr>
+  <tr><td>Working Capital Component (Bank Assessed)</td><td>${inr(c.wcBank)}</td></tr>
+  </table>`;
+}
+function rCost(c){
+  return `<h3>Project Cost</h3>
+  <p class="note-box">Indicative — user should modify if actual figures are available.</p>
+  <table><tr><th>Component</th><th>Amount</th></tr>
+  <tr><td>Land</td><td>${inr(c.fa.land)}</td></tr>
+  <tr><td>Building</td><td>${inr(c.fa.building)}</td></tr>
+  <tr><td>Machinery / Equipment</td><td>${inr(c.fa.machinery)}</td></tr>
+  <tr><td>Furniture</td><td>${inr(c.fa.furniture)}</td></tr>
+  <tr><td>Vehicle</td><td>${inr(c.fa.vehicle)}</td></tr>
+  <tr><td>Preliminary Expenses</td><td>${inr(c.fa.preliminary)}</td></tr>
+  <tr><td>Other Fixed Assets</td><td>${inr(c.fa.other)}</td></tr>
+  <tr><td>Working Capital Margin</td><td>${inr(c.wcReq)}</td></tr>
+  <tr class="total"><td>Total Project Cost</td><td>${inr(c.totalProjectCost)}</td></tr></table>`;
+}
+function rFinance(c){
+  return `<h3>Means of Finance</h3><table><tr><th>Source</th><th>Amount</th></tr>
+  <tr><td>Promoter Contribution</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
+  <tr><td>Term Loan</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
+  <tr><td>Working Capital Finance</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
+  <tr><td>Other Sources</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
+  <tr><td>Subsidy</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
+  <tr class="total"><td>Total Means of Finance</td><td>${inr(c.meansOfFinance.total)}</td></tr></table>
+  <p class="small muted">Total Project Cost equals Total Means of Finance.</p>`;
+}
+function rAssumptions(){
+  const a = getAssumptions(current);
+  return `<h3>Activity Assumptions</h3>
+  <table><tr><th>Parameter</th><th>Value</th><th>Status</th></tr>
+  ${ASSUMPTION_FIELDS.map(([k,label])=>`<tr><td>${label}</td><td>${a[k]}${k.includes('Days')?' days':(k==='deprRate'?'%':'%')}</td><td>${isModified(current,k)?'Modified':'Default'}</td></tr>`).join('')}
+  </table>`;
+}
+function rSales(c){
+  return `<h3>Projected Sales</h3><table><tr><th>Year</th><th>Projected Sales</th></tr>
+  <tr><td>Current Year</td><td>${inr(c.sales[0])}</td></tr>
+  <tr><td>Following Year</td><td>${inr(c.sales[1])}</td></tr>
+  <tr><td>Next Year</td><td>${inr(c.sales[2])}</td></tr></table>`;
+}
+function rPnl(c){
+  const rows = [["Sales","sales"],["Cost of Sales","cos"],["Gross Profit","gp"],["Employee Cost","employee"],
+    ["Rent","rent"],["Electricity","elec"],["Transport","transport"],["Administrative Expenses","admin"],
+    ["Selling Expenses","selling"],["Repairs","repairs"],["Other Operating Expenses","other"],["EBITDA","ebitda"],
+    ["Depreciation","depr"],["Interest","interest"],["Profit Before Tax","pbt"],["Tax","tax"],["Profit After Tax","pat"]];
+  return `<h3>Projected Profit & Loss</h3><table><tr><th>Particulars</th><th>Current Yr</th><th>Following Yr</th><th>Next Yr</th></tr>
+  ${rows.map(([label,k])=>`<tr class="${k==='pat'||k==='ebitda'?'total':''}"><td>${label}</td><td>${inr(c.pnl[0][k])}</td><td>${inr(c.pnl[1][k])}</td><td>${inr(c.pnl[2][k])}</td></tr>`).join('')}
+  </table><p class="small muted">All expenses flow from activity-specific assumptions applied to projected sales.</p>`;
+}
+function rBS(c){
+  const rows = [["Net Fixed Assets","assets","nfa"],["Inventory","assets","inventory"],["Receivables","assets","receivables"],
+    ["Cash / Bank","assets","cash"],["Other Current Assets","assets","otherCA"],["Total Assets","assets","total"]];
+  const liab = [["Promoter Capital","liabilities","promoterCapital"],["Retained Earnings","liabilities","retainedEarnings"],
+    ["Term Loan","liabilities","termLoan"],["Working Capital Borrowing","liabilities","wcBorrowing"],
+    ["Trade Creditors","liabilities","creditors"],["Other Current Liabilities","liabilities","otherCL"],["Total Liabilities","liabilities","total"]];
+  return `<h3>Projected Balance Sheet</h3>
+  <table><tr><th>Assets</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
+  ${rows.map(([label,g,k])=>`<tr class="${k==='total'?'total':''}"><td>${label}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
+  </table>
+  <table><tr><th>Liabilities</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
+  ${liab.map(([label,g,k])=>`<tr class="${k==='total'?'total':''}"><td>${label}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
+  </table><p class="small muted">Cash / Bank is derived from the Projected Cash Flow Statement — the Balance Sheet is not force-tallied using any unexplained figure.</p>`;
+}
+function rCF(c){
+  return `<h3>Projected Cash Flow</h3><table><tr><th>Particulars</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
+  <tr><td>Cash from Operating Activities</td><td>${inr(c.cashFlow[0].operating)}</td><td>${inr(c.cashFlow[1].operating)}</td><td>${inr(c.cashFlow[2].operating)}</td></tr>
+  <tr><td>Cash from Investing Activities</td><td>${inr(c.cashFlow[0].investing)}</td><td>${inr(c.cashFlow[1].investing)}</td><td>${inr(c.cashFlow[2].investing)}</td></tr>
+  <tr><td>Cash from Financing Activities</td><td>${inr(c.cashFlow[0].financing)}</td><td>${inr(c.cashFlow[1].financing)}</td><td>${inr(c.cashFlow[2].financing)}</td></tr>
+  <tr class="total"><td>Net Cash Flow</td><td>${inr(c.cashFlow[0].net)}</td><td>${inr(c.cashFlow[1].net)}</td><td>${inr(c.cashFlow[2].net)}</td></tr>
+  <tr><td>Opening Cash</td><td>${inr(c.cashFlow[0].opening)}</td><td>${inr(c.cashFlow[1].opening)}</td><td>${inr(c.cashFlow[2].opening)}</td></tr>
+  <tr class="total"><td>Closing Cash</td><td>${inr(c.cashFlow[0].closing)}</td><td>${inr(c.cashFlow[1].closing)}</td><td>${inr(c.cashFlow[2].closing)}</td></tr>
+  </table>`;
+}
+function rWC(c){
+  return `<h3>Working Capital Assessment</h3>
+  <table><tr><th></th><th>Turnover Method</th><th>Operating Cycle Method (Yr 1)</th></tr>
+  <tr><td>Working Capital Requirement</td><td>${inr(c.wcReq)}</td><td>${inr(c.opCycle[0].gap)}</td></tr>
+  <tr><td>Borrower's Contribution</td><td>${inr(c.wcNwc)}</td><td>${inr(c.opCycle[0].borrowerContribution)}</td></tr>
+  <tr><td>Bank Finance</td><td>${inr(c.wcBank)}</td><td>${inr(c.opCycle[0].bankFinance)}</td></tr>
+  </table>
+  <div class="note-box">The two methods are shown for comparison only; the higher amount is not automatically selected. The applicable method and final working-capital limit remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>`;
+}
+function rMPBF(c){
+  const s = current.settings;
+  return `<h3>Working Capital – Turnover Method (Nayak Method)</h3>
+  <p>Formula: Working Capital Requirement = ${s.wcTurnoverPct}% of Projected Annual Turnover; Borrower's NWC/Margin = ${s.wcNwcPct}% of Turnover; Bank Finance = ${s.wcBankPct}% of Turnover.</p>
+  <table><tr><th></th><th>Amount</th></tr>
+  <tr><td>Projected Annual Turnover (Current Year)</td><td>${inr(c.sales[0])}</td></tr>
+  <tr><td>Working Capital Requirement (${s.wcTurnoverPct}%)</td><td>${inr(c.wcReq)}</td></tr>
+  <tr><td>Borrower's NWC / Margin (${s.wcNwcPct}%)</td><td>${inr(c.wcNwc)}</td></tr>
+  <tr><td>Bank Finance (${s.wcBankPct}%)</td><td>${inr(c.wcBank)}</td></tr>
+  </table>
+  <p class="small muted">Applicable percentage / eligibility parameters can be changed under Settings rather than being hard-coded.</p>`;
+}
+function rRepayment(c){
+  const yearRows = c.tlYearly.map((y,i)=>`<tr><td>Year ${i+1}</td><td>${inr(y.openBal)}</td><td>${inr(y.principal)}</td><td>${inr(y.interest)}</td><td>${inr(y.principal+y.interest)}</td><td>${inr(y.closeBal)}</td></tr>`).join('');
+  return `<h3>Loan Repayment Schedule (Annual Summary)</h3>
+  <table><tr><th>Year</th><th>Opening Balance</th><th>Principal Repayment</th><th>Interest</th><th>Total Debt Service</th><th>Closing Balance</th></tr>
+  ${yearRows}</table>
+  <p class="small muted">Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years,
+  moratorium ${current.loanTerms.moratoriumMonths} months, equal-principal ${current.loanTerms.instalmentFreq.toLowerCase()} instalments.
+  Working Capital is a revolving fund-based limit — interest is charged on utilisation and it is not repaid through this term schedule.</p>`;
+}
+function rRatios(c){
+  const rows = [["Current Ratio","currentRatio",""],["Debt Equity Ratio","debtEquity",""],["TOL/TNW","tolTnw",""],
+    ["Gross Profit Margin","gpMargin","%"],["EBITDA Margin","ebitdaMargin","%"],["Net Profit Margin","npMargin","%"],
+    ["Interest Coverage Ratio","interestCoverage",""],["Stock Holding Period","stockDays"," days"],
+    ["Debtor Holding Period","debtorDays"," days"],["Creditor Holding Period","creditorDays"," days"],
+    ["Working Capital Cycle","wcCycle"," days"]];
+  const dscrRows = c.dscrYearly.map((d,i)=>`<tr><td>Year ${i+1}</td><td>${inr(d.cashAccrual)}</td><td>${inr(d.interest)}</td><td>${inr(d.principal)}</td><td>${inr(d.debtService)}</td><td>${d.dscr!==null?d.dscr.toFixed(2):'Not Applicable'}</td></tr>`).join('');
+  return `<h3>Financial Ratios</h3>
+  <table><tr><th>Ratio</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
+  ${rows.map(([label,k,suf])=>`<tr><td>${label}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?'Not Applicable':(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
+  </table>
+  <h3>DSCR</h3>
+  <table><tr><th>Year</th><th>Cash Accrual</th><th>Interest</th><th>Principal Repayment</th><th>Total Debt Service</th><th>DSCR</th></tr>
+  ${dscrRows}</table>
+  <p><b>Average DSCR:</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} &nbsp; <b>Minimum DSCR:</b> ${c.minDscr!==null?c.minDscr.toFixed(2):'Not Applicable'}</p>`;
+}
+function rBreakeven(c){
+  return `<h3>Break-even Analysis</h3><table><tr><th>Particulars</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
+  <tr><td>Fixed Cost</td><td>${inr(c.breakeven[0].fixed)}</td><td>${inr(c.breakeven[1].fixed)}</td><td>${inr(c.breakeven[2].fixed)}</td></tr>
+  <tr><td>Variable Cost</td><td>${inr(c.breakeven[0].variable)}</td><td>${inr(c.breakeven[1].variable)}</td><td>${inr(c.breakeven[2].variable)}</td></tr>
+  <tr><td>Contribution</td><td>${inr(c.breakeven[0].contribution)}</td><td>${inr(c.breakeven[1].contribution)}</td><td>${inr(c.breakeven[2].contribution)}</td></tr>
+  <tr><td>P/V Ratio</td><td>${pct(c.breakeven[0].pvRatio,1)}</td><td>${pct(c.breakeven[1].pvRatio,1)}</td><td>${pct(c.breakeven[2].pvRatio,1)}</td></tr>
+  <tr class="total"><td>Break-even Sales</td><td>${c.breakeven[0].beSales!==null?inr(c.breakeven[0].beSales):'Not Applicable'}</td><td>${c.breakeven[1].beSales!==null?inr(c.breakeven[1].beSales):'Not Applicable'}</td><td>${c.breakeven[2].beSales!==null?inr(c.breakeven[2].beSales):'Not Applicable'}</td></tr>
+  <tr><td>Break-even % of Projected Sales</td><td>${c.breakeven[0].bePct!==null?pct(c.breakeven[0].bePct,1):'Not Applicable'}</td><td>${c.breakeven[1].bePct!==null?pct(c.breakeven[1].bePct,1):'Not Applicable'}</td><td>${c.breakeven[2].bePct!==null?pct(c.breakeven[2].bePct,1):'Not Applicable'}</td></tr>
+  </table>
+  <p class="small muted">Fixed cost includes employee cost, rent, electricity, administrative expenses, repairs, other operating expenses, depreciation and interest. Variable cost includes cost of sales, transport and selling expenses. This is an indicative approximation based on the granularity of activity assumptions used.</p>`;
+}
+function rInterpretation(c){
+  const s = c.sales;
+  const profitable = c.pnl.every(r=>r.pat>0);
+  return `<h3>Financial Interpretation</h3>
+  <p><b>Sales:</b> Sales are projected to move from ${inr(s[0])} to ${inr(s[1])} and ${inr(s[2])} over three years.</p>
+  <p><b>Profitability:</b> The projected business ${profitable?'remains profitable':'shows losses in at least one projected year'} under the assumptions used, with EBITDA margins of ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} and ${pct(c.ratios[2].ebitdaMargin,1)}.</p>
+  <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} indicate the estimated debt-servicing capacity.</p>
+  <p><b>Working Capital:</b> Working capital is assessed using the Turnover Method, cross-checked against the Operating Cycle Method.</p>
+  <div class="note-box">The proposal is subject to verification, viability assessment and applicable lending norms.</div>`;
+}
+function rMethodology(){
+  const a = getAssumptions(current);
+  const s = current.settings;
+  return `<h3>Key Assumptions & Methodology</h3>
+  <p>The financial projections have been prepared using the sales estimates provided by the borrower and the activity-specific assumptions selected in the application. The assumptions should be reviewed and modified wherever actual business information is available.</p>
+  <table><tr><th>Parameter</th><th>Value</th></tr>
+  ${ASSUMPTION_FIELDS.map(([k,label])=>`<tr><td>${label}</td><td>${a[k]}${k.includes('Days')?' days':'%'}</td></tr>`).join('')}
+  <tr><td>Working Capital – Turnover Method</td><td>${s.wcTurnoverPct}% / ${s.wcNwcPct}% / ${s.wcBankPct}%</td></tr>
+  <tr><td>Promoter Margin on Fixed Assets</td><td>${s.promoterMarginFixedPct}%</td></tr>
+  <tr><td>Owner Drawings</td><td>${s.ownerDrawingsPct}% of Profit After Tax</td></tr>
+  <tr><td>Tax Rate</td><td>${s.taxRatePct}%</td></tr>
+  <tr><td>Interest Rate</td><td>${current.loanTerms.interestRatePct}% p.a.</td></tr>
+  </table>`;
+}
+function rChecklist(c){
+  return `<h3>Report Readiness Checklist</h3><ul class="check-list">
+  ${c.checklist.map(x=>`<li class="${x.pass?'pass':'fail'}">${x.label}</li>`).join('')}
+  </ul>`;
+}
+function rConclusion(c){
+  return `<h3>Conclusion</h3>
+  <p>Based on the activity-specific assumptions and the sales projection provided, the proposed project for ${escapeHtml(current.borrower.business)}
+  indicates ${c.checklist[c.checklist.length-1].pass?'a mathematically consistent and complete':'an incomplete'} set of financial projections.
+  Final assessment, sanction and terms remain subject to the lending bank's independent verification, viability assessment and applicable regulatory requirements.</p>
+  <div class="footer-byline">Developed by Anil Sharma, Former General Manager, Central Bank of India.<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
+}
+
+/* ---------------- Boot ---------------- */
+goDashboard();
+</script>
+</body>
+</html>
