@@ -286,6 +286,11 @@ const I18N = {
   actualTermLoanOS:["Existing Term Loan Outstanding (Last Year, if any)","विद्यमान मीयादी ऋण बकाया (पिछला वर्ष, यदि कोई हो)"]
 };
 function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
+function wcMemoNote(amount){
+  return LANG==='hi'
+    ? `ज्ञापन: टर्नओवर पद्धति के अंतर्गत स्टॉक/प्राप्य के विरुद्ध अलग से स्वीकृत की जाने वाली ${inr(amount)} की कार्यशील पूंजी सीमा उपरोक्त कुल में शामिल नहीं है — विवरण हेतु "कार्यशील पूंजी आकलन" खंड देखें।`
+    : `Memo: a separate Working Capital limit of ${inr(amount)} (sanctioned independently against stock/receivables under the Turnover Method) is not included in the total above — see the "Working Capital Assessment" section.`;
+}
 function colorLegend(){
   return `<div class="color-legend no-print">
     <span><i class="swatch fill"></i>${LANG==='hi'?'आपको भरना है':'You must fill this'}</span>
@@ -571,12 +576,18 @@ function calculate(p){
   const wcNwc = y1Sales*s.wcNwcPct/100;
   const wcBank = y1Sales*s.wcBankPct/100;
 
-  const totalProjectCost = fixedAssetReq + wcReq;
+  /* Project Cost takes only the Margin Money for Working Capital (the borrower's own
+     contribution, wcNwc) — not the full Working Capital Requirement (wcReq). The bank's
+     working capital limit (wcBank) is a separate revolving fund-based facility sanctioned
+     against stock/receivables under the Turnover Method (see Working Capital Assessment /
+     MPBF sections) and does not form part of the project financing table below. */
+  const totalProjectCost = fixedAssetReq + wcNwc;
   const promoterContributionTotal = promoterMarginFixed + wcNwc;
   const meansOfFinance = {
     promoterContribution: promoterContributionTotal, termLoan: termLoan,
-    wcFinance: wcBank, otherSources:0, subsidy:0,
-    total: promoterContributionTotal+termLoan+wcBank
+    otherSources:0, subsidy:0,
+    total: promoterContributionTotal+termLoan,
+    wcFinanceMemo: wcBank
   };
 
   /* Loan Applied (what the borrower asked for in Step 3) vs Loan Assessed (what this report
@@ -1337,7 +1348,7 @@ function renderProjectCost(){
       <tr><td>${tt('vehicle')}</td><td>${inr(c.fa.vehicle)}</td></tr>
       <tr><td>${tt('preliminary')}</td><td>${inr(c.fa.preliminary)}</td></tr>
       <tr><td>${tt('otherFixedAssets')}</td><td>${inr(c.fa.other)}</td></tr>
-      <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcReq)}</td></tr>
+      <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcNwc)}</td></tr>
       <tr class="total"><td>${tt('totalProjectCostRow')}</td><td>${inr(c.totalProjectCost)}</td></tr>
     </table>
     <h3>${tt('meansOfFinanceTitle')}</h3>
@@ -1345,11 +1356,11 @@ function renderProjectCost(){
       <tr><th>${tt('sourceHdr')}</th><th>${tt('amountHdr')}</th></tr>
       <tr><td>${tt('promoterContribution')}</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
       <tr><td>${tt('termLoanRow')}</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
-      <tr><td>${tt('wcFinanceRow')}</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
       <tr><td>${tt('otherSourcesRow')}</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
       <tr><td>${tt('subsidyRow')}</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
       <tr class="total"><td>${tt('totalMeansRow')}</td><td>${inr(c.meansOfFinance.total)}</td></tr>
     </table>
+    <p class="muted small">${wcMemoNote(c.meansOfFinance.wcFinanceMemo)}</p>
     <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
     <p class="muted small">${tt('balanceNote')}</p>
     <div class="btnrow">
@@ -1703,17 +1714,17 @@ function rCost(c){
   <tr><td>${tt('vehicle')}</td><td>${inr(c.fa.vehicle)}</td></tr>
   <tr><td>${tt('preliminary')}</td><td>${inr(c.fa.preliminary)}</td></tr>
   <tr><td>${tt('otherFixedAssets')}</td><td>${inr(c.fa.other)}</td></tr>
-  <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcReq)}</td></tr>
+  <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcNwc)}</td></tr>
   <tr class="total"><td>${tt('totalProjectCostRow')}</td><td>${inr(c.totalProjectCost)}</td></tr></table>`;
 }
 function rFinance(c){
   return `<h3>${tt('meansOfFinanceTitle')}</h3><table><tr><th>${tt('sourceHdr')}</th><th>${tt('amountHdr')}</th></tr>
   <tr><td>${tt('promoterContribution')}</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
   <tr><td>${tt('termLoanRow')}</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
-  <tr><td>${tt('wcFinanceRow')}</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
   <tr><td>${tt('otherSourcesRow')}</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
   <tr><td>${tt('subsidyRow')}</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
   <tr class="total"><td>${tt('totalMeansRow')}</td><td>${inr(c.meansOfFinance.total)}</td></tr></table>
+  <p class="small muted">${wcMemoNote(c.meansOfFinance.wcFinanceMemo)}</p>
   <p class="small muted">${tt('balanceNote')}</p>`;
 }
 function rAssumptions(){
