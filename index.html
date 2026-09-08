@@ -269,7 +269,9 @@ const I18N = {
   version:["Version","संस्करण"],
   dashTitleSub:["Offline","ऑफलाइन"],
   helpBtn:["Help","सहायता"],
-  helpTitle:["User Guide & Help","उपयोगकर्ता मार्गदर्शिका व सहायता"]
+  helpTitle:["User Guide & Help","उपयोगकर्ता मार्गदर्शिका व सहायता"],
+  shareBtn:["Share","साझा करें"],
+  printShareScope:["Print and Share bundle only the Loan Application and the full Project Report — ready for bank submission. The Report Readiness Checklist (for your own reference) is not included.","प्रिंट व साझा करें में केवल ऋण आवेदन एवं पूर्ण परियोजना रिपोर्ट शामिल है — बैंक में जमा करने हेतु तैयार। रिपोर्ट तैयारी सूची (केवल आपके संदर्भ हेतु) इसमें शामिल नहीं है।"]
 };
 function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
 function colorLegend(){
@@ -757,6 +759,7 @@ function renderDashboard(){
           <button class="btn secondary" onclick="openProject('${pr.id}')">${tt('open')}</button>
           <button class="btn secondary" onclick="duplicateProject('${pr.id}')">${tt('duplicate')}</button>
           <button class="btn secondary" onclick="exportProject('${pr.id}')">${tt('exportBtn')}</button>
+          <button class="btn secondary" onclick="shareProject('${pr.id}')">${tt('shareBtn')}</button>
           <button class="btn danger" onclick="deleteProjectConfirm('${pr.id}')">${tt('deleteBtn')}</button>
         </div>
       </div>`;
@@ -800,6 +803,17 @@ function exportProject(id){
   link.href = url; link.download = (pr.borrower.business||"msme-project").replace(/\s+/g,'_')+".json";
   document.body.appendChild(link); link.click(); document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+function shareProject(id){
+  const pr = loadAllProjects().find(x=>x.id===id);
+  if(!pr) return;
+  const blob = new Blob([JSON.stringify(pr,null,2)], {type:"application/json"});
+  const filename = (pr.borrower.business||"msme-project").replace(/\s+/g,'_')+".json";
+  const title = (LANG==='hi'?'एमएसएमई परियोजना डेटा: ':'MSME Project Data: ')+(pr.borrower.business||'');
+  const text = LANG==='hi'?'यह परियोजना फ़ाइल एमएसएमई परियोजना रिपोर्ट जनरेटर में आयात की जा सकती है।':'This project file can be imported back into the MSME Project Report Generator.';
+  shareBlob(blob, filename, title, text).then(shared=>{
+    if(!shared){ alert(LANG==='hi' ? "इस ब्राउज़र में सीधा साझा समर्थित नहीं है — फ़ाइल डाउनलोड कर दी गई है।" : "Direct sharing isn't supported on this browser — the file has been downloaded."); }
+  });
 }
 function handleImportFile(ev){
   const file = ev.target.files[0]; if(!file) return;
@@ -1243,6 +1257,10 @@ const REPORT_SECTIONS = [
   ["conclusion","Conclusion","निष्कर्ष"]
 ];
 function rsLabel(row){ return LANG==='hi' ? row[2] : row[1]; }
+/* Only these sections are bundled into Print / Share / "View Full Report" — the document
+   actually submitted to the bank. The Report Readiness Checklist is an internal self-check
+   for the preparer and is deliberately excluded from the bank-facing bundle. */
+const PRINTABLE_SECTIONS = REPORT_SECTIONS.filter(row=>row[0]!=='checklist');
 function renderReportScreen(){
   reportTab='application';
   const c = calculate(current);
@@ -1283,18 +1301,20 @@ function drawReport(){
     <div class="btnrow" style="margin-top:0;">
       <button class="btn secondary" onclick="renderProjectCost()">${tt('backToEditing')}</button>
       <button class="btn gold" onclick="printReport()">${tt('printSave')}</button>
+      <button class="btn gold" onclick="shareReport()">${tt('shareBtn')}</button>
       <button class="btn secondary" onclick="showFullReport()">${tt('viewFull')}</button>
     </div>
+    <p class="muted small" style="margin-top:8px;">${tt('printShareScope')}</p>
   </div>
   <div class="card no-print"><div class="tabs">${tabs}</div>${colorLegend()}</div>
   <div class="card report-page" id="reportBody">${body}</div>`;
   document.getElementById('mainArea').innerHTML = html;
 }
 function switchReportTab(id){ reportTab=id; drawReport(); }
-function showFullReport(){
+function buildFullReportHtml(){
   const c = window._reportCalc;
   let all = `<div class="dev-credit cover">${byline()}</div>`;
-  REPORT_SECTIONS.forEach(row=>{
+  PRINTABLE_SECTIONS.forEach(row=>{
     const id = row[0];
     let fn = {application:()=>rApplication(c),cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,purpose:()=>rPurpose(c),
       cost:()=>rCost(c),finance:()=>rFinance(c),assumptions:rAssumptions,sales:()=>rSales(c),pnl:()=>rPnl(c),
@@ -1304,9 +1324,52 @@ function showFullReport(){
     all += `<div class="section-anchor">${fn()}</div><hr style="border:none;border-top:1px solid var(--line);margin:22px 0;">`;
   });
   all += `<div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline</div>`;
-  document.getElementById('reportBody').innerHTML = all;
+  return all;
+}
+function showFullReport(){
+  document.getElementById('reportBody').innerHTML = buildFullReportHtml();
 }
 function printReport(){ showFullReport(); setTimeout(()=>window.print(),150); }
+
+/* ---------------- Share (Web Share API with file/text/download fallback) ---------------- */
+async function shareBlob(blob, filename, title, text){
+  try{
+    const file = new File([blob], filename, {type:blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({title, text, files:[file]});
+      return true;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return true; }
+  try{
+    if(navigator.share){ await navigator.share({title, text}); return true; }
+  }catch(e){ if(e && e.name==='AbortError') return true; }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  return false;
+}
+function buildStandaloneReportDoc(){
+  const styleEl = document.querySelector('style');
+  const styleText = styleEl ? styleEl.innerHTML : '';
+  const bodyHtml = buildFullReportHtml();
+  return `<!DOCTYPE html><html lang="${LANG}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(current.borrower.business||'MSME Project Report')}</title><style>${styleText}
+  body{padding:20px;background:#fff;} .app{max-width:800px;margin:0 auto;}</style></head>
+  <body><div class="app"><div class="card report-page">${bodyHtml}</div></div></body></html>`;
+}
+function shareReport(){
+  showFullReport();
+  const filename = (current.borrower.business||'MSME_Project_Report').replace(/\s+/g,'_')+'.html';
+  const docHtml = buildStandaloneReportDoc();
+  const blob = new Blob([docHtml], {type:'text/html'});
+  const title = (LANG==='hi'?'एमएसएमई परियोजना रिपोर्ट: ':'MSME Project Report: ')+(current.borrower.business||'');
+  const text = LANG==='hi'?'कृपया संलग्न परियोजना रिपोर्ट देखें। यह ऑफलाइन एमएसएमई परियोजना रिपोर्ट जनरेटर से तैयार की गई है।':'Please find the attached project report, prepared using the Offline MSME Project Report Generator.';
+  shareBlob(blob, filename, title, text).then(shared=>{
+    if(!shared){ alert(LANG==='hi' ? "इस ब्राउज़र में सीधा साझा समर्थित नहीं है — रिपोर्ट डाउनलोड कर दी गई है। आप इसे व्हाट्सएप/ईमेल से मैन्युअल रूप से साझा कर सकते हैं।" : "Direct sharing isn't supported on this browser — the report has been downloaded. You can share the file manually via WhatsApp/Email."); }
+  });
+}
 
 function demoNote(){
   return current.isDemo ? `<div class="warn-box"><b>DEMO DATA – NOT FOR BANK SUBMISSION.</b> This is a sample project for illustration only.</div>` : "";
