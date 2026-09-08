@@ -106,6 +106,9 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 .note-box{background:#fdf6e8;border-left:4px solid var(--gold);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
 .warn-box{background:#fdeceb;border-left:4px solid var(--red);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
 .emi-box{background:#eef4ee;border-left:4px solid var(--green);padding:10px 12px;font-size:14px;margin:10px 0;border-radius:0 4px 4px 0;font-weight:700;color:var(--navy-dark);}
+.mismatch{color:var(--red);font-weight:800;}
+tr.mismatch-row td{background:#fdeceb;}
+.mismatch-box{background:#fdeceb;border-left:4px solid var(--red);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;color:#7a2418;}
 .dev-credit{background:var(--navy);color:#fff;padding:10px 14px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;}
 .dev-credit.cover{background:none;color:var(--navy);border:1px solid var(--gold);margin:16px auto 0;max-width:90%;}
 .letter-block{border:1px solid var(--line);padding:20px;border-radius:4px;background:#fff;font-size:14.5px;}
@@ -432,7 +435,9 @@ function defaultSettings(){
     fixedAssetSplit:{ land:0, building:10, machinery:55, furniture:10, vehicle:15, preliminary:5, other:5 },
     otherCurrentAssetsPct:1, otherCurrentLiabPct:1,
     ownerDrawingsPct:50, taxRatePct:0,
-    interestRatePct:12, tenureYears:5, moratoriumMonths:6, instalmentFreq:"Monthly"
+    interestRatePct:12, tenureYears:5, moratoriumMonths:6, instalmentFreq:"Monthly",
+    ratioNorms:{ currentRatioMin:1.33, debtEquityMax:3, tolTnwMax:4, dscrAvgMin:1.5, dscrMinMin:1.25, interestCoverageMin:1.5 },
+    loanMismatchTolerancePct:5
   };
 }
 function getSettings(){
@@ -557,6 +562,30 @@ function calculate(p){
     total: promoterContributionTotal+termLoan+wcBank
   };
 
+  /* Loan Applied (what the borrower asked for in Step 3) vs Loan Assessed (what this report
+     works out from the fixed-asset requirement and the Turnover Method) — flagged in red
+     wherever they differ by more than the tolerance, so the preparer can reconcile before
+     the report is submitted to the bank. */
+  const tolerancePct = (s.loanMismatchTolerancePct===undefined?5:s.loanMismatchTolerancePct);
+  const appliedTotal = num(p.loan.total);
+  const appliedTermLoan = num(p.loan.termLoan);
+  const appliedWc = num(p.loan.wcLoan);
+  const assessedTotal = termLoan + wcBank;
+  function differs(applied, assessed){
+    if(!applied) return false;
+    const base = Math.max(Math.abs(applied), Math.abs(assessed), 1);
+    return Math.abs(applied-assessed) > base*tolerancePct/100;
+  }
+  const loanCheck = {
+    appliedTotal, appliedTermLoan, appliedWc,
+    assessedTermLoan: termLoan, assessedWc: wcBank, assessedTotal,
+    totalMismatch: differs(appliedTotal, assessedTotal),
+    wcMismatch: differs(appliedWc, wcBank),
+    splitMismatch: (appliedTermLoan>0 && appliedWc>0) && Math.abs((appliedTermLoan+appliedWc)-appliedTotal) > Math.max(appliedTotal*0.01,1),
+    tolerancePct
+  };
+  loanCheck.anyMismatch = loanCheck.totalMismatch || loanCheck.wcMismatch || loanCheck.splitMismatch;
+
   const opCycle = pnl.map((row,i)=>{
     const S = sales[i];
     const inventory = row.cos*a.stockDays/365;
@@ -667,6 +696,16 @@ function calculate(p){
   const avgDscr = validDscr.length? validDscr.reduce((a,b)=>a+b,0)/validDscr.length : null;
   const minDscr = validDscr.length? Math.min(...validDscr) : null;
 
+  const norms = Object.assign({}, defaultSettings().ratioNorms, s.ratioNorms||{});
+  function meetsNorm(value, normValue, dir){
+    if(value===null || value===undefined || normValue===null || normValue===undefined || isNaN(normValue)) return null;
+    return dir==='min' ? value>=normValue : value<=normValue;
+  }
+  const dscrCompliance = {
+    avg: meetsNorm(avgDscr, norms.dscrAvgMin, 'min'),
+    min: meetsNorm(minDscr, norms.dscrMinMin, 'min')
+  };
+
   const ratios = [0,1,2].map(i=>{
     const bs = balanceSheet[i], r = pnlFull[i];
     const ca = bs.assets.inventory+bs.assets.receivables+bs.assets.cash+bs.assets.otherCA;
@@ -681,9 +720,24 @@ function calculate(p){
     const ebitdaMargin = r.sales>0? (r.ebitda/r.sales)*100 : null;
     const npMargin = r.sales>0? (r.pat/r.sales)*100 : null;
     const interestCoverage = r.interest>0? r.ebitda/r.interest : null;
+    const compliance = {
+      currentRatio: meetsNorm(currentRatio, norms.currentRatioMin, 'min'),
+      debtEquity: meetsNorm(debtEquity, norms.debtEquityMax, 'max'),
+      tolTnw: meetsNorm(tolTnw, norms.tolTnwMax, 'max'),
+      interestCoverage: meetsNorm(interestCoverage, norms.interestCoverageMin, 'min')
+    };
     return {currentRatio,debtEquity,tolTnw,gpMargin,ebitdaMargin,npMargin,interestCoverage,
-      stockDays:a.stockDays, debtorDays:a.debtorDays, creditorDays:a.creditorDays, wcCycle:a.stockDays+a.debtorDays-a.creditorDays};
+      stockDays:a.stockDays, debtorDays:a.debtorDays, creditorDays:a.creditorDays, wcCycle:a.stockDays+a.debtorDays-a.creditorDays,
+      compliance};
   });
+  const belowNormList = [];
+  const RATIO_NORM_NAMES = {currentRatio:["Current Ratio","धारा अनुपात"],debtEquity:["Debt Equity Ratio","ऋण इक्विटी अनुपात"],
+    tolTnw:["TOL/TNW","टीओएल/टीएनडब्ल्यू"],interestCoverage:["Interest Coverage Ratio","ब्याज कवरेज अनुपात"]};
+  ["currentRatio","debtEquity","tolTnw","interestCoverage"].forEach(k=>{
+    if(ratios.some(r=>r.compliance[k]===false)) belowNormList.push(RATIO_NORM_NAMES[k]);
+  });
+  if(dscrCompliance.avg===false || dscrCompliance.min===false) belowNormList.push(["DSCR","डीएससीआर"]);
+
 
   const breakeven = pnlFull.map((r,i)=>{
     const S = sales[i];
@@ -709,13 +763,16 @@ function calculate(p){
   checklist.push({key:"chkRatios", pass: ratios.every(r=>r!==null)});
   const allPass = checklist.every(c=>c.pass);
   checklist.push({key:"chkReady", pass: allPass});
+  checklist.push({key:"chkRatioNorm", pass: belowNormList.length===0, info:true});
+  checklist.push({key:"chkLoanMatch", pass: !loanCheck.anyMismatch, info:true});
 
   return {
     a, sales, pnl:pnlFull, fixedAssetReq, promoterMarginFixed, fa, grossBlock,
     wcReq, wcNwc, wcBank, totalProjectCost, meansOfFinance, opCycle,
     schedule, tlYearly, wcYearly, wcInterestYearly, deprYearly, nfaYearly,
     drawingsYearly, reYearly, cashFlow, balanceSheet, dscrYearly, avgDscr, minDscr,
-    ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths, emi, repayMonths
+    ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths, emi, repayMonths,
+    norms, dscrCompliance, belowNormList, loanCheck
   };
 }
 
@@ -902,6 +959,21 @@ function openSettingsScreen(){
     <div><label>Default Tenure (Years)</label><input type="number" id="s_tenure" value="${s.tenureYears}"></div>
     <div><label>Default Moratorium (Months)</label><input type="number" id="s_mora" value="${s.moratoriumMonths}"></div>
   </div>
+  <h3>${LANG==='hi'?'निर्धारित अनुपात मानक (बैंकिंग बेंचमार्क)':'Prescribed Ratio Norms (Banking Benchmarks)'}</h3>
+  <p class="muted small">${LANG==='hi'?'ये सांकेतिक बेंचमार्क हैं। वास्तविक मानदंड बैंक-दर-बैंक भिन्न हो सकते हैं — अपनी शाखा की नीति के अनुसार समायोजित करें।':'These are indicative benchmarks. Actual norms vary bank to bank — adjust to match your branch\'s policy.'}</p>
+  <div class="grid default-zone">
+    <div><label>${LANG==='hi'?'न्यूनतम धारा अनुपात (Current Ratio ≥)':'Minimum Current Ratio (≥)'}</label><input type="number" step="0.01" id="s_curRatio" value="${s.ratioNorms.currentRatioMin}"></div>
+    <div><label>${LANG==='hi'?'अधिकतम ऋण इक्विटी अनुपात (Debt Equity ≤)':'Maximum Debt Equity Ratio (≤)'}</label><input type="number" step="0.1" id="s_deRatio" value="${s.ratioNorms.debtEquityMax}"></div>
+    <div><label>${LANG==='hi'?'अधिकतम टीओएल/टीएनडब्ल्यू (TOL/TNW ≤)':'Maximum TOL/TNW (≤)'}</label><input type="number" step="0.1" id="s_tolTnw" value="${s.ratioNorms.tolTnwMax}"></div>
+    <div><label>${LANG==='hi'?'न्यूनतम ब्याज कवरेज अनुपात (≥)':'Minimum Interest Coverage Ratio (≥)'}</label><input type="number" step="0.1" id="s_icr" value="${s.ratioNorms.interestCoverageMin}"></div>
+    <div><label>${LANG==='hi'?'न्यूनतम औसत डीएससीआर (≥)':'Minimum Average DSCR (≥)'}</label><input type="number" step="0.1" id="s_dscrAvg" value="${s.ratioNorms.dscrAvgMin}"></div>
+    <div><label>${LANG==='hi'?'न्यूनतम न्यूनतम-वर्ष डीएससीआर (≥)':'Minimum Year DSCR (≥)'}</label><input type="number" step="0.1" id="s_dscrMin" value="${s.ratioNorms.dscrMinMin}"></div>
+  </div>
+  <h3>${LANG==='hi'?'ऋण राशि जाँच':'Loan Amount Check'}</h3>
+  <p class="muted small">${LANG==='hi'?'यदि उधारकर्ता द्वारा आवेदित ऋण राशि, इस सहनशीलता से अधिक इस रिपोर्ट की आकलित आवश्यकता से भिन्न हो, तो उसे लाल रंग में उजागर किया जाता है।':'If the loan amount the borrower applied for differs from this report\'s assessed requirement by more than this tolerance, it is highlighted in red.'}</p>
+  <div class="grid default-zone">
+    <div><label>${LANG==='hi'?'सहनशीलता (%)':'Tolerance (%)'}</label><input type="number" step="1" id="s_loanTol" value="${s.loanMismatchTolerancePct}"></div>
+  </div>
   <div class="note-box">These are indicative default assumptions. The applicable methodology, ratios and final sanction terms remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>
   <div class="btnrow">
     <button class="btn gold" onclick="saveSettingsScreen()">${tt('save')} Defaults</button>
@@ -917,7 +989,10 @@ function saveSettingsScreen(){
       furniture:+val('s_furniture'), vehicle:+val('s_vehicle'), preliminary:+val('s_preliminary'), other:+val('s_other') },
     otherCurrentAssetsPct:+val('s_otherCA'), otherCurrentLiabPct:+val('s_otherCL'),
     ownerDrawingsPct:+val('s_drawings'), taxRatePct:+val('s_tax'),
-    interestRatePct:+val('s_rate'), tenureYears:+val('s_tenure'), moratoriumMonths:+val('s_mora'), instalmentFreq:"Monthly"
+    interestRatePct:+val('s_rate'), tenureYears:+val('s_tenure'), moratoriumMonths:+val('s_mora'), instalmentFreq:"Monthly",
+    ratioNorms:{ currentRatioMin:+val('s_curRatio'), debtEquityMax:+val('s_deRatio'), tolTnwMax:+val('s_tolTnw'),
+      interestCoverageMin:+val('s_icr'), dscrAvgMin:+val('s_dscrAvg'), dscrMinMin:+val('s_dscrMin') },
+    loanMismatchTolerancePct:+val('s_loanTol')
   };
   saveSettingsObj(s);
   alert("Default assumptions saved.");
@@ -1428,6 +1503,9 @@ function rApplication(c){
   return `${demoNote()}<h3>${LANG==='hi'?'बैंक हेतु ऋण आवेदन':'Loan Application to Bank'}</h3>
   ${editForm}
   <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
+  ${c.loanCheck.anyMismatch ? `<div class="mismatch-box"><b>${LANG==='hi'?'⚠ ऋण राशि जाँच:':'⚠ Loan Amount Check:'}</b> ${LANG==='hi'
+    ? `ऊपर आवेदित ऋण राशि (${inr(c.loanCheck.appliedTotal)}), इस रिपोर्ट की आकलित आवश्यकता (मीयादी ऋण ${inr(c.loanCheck.assessedTermLoan)} + कार्यशील पूंजी ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}) से भिन्न है। प्रस्तुत करने से पहले कृपया समाधान करें — देखें "ऋण का उद्देश्य" खंड।`
+    : `The loan amount applied for above (${inr(c.loanCheck.appliedTotal)}) differs from this report's assessed requirement (Term Loan ${inr(c.loanCheck.assessedTermLoan)} + Working Capital ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}). Please reconcile before submission — see the "Purpose of Loan" section.`}</div>` : ''}
   <div class="letter-block">${LANG==='hi'?letterHi:letterEn}</div>
   <p class="small muted">${LANG==='hi'?'बैंक का नाम, शाखा/स्थान व दिनांक ऊपर बदले जा सकते हैं; पत्र स्वतः अद्यतन हो जाएगा।':'Bank name, branch/place and date above are editable — the letter updates automatically.'}</p>`;
 }
@@ -1493,12 +1571,26 @@ function rActivity(){
     :`The unit is a ${escapeHtml(current.borrower.existing).toLowerCase()} enterprise engaged in ${escapeHtml(current.activityName).toLowerCase()}, operated as a ${escapeHtml(current.borrower.constitution).toLowerCase()}.`}</p>`;
 }
 function rPurpose(c){
+  const lc = c.loanCheck;
+  const hi = LANG==='hi';
   return `<h3>${tt('stepLoan')}</h3><table>
   <tr><td>${tt('purposeOfLoan')}</td><td>${escapeHtml(current.loan.purpose)}</td></tr>
   <tr><td>${tt('totalLoanRequired').replace(' *','')}</td><td>${inr(current.loan.total)}</td></tr>
-  <tr><td>${tt('termLoanRow')}</td><td>${inr(c.termLoan)}</td></tr>
-  <tr><td>${LANG==='hi'?'कार्यशील पूंजी घटक (बैंक आकलित)':'Working Capital Component (Bank Assessed)'}</td><td>${inr(c.wcBank)}</td></tr>
-  </table>`;
+  </table>
+  <h3>${hi?'आवेदित बनाम आकलित ऋण राशि':'Loan Amount Applied vs Assessed'}</h3>
+  <table><tr><th>${hi?'':''}</th><th>${hi?'उधारकर्ता द्वारा आवेदित':'Applied by Borrower'}</th><th>${hi?'इस रिपोर्ट द्वारा आकलित':'Assessed by this Report'}</th></tr>
+  <tr><td>${tt('termLoanRow')}</td><td>${lc.appliedTermLoan?inr(lc.appliedTermLoan):'—'}</td><td>${inr(lc.assessedTermLoan)}</td></tr>
+  <tr class="${lc.wcMismatch?'mismatch-row':''}"><td>${hi?'कार्यशील पूंजी':'Working Capital'}</td><td>${lc.appliedWc?`<span class="${lc.wcMismatch?'mismatch':''}">${inr(lc.appliedWc)}</span>`:'—'}</td><td>${inr(lc.assessedWc)}</td></tr>
+  <tr class="total ${lc.totalMismatch?'mismatch-row':''}"><td>${hi?'कुल':'Total'}</td><td><span class="${lc.totalMismatch?'mismatch':''}">${inr(lc.appliedTotal)}</span></td><td><span class="${lc.totalMismatch?'mismatch':''}">${inr(lc.assessedTotal)}</span></td></tr>
+  </table>
+  ${lc.anyMismatch ? `<div class="mismatch-box"><b>${hi?'⚠ राशि में अंतर:':'⚠ Amount differs:'}</b> ${
+    [
+      lc.totalMismatch ? (hi?`आवेदित कुल ऋण (${inr(lc.appliedTotal)}) इस रिपोर्ट की आकलित आवश्यकता (${inr(lc.assessedTotal)}) से भिन्न है।`:`The total loan applied for (${inr(lc.appliedTotal)}) differs from this report's assessed requirement (${inr(lc.assessedTotal)}).`) : '',
+      lc.wcMismatch ? (hi?`आवेदित कार्यशील पूंजी (${inr(lc.appliedWc)}) टर्नओवर पद्धति द्वारा आकलित राशि (${inr(lc.assessedWc)}) से भिन्न है।`:`The working capital applied for (${inr(lc.appliedWc)}) differs from the Turnover Method assessment (${inr(lc.assessedWc)}).`) : '',
+      lc.splitMismatch ? (hi?'दर्ज किया गया मीयादी ऋण व कार्यशील पूंजी का योग, कुल आवश्यक ऋण से मेल नहीं खाता।':'The Term Loan + Working Capital entered does not add up to the Total Loan Required entered.') : ''
+    ].filter(Boolean).join(' ')
+  } ${hi?'कृपया आवेदन प्रस्तुत करने से पहले राशि की समीक्षा करें, या बैंक को अंतर का औचित्य स्पष्ट करें।':'Please review the amount before submitting the application, or provide the bank a justification for the difference.'}</div>`
+  : `<div class="note-box">${hi?'आवेदित ऋण राशि इस रिपोर्ट की आकलित आवश्यकता से मेल खाती है।':'The loan amount applied for matches this report\'s assessed requirement.'}</div>`}`;
 }
 function rCost(c){
   return `<h3>${tt('projectCostTitle')}</h3>
@@ -1618,15 +1710,25 @@ function rRatios(c){
     ["Debtor Holding Period","देनदार अवधि","debtorDays",LANG==='hi'?' दिन':' days'],["Creditor Holding Period","लेनदार अवधि","creditorDays",LANG==='hi'?' दिन':' days'],
     ["Working Capital Cycle","कार्यशील पूंजी चक्र","wcCycle",LANG==='hi'?' दिन':' days']];
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  const NORM_META = {
+    currentRatio:{norm:c.norms.currentRatioMin, dir:'≥'}, debtEquity:{norm:c.norms.debtEquityMax, dir:'≤'},
+    tolTnw:{norm:c.norms.tolTnwMax, dir:'≤'}, interestCoverage:{norm:c.norms.interestCoverageMin, dir:'≥'}
+  };
+  function normCell(k){ const m=NORM_META[k]; return m? `${m.dir} ${m.norm}` : (LANG==='hi'?'—':'—'); }
+  function badge(pass){ if(pass===null||pass===undefined) return ''; return pass? ' <span class="badge default" style="background:#e4eee7;color:var(--green);">'+(LANG==='hi'?'✓ अनुरूप':'✓ Meets')+'</span>' : ' <span class="badge modified" style="background:#fbe0dc;color:var(--red);">'+(LANG==='hi'?'✗ मानक से कम':'✗ Below Norm')+'</span>'; }
   const dscrRows = c.dscrYearly.map((d,i)=>`<tr><td>${LANG==='hi'?'वर्ष':'Year'} ${i+1}</td><td>${inr(d.cashAccrual)}</td><td>${inr(d.interest)}</td><td>${inr(d.principal)}</td><td>${inr(d.debtService)}</td><td>${d.dscr!==null?d.dscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}</td></tr>`).join('');
   return `<h3>${LANG==='hi'?'वित्तीय अनुपात':'Financial Ratios'}</h3>
-  <table><tr><th>${LANG==='hi'?'अनुपात':'Ratio'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
-  ${rows.map(([en,hi,k,suf])=>`<tr><td>${LANG==='hi'?hi:en}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?(LANG==='hi'?'लागू नहीं':'Not Applicable'):(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
+  <p class="muted small">${LANG==='hi'?'"निर्धारित मानक" स्तंभ बैंकिंग में सामान्यतः उपयोग किए जाने वाले सांकेतिक बेंचमार्क दर्शाता है (सेटिंग्स में संपादन-योग्य); वास्तविक मानदंड बैंक-दर-बैंक भिन्न हो सकते हैं।':'The "Prescribed Norm" column shows indicative benchmarks commonly used in banking (editable in Settings); actual norms vary bank to bank.'}</p>
+  <table><tr><th>${LANG==='hi'?'अनुपात':'Ratio'}</th><th>${LANG==='hi'?'निर्धारित मानक':'Prescribed Norm'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  ${rows.map(([en,hi,k,suf])=>`<tr><td>${LANG==='hi'?hi:en}</td><td>${normCell(k)}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; const comp=c.ratios[i].compliance?c.ratios[i].compliance[k]:undefined; return `<td>${v===null?(LANG==='hi'?'लागू नहीं':'Not Applicable'):(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}${badge(comp)}</td>`;}).join('')}</tr>`).join('')}
   </table>
   <h3>DSCR</h3>
+  <p class="muted small">${LANG==='hi'?`निर्धारित मानक: औसत डीएससीआर ${c.norms.dscrAvgMin} व न्यूनतम डीएससीआर ${c.norms.dscrMinMin} (सेटिंग्स में संपादन-योग्य)।`:`Prescribed norm: Average DSCR ≥ ${c.norms.dscrAvgMin} and Minimum DSCR ≥ ${c.norms.dscrMinMin} (editable in Settings).`}</p>
   <table><tr><th>${LANG==='hi'?'वर्ष':'Year'}</th><th>${LANG==='hi'?'नकदी संचयन':'Cash Accrual'}</th><th>${LANG==='hi'?'ब्याज':'Interest'}</th><th>${LANG==='hi'?'मूलधन चुकौती':'Principal Repayment'}</th><th>${LANG==='hi'?'कुल ऋण सेवा':'Total Debt Service'}</th><th>DSCR</th></tr>
   ${dscrRows}</table>
-  <p><b>${LANG==='hi'?'औसत डीएससीआर:':'Average DSCR:'}</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')} &nbsp; <b>${LANG==='hi'?'न्यूनतम डीएससीआर:':'Minimum DSCR:'}</b> ${c.minDscr!==null?c.minDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}</p>`;
+  <p><b>${LANG==='hi'?'औसत डीएससीआर:':'Average DSCR:'}</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}${badge(c.dscrCompliance.avg)} &nbsp; <b>${LANG==='hi'?'न्यूनतम डीएससीआर:':'Minimum DSCR:'}</b> ${c.minDscr!==null?c.minDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}${badge(c.dscrCompliance.min)}</p>
+  ${c.belowNormList.length? `<div class="warn-box">${LANG==='hi'?'निम्न अनुपात निर्धारित मानकों से कम हैं: ':'The following ratios are below the prescribed norm: '}<b>${c.belowNormList.map(n=>n[LANG==='hi'?1:0]).join(', ')}</b>. ${LANG==='hi'?'इसका अर्थ यह नहीं कि ऋण अस्वीकृत होगा, परंतु बैंक अतिरिक्त प्रतिभूति, संपार्श्विक अथवा उच्च प्रवर्तक अंशदान की अपेक्षा कर सकता है। अंतिम निर्णय बैंक की प्रचलित नीति व मानदंडों के अधीन है।':'This does not automatically mean the loan will be refused, but the bank may seek additional comfort — such as collateral or a higher promoter contribution. The final decision remains subject to the lending bank\'s prevailing policy and norms.'}</div>`
+    : `<div class="note-box">${LANG==='hi'?'सभी बेंचमार्क किए गए अनुपात निर्धारित मानकों की सीमा के भीतर हैं।':'All benchmarked ratios are within the prescribed norm.'}</div>`}`;
 }
 function rBreakeven(c){
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
@@ -1644,12 +1746,26 @@ function rBreakeven(c){
 function rInterpretation(c){
   const s = c.sales;
   const profitable = c.pnl.every(r=>r.pat>0);
+  const normLineHi = c.belowNormList.length
+    ? `<p><b>अनुपात मानक अनुपालन:</b> निम्न अनुपात निर्धारित मानकों से कम हैं: <b>${c.belowNormList.map(n=>n[1]).join(', ')}</b>। इससे स्वीकृति स्वतः अस्वीकृत नहीं होती, परंतु बैंक अतिरिक्त प्रतिभूति, संपार्श्विक अथवा उच्च प्रवर्तक अंशदान की अपेक्षा कर सकता है। विस्तृत तुलना हेतु "वित्तीय अनुपात" खंड देखें।</p>`
+    : `<p><b>अनुपात मानक अनुपालन:</b> सभी बेंचमार्क किए गए अनुपात निर्धारित मानकों की सीमा के भीतर हैं।</p>`;
+  const normLineEn = c.belowNormList.length
+    ? `<p><b>Ratio Norm Compliance:</b> The following ratios are below the prescribed norm: <b>${c.belowNormList.map(n=>n[0]).join(', ')}</b>. This does not automatically mean the proposal will be rejected, but the bank may seek additional comfort — such as collateral or a higher promoter contribution. See the "Financial Ratios" section for the full comparison.</p>`
+    : `<p><b>Ratio Norm Compliance:</b> All benchmarked ratios are within the prescribed norm.</p>`;
+  const loanLineHi = c.loanCheck.anyMismatch
+    ? `<p class="mismatch"><b>ऋण राशि जाँच:</b> आवेदित ऋण राशि, इस रिपोर्ट की आकलित आवश्यकता से भिन्न है — विवरण हेतु "ऋण का उद्देश्य" खंड देखें।</p>`
+    : `<p><b>ऋण राशि जाँच:</b> आवेदित ऋण राशि इस रिपोर्ट की आकलित आवश्यकता से मेल खाती है।</p>`;
+  const loanLineEn = c.loanCheck.anyMismatch
+    ? `<p class="mismatch"><b>Loan Amount Check:</b> The loan amount applied for differs from this report's assessed requirement — see the "Purpose of Loan" section for details.</p>`
+    : `<p><b>Loan Amount Check:</b> The loan amount applied for matches this report's assessed requirement.</p>`;
   if(LANG==='hi'){
     return `<h3>वित्तीय व्याख्या</h3>
     <p><b>बिक्री:</b> अनुमानित बिक्री ${inr(s[0])} से बढ़कर ${inr(s[1])} व ${inr(s[2])} होने की संभावना है।</p>
     <p><b>लाभप्रदता:</b> उपयोग की गई मान्यताओं के अंतर्गत प्रस्तावित व्यवसाय ${profitable?'लाभप्रद बना रहता है':'कम से कम एक वर्ष में हानि दर्शाता है'}, ईबीआईटीडीए मार्जिन ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} व ${pct(c.ratios[2].ebitdaMargin,1)} है।</p>
     <p><b>चुकौती:</b> अनुमानित नकदी संचयन एवं औसत डीएससीआर ${c.avgDscr!==null?c.avgDscr.toFixed(2):'लागू नहीं'} ऋण चुकौती क्षमता दर्शाते हैं। प्रस्तावित मासिक किस्त (ईएमआई) लगभग ${inr(c.emi)} प्रति माह है।</p>
     <p><b>कार्यशील पूंजी:</b> कार्यशील पूंजी का आकलन टर्नओवर पद्धति द्वारा किया गया है, जिसे परिचालन चक्र पद्धति से क्रॉस-चेक किया गया है।</p>
+    ${normLineHi}
+    ${loanLineHi}
     <div class="note-box">यह प्रस्ताव सत्यापन, व्यवहार्यता आकलन एवं लागू ऋण मानदंडों के अधीन है।</div>`;
   }
   return `<h3>Financial Interpretation</h3>
@@ -1657,6 +1773,8 @@ function rInterpretation(c){
   <p><b>Profitability:</b> The projected business ${profitable?'remains profitable':'shows losses in at least one projected year'} under the assumptions used, with EBITDA margins of ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} and ${pct(c.ratios[2].ebitdaMargin,1)}.</p>
   <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} indicate the estimated debt-servicing capacity. The proposed monthly instalment (EMI) is approximately ${inr(c.emi)} per month.</p>
   <p><b>Working Capital:</b> Working capital is assessed using the Turnover Method, cross-checked against the Operating Cycle Method.</p>
+  ${normLineEn}
+  ${loanLineEn}
   <div class="note-box">The proposal is subject to verification, viability assessment and applicable lending norms.</div>`;
 }
 function rMethodology(){
@@ -1678,11 +1796,15 @@ const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारक�
   chkAssump:["Assumptions Reviewed","मान्यताएँ समीक्षित"],chkCost:["Project Cost = Means of Finance","परियोजना लागत = वित्त के साधन"],
   chkWC:["Working Capital Calculated","कार्यशील पूंजी गणना"],chkPnl:["Profit & Loss Calculated","लाभ-हानि गणना"],
   chkBS:["Balance Sheet Balanced","तुलन पत्र संतुलित"],chkCF:["Cash Flow Calculated","नकदी प्रवाह गणना"],
-  chkRepay:["Repayment Schedule Calculated","चुकौती अनुसूची गणना"],chkRatios:["Ratios Calculated","अनुपात गणना"],chkReady:["Report Ready","रिपोर्ट तैयार"]};
+  chkRepay:["Repayment Schedule Calculated","चुकौती अनुसूची गणना"],chkRatios:["Ratios Calculated","अनुपात गणना"],chkReady:["Report Ready","रिपोर्ट तैयार"],
+  chkRatioNorm:["All Ratios Meet Prescribed Norms","सभी अनुपात निर्धारित मानकों को पूरा करते हैं"],
+  chkLoanMatch:["Loan Applied Matches Assessed Requirement","आवेदित ऋण, आकलित आवश्यकता से मेल खाता है"]};
 function rChecklist(c){
   return `<h3>${LANG==='hi'?'रिपोर्ट तैयारी सूची':'Report Readiness Checklist'}</h3><ul class="check-list">
-  ${c.checklist.map(x=>`<li class="${x.pass?'pass':'fail'}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
-  </ul>`;
+  ${c.checklist.map(x=>`<li class="${x.pass?'pass':(x.info?'warn':'fail')}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
+  </ul>
+  ${c.belowNormList.length? `<div class="warn-box">${LANG==='hi'?'निम्न अनुपात निर्धारित मानकों से कम हैं: ':'The following ratios are below the prescribed norm: '}${c.belowNormList.map(n=>n[LANG==='hi'?1:0]).join(', ')}. ${LANG==='hi'?'यह स्वीकृति को स्वतः अस्वीकार नहीं करता, परंतु बैंक अतिरिक्त प्रतिभूति, संपार्श्विक अथवा उच्च प्रवर्तक अंशदान की अपेक्षा कर सकता है। अंतिम निर्णय बैंक की प्रचलित नीति के अधीन है।':'This does not automatically disqualify the proposal, but the bank may seek additional comfort — such as collateral or a higher promoter contribution. The final decision remains subject to the lending bank\'s prevailing policy.'}</div>`
+    : `<div class="note-box">${LANG==='hi'?'सभी बेंचमार्क किए गए अनुपात निर्धारित मानकों की सीमा के भीतर हैं।':'All benchmarked ratios are within the prescribed norm.'}</div>`}`;
 }
 function rConclusion(c){
   if(LANG==='hi'){
