@@ -33,7 +33,7 @@ body{
 header.topbar{
   background:linear-gradient(180deg,var(--navy) 0%,var(--navy-dark) 100%);
   color:#fff;padding:14px 18px;position:sticky;top:0;z-index:50;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
   box-shadow:0 2px 8px rgba(0,0,0,.18);
 }
 header.topbar .brand{display:flex;flex-direction:column;}
@@ -44,6 +44,7 @@ header.topbar button.nav-btn{
   padding:7px 12px;border-radius:var(--radius);font-size:13px;cursor:pointer;
 }
 header.topbar button.nav-btn:active{background:rgba(255,255,255,.2);}
+header.topbar button.lang-btn{background:var(--gold);border:none;color:#fff;font-weight:700;}
 main{padding:16px;}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
 .card h2{margin:0 0 4px;font-size:18px;color:var(--navy);}
@@ -94,8 +95,6 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 .demo-tag{background:var(--red);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px;}
 .assump-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line);padding:7px 0;font-size:14px;}
 .assump-row .val{display:flex;align-items:center;gap:8px;}
-.how-calc{font-size:11.5px;color:var(--navy);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;margin-left:6px;}
-.how-calc-box{background:#f2eee0;border:1px dashed var(--gold-dark);border-radius:4px;padding:8px 10px;font-size:12.5px;margin:6px 0;color:var(--ink-soft);}
 .tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;}
 .tabs button{white-space:nowrap;padding:8px 12px;border-radius:16px;border:1px solid var(--line);background:#fff;font-size:12.5px;cursor:pointer;}
 .tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
@@ -106,16 +105,18 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 .footer-byline{text-align:center;font-size:11.5px;color:var(--ink-soft);margin-top:30px;padding-top:14px;border-top:1px solid var(--line);}
 .note-box{background:#fdf6e8;border-left:4px solid var(--gold);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
 .warn-box{background:#fdeceb;border-left:4px solid var(--red);padding:10px 12px;font-size:13px;margin:10px 0;border-radius:0 4px 4px 0;}
+.emi-box{background:#eef4ee;border-left:4px solid var(--green);padding:10px 12px;font-size:14px;margin:10px 0;border-radius:0 4px 4px 0;font-weight:700;color:var(--navy-dark);}
+.dev-credit{background:var(--navy);color:#fff;padding:10px 14px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;}
+.dev-credit.cover{background:none;color:var(--navy);border:1px solid var(--gold);margin:16px auto 0;max-width:90%;}
+.letter-block{border:1px solid var(--line);padding:20px;border-radius:4px;background:#fff;font-size:14.5px;}
+.letter-block p{margin:10px 0;}
 .section-anchor{scroll-margin-top:70px;}
 .hidden{display:none !important;}
 .small{font-size:12px;}
-.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
 .searchbox{position:relative;}
 .activity-list{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);}
-.activity-list .act-cat{background:#eee8d8;padding:5px 10px;font-weight:700;font-size:12px;color:var(--navy-dark);position:sticky;top:0;}
 .activity-list .act-item{padding:8px 10px;border-bottom:1px solid #efece0;cursor:pointer;font-size:14px;}
 .activity-list .act-item:hover, .activity-list .act-item.sel{background:#f3efe2;}
-.two-col-inline{display:flex;gap:8px;align-items:center;}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);margin-top:8px;}
 @media print{
   header.topbar,.no-print{display:none !important;}
@@ -124,7 +125,6 @@ table tr.total td{font-weight:700;background:#f3efe2;}
   .card{border:none;box-shadow:none;padding:0;margin-bottom:14px;page-break-inside:avoid;}
   .report-page{padding:0;}
   table{font-size:11px;}
-  .section-anchor{page-break-before:auto;}
 }
 </style>
 </head>
@@ -133,9 +133,10 @@ table tr.total td{font-weight:700;background:#f3efe2;}
   <header class="topbar">
     <div class="brand">
       <b id="topbarTitle">MSME Project Report Generator</b>
-      <span id="topbarSub">Offline • v1.4</span>
+      <span id="topbarSub">Offline • v1.5</span>
     </div>
     <div class="no-print" style="display:flex;gap:8px;">
+      <button class="nav-btn lang-btn" id="langBtn" onclick="toggleLang()">हिंदी</button>
       <button class="nav-btn" onclick="goDashboard()">Dashboard</button>
       <button class="nav-btn" id="saveTopBtn" onclick="saveCurrentProject()" style="display:none;">Save</button>
     </div>
@@ -146,33 +147,133 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 <script>
 /* ============================================================
    MSME OFFLINE PROJECT REPORT GENERATOR
-   Developed by Anil Sharma, Former General Manager, Central Bank of India.
+   Developed by Anil Sharma, Former General Manager, Central Bank of India,
+   and National Resource Person, NIRD&PR.
    100% offline. No server, login or external API calls.
    ============================================================ */
-const APP_VERSION = "1.4";
+const APP_VERSION = "1.5";
 const STORAGE_KEY = "msme_prg_projects_v1";
 const SETTINGS_KEY = "msme_prg_settings_v1";
+let LANG = 'en';
+let currentScreenRenderer = null;
+const BYLINE = {
+  en:"Developed by Anil Sharma, Former General Manager, Central Bank of India, and National Resource Person, NIRD&PR.",
+  hi:"विकासकर्ता: अनिल शर्मा, पूर्व महाप्रबंधक, सेंट्रल बैंक ऑफ इंडिया एवं नेशनल रिसोर्स पर्सन, NIRD&PR."
+};
+function byline(){ return BYLINE[LANG]; }
+function toggleLang(){
+  LANG = LANG==='en' ? 'hi' : 'en';
+  document.getElementById('langBtn').textContent = LANG==='en' ? 'हिंदी' : 'English';
+  document.getElementById('topbarTitle').textContent = tt('appTitle');
+  if(currentScreenRenderer) currentScreenRenderer();
+}
+/* ---------------- i18n dictionary: key -> [en, hi] ---------------- */
+const I18N = {
+  appTitle:["MSME Project Report Generator","एमएसएमई परियोजना रिपोर्ट जनरेटर"],
+  newProject:["+ New Project","+ नई परियोजना"],
+  loadSamples:["Load Sample Projects","नमूना परियोजनाएँ लोड करें"],
+  importProject:["Import Project","परियोजना आयात करें"],
+  settingsBtn:["Settings / Default Assumptions","सेटिंग्स / डिफ़ॉल्ट मान्यताएँ"],
+  savedProjects:["Saved Projects","सहेजी गई परियोजनाएँ"],
+  noProjects:["No saved projects yet. Start a new project or load sample projects to explore the app.","अभी तक कोई सहेजी गई परियोजना नहीं है। नई परियोजना शुरू करें या नमूना परियोजनाएँ लोड करें।"],
+  open:["Open","खोलें"], duplicate:["Duplicate","डुप्लिकेट करें"], exportBtn:["Export","निर्यात करें"], deleteBtn:["Delete","हटाएँ"],
+  offlineNote:["100% offline. Data stays only on this device (browser storage).","100% ऑफलाइन। डेटा केवल इसी डिवाइस पर सुरक्षित रहता है।"],
+  save:["Save","सहेजें"],
+  tagline:["Ask less. Calculate more. Show assumptions. Explain clearly.","कम पूछें। अधिक गणना करें। मान्यताएँ दिखाएँ। स्पष्ट रूप से समझाएँ।"],
+  taglineSub:["Enter Borrower Details, Activity, Loan Requirement and Sales Projection — the rest is calculated automatically using transparent, editable assumptions.","उधारकर्ता विवरण, गतिविधि, ऋण आवश्यकता और बिक्री अनुमान दर्ज करें — शेष सभी गणना पारदर्शी, संपादन-योग्य मान्यताओं का उपयोग करके स्वतः हो जाएगी।"],
+  stepBorrower:["Borrower Details","उधारकर्ता विवरण"],
+  stepActivity:["Business Activity","व्यवसाय गतिविधि"],
+  stepLoan:["Loan Requirement","ऋण आवश्यकता"],
+  stepSales:["Sales Projection","बिक्री अनुमान"],
+  stepLoanTerms:["Loan Terms","ऋण शर्तें"],
+  borrowerName:["Borrower Name *","उधारकर्ता का नाम *"],
+  businessName:["Business Name *","व्यवसाय का नाम *"],
+  constitution:["Constitution","गठन प्रकार"],
+  mobile:["Mobile","मोबाइल"],
+  address:["Address","पता"],
+  businessStatus:["Business Status","व्यवसाय स्थिति"],
+  businessExperience:["Business Experience","व्यावसायिक अनुभव"],
+  udyam:["Udyam Registration (if available)","उद्यम पंजीकरण (यदि उपलब्ध हो)"],
+  gstin:["GSTIN (if applicable)","जीएसटीएन (यदि लागू हो)"],
+  bankBranch:["Bank / Branch (if required)","बैंक / शाखा (यदि आवश्यक हो)"],
+  next:["Next","आगे"], back:["Back","पीछे"], cancel:["Cancel","रद्द करें"],
+  reviewAssumptions:["Review Assumptions","मान्यताएँ देखें"],
+  cat_Trading:["Trading","व्यापार"], cat_Manufacturing:["Manufacturing","विनिर्माण"], cat_Services:["Services","सेवाएँ"],
+  searchActivity:["Search activity...","गतिविधि खोजें..."],
+  notListed:["My activity is not listed — enter manually and pick the nearest financial model","मेरी गतिविधि सूची में नहीं है — मैन्युअल रूप से दर्ज करें और निकटतम वित्तीय मॉडल चुनें"],
+  activityNameLabel:["Activity Name","गतिविधि का नाम"],
+  nearestModel:["Nearest Financial Model","निकटतम वित्तीय मॉडल"],
+  selectedLabel:["Selected:","चयनित:"], none:["None","कोई नहीं"], modelWord:["financial model:","वित्तीय मॉडल:"],
+  totalLoanRequired:["Total Loan Required (₹) *","कुल आवश्यक ऋण (₹) *"],
+  purposeOfLoan:["Purpose of Loan","ऋण का उद्देश्य"],
+  termLoanAmount:["Term Loan Amount (₹, if known)","मीयादी ऋण राशि (₹, यदि ज्ञात हो)"],
+  wcAmount:["Working Capital Amount (₹, if known)","कार्यशील पूंजी राशि (₹, यदि ज्ञात हो)"],
+  loanSplitNote:["If Term Loan / Working Capital split is not known, leave blank — the app will estimate the split using the Turnover Method and fixed-asset assumptions.","यदि मीयादी ऋण / कार्यशील पूंजी का विभाजन ज्ञात नहीं है, तो खाली छोड़ दें — ऐप टर्नओवर पद्धति और स्थिर संपत्ति मान्यताओं के आधार पर विभाजन का अनुमान लगाएगा।"],
+  salesModeDirect:["Enter 3-Year Sales Directly","3 वर्षों की बिक्री सीधे दर्ज करें"],
+  salesModeGrowth:["Current Sales + Growth %","वर्तमान बिक्री + वृद्धि %"],
+  currentYearSales:["Current Year Projected Sales (₹)","चालू वर्ष अनुमानित बिक्री (₹)"],
+  followingYearSales:["Following Year Projected Sales (₹)","अगले वर्ष अनुमानित बिक्री (₹)"],
+  nextYearSales:["Next Year Projected Sales (₹)","तीसरे वर्ष अनुमानित बिक्री (₹)"],
+  currentAnnualSales:["Current Annual Sales (₹)","वर्तमान वार्षिक बिक्री (₹)"],
+  growthPctLabel:["Expected Annual Growth (%)","अपेक्षित वार्षिक वृद्धि (%)"],
+  growthNote:["Subsequent years will be calculated automatically. You can still override any year on the Assumptions screen.","अगले वर्षों की गणना स्वतः हो जाएगी। आप मान्यता स्क्रीन पर किसी भी वर्ष को बदल भी सकते हैं।"],
+  interestRate:["Interest Rate (% p.a.)","ब्याज दर (% प्रति वर्ष)"],
+  repaymentPeriod:["Repayment Period (Years)","चुकौती अवधि (वर्ष)"],
+  moratorium:["Moratorium (Months)","स्थगन अवधि (महीने)"],
+  instalmentFreq:["Instalment Frequency","किस्त आवृत्ति"],
+  loanTermsNote:["These are editable defaults. The Repayment Schedule uses equal-principal instalments for full transparency; an equivalent Equal Monthly Instalment (EMI) figure is also shown below.","ये संपादन-योग्य डिफ़ॉल्ट मान हैं। चुकौती अनुसूची पूर्ण पारदर्शिता हेतु समान-मूलधन किस्तों पर आधारित है; समतुल्य समान मासिक किस्त (ईएमआई) राशि नीचे दर्शाई गई है।"],
+  emiPreview:["Indicative Equal Monthly Instalment (EMI)","अनुमानित समान मासिक किस्त (ईएमआई)"],
+  perMonth:["per month","प्रति माह"],
+  assumptionsUsed:["Assumptions Used","उपयोग की गई मान्यताएँ"],
+  modelLabel:["Model:","मॉडल:"], activityLabel:["Activity:","गतिविधि:"],
+  resetDefaults:["Reset to Model Defaults","मॉडल डिफ़ॉल्ट पर रीसेट करें"],
+  assumptionNote:["Changing any assumption immediately recalculates the complete financial model, project report and ratios. Nothing is hidden.","किसी भी मान्यता को बदलने पर पूरा वित्तीय मॉडल, परियोजना रिपोर्ट और अनुपात तुरंत पुनर्गणित हो जाते हैं। कुछ भी छिपाया नहीं जाता।"],
+  backToWizard:["Back to Wizard","विज़ार्ड पर वापस जाएँ"],
+  continueProjectCost:["Continue → Project Cost","आगे बढ़ें → परियोजना लागत"],
+  defaultTag:["Default","डिफ़ॉल्ट"], modifiedTag:["Modified","संशोधित"],
+  projectCostTitle:["Project Cost","परियोजना लागत"],
+  meansOfFinanceTitle:["Means of Finance","वित्त के साधन"],
+  land:["Land","भूमि"], building:["Building","भवन"], machinery:["Machinery / Equipment","मशीनरी / उपकरण"],
+  furniture:["Furniture","फर्नीचर"], vehicle:["Vehicle","वाहन"], preliminary:["Preliminary Expenses","प्रारंभिक व्यय"],
+  otherFixedAssets:["Other Fixed Assets","अन्य स्थिर संपत्तियाँ"], wcMargin:["Working Capital Margin (Turnover Method)","कार्यशील पूंजी मार्जिन (टर्नओवर पद्धति)"],
+  totalProjectCostRow:["Total Project Cost","कुल परियोजना लागत"],
+  promoterContribution:["Promoter Contribution","प्रवर्तक अंशदान"],
+  termLoanRow:["Term Loan","मीयादी ऋण"], wcFinanceRow:["Working Capital Finance","कार्यशील पूंजी वित्त"],
+  otherSourcesRow:["Other Sources","अन्य स्रोत"], subsidyRow:["Subsidy","सब्सिडी"],
+  totalMeansRow:["Total Means of Finance","वित्त के कुल साधन"],
+  componentHdr:["Component","विवरण"], amountHdr:["Amount","राशि"], sourceHdr:["Source","स्रोत"],
+  indicativeNote:["Indicative — user should modify if actual figures are available.","अनुमानित — वास्तविक आंकड़े उपलब्ध होने पर संशोधित करें।"],
+  balanceNote:["Total Project Cost equals Total Means of Finance by construction — no unexplained balancing figure is used.","कुल परियोजना लागत, वित्त के कुल साधनों के बराबर है — कोई अस्पष्ट संतुलन आंकड़ा उपयोग नहीं किया गया।"],
+  generateReport:["Generate Full Report","पूर्ण रिपोर्ट तैयार करें"],
+  backToEditing:["Back to Editing","संपादन पर वापस जाएँ"],
+  printSave:["Print / Save as PDF","प्रिंट करें / पीडीएफ के रूप में सहेजें"],
+  viewFull:["View Full Report (All Sections)","पूर्ण रिपोर्ट देखें (सभी खंड)"],
+  version:["Version","संस्करण"],
+  dashTitleSub:["Offline","ऑफलाइन"]
+};
+function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
 
 /* ---------------- Financial Models ---------------- */
 /* Every % is "of Sales" unless noted. Days are on a 365-day year. */
 const MODELS = {
-  fastMovingRetail:{ label:"Fast-Moving Retail (Grocery / Kirana)", costOfSales:85, employee:3, rent:3, electricity:1, transport:1, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:30, debtorDays:5, creditorDays:20, deprRate:10 },
-  garmentFootwearRetail:{ label:"Garment / Footwear Retail", costOfSales:65, employee:8, rent:5, electricity:1.5, transport:1, admin:1.5, selling:2, repairs:0.5, otherOpex:1, stockDays:60, debtorDays:10, creditorDays:30, deprRate:10 },
-  hardwareBuilding:{ label:"Hardware / Building Material Trading", costOfSales:80, employee:4, rent:3, electricity:1, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:45, debtorDays:20, creditorDays:30, deprRate:10 },
-  agriTrading:{ label:"Agricultural Inputs / Produce Trading", costOfSales:88, employee:2, rent:1, electricity:0.5, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:20, debtorDays:10, creditorDays:15, deprRate:10 },
-  foodProcessing:{ label:"Food Processing (Mills / Oil / Processing)", costOfSales:65, employee:10, rent:2, electricity:3, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:20, creditorDays:20, deprRate:15 },
-  bakeryFood:{ label:"Bakery / Sweets / Snacks Manufacturing", costOfSales:55, employee:15, rent:3, electricity:4, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:15, debtorDays:10, creditorDays:15, deprRate:15 },
-  textileGarments:{ label:"Textile / Garment Manufacturing", costOfSales:60, employee:15, rent:2, electricity:3, transport:1, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
-  furnitureWood:{ label:"Furniture / Wood Products", costOfSales:60, employee:15, rent:2, electricity:2, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
-  engineeringFab:{ label:"Engineering / Fabrication / Welding", costOfSales:60, employee:15, rent:2, electricity:3, transport:2, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:25, deprRate:15 },
-  constructionProducts:{ label:"Construction Products (Bricks/Blocks/Precast)", costOfSales:55, employee:15, rent:2, electricity:4, transport:3, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:20, debtorDays:30, creditorDays:20, deprRate:15 },
-  personalServices:{ label:"Personal Services (Salon / Tailoring / Laundry)", costOfSales:25, employee:25, rent:8, electricity:4, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:3, creditorDays:5, deprRate:15 },
-  repairServices:{ label:"Repair Services (Mobile/Electronics/Auto)", costOfSales:40, employee:20, rent:5, electricity:3, transport:2, admin:2, selling:1, repairs:1, otherOpex:1, stockDays:15, debtorDays:5, creditorDays:15, deprRate:15 },
-  transport:{ label:"Transport / Goods Vehicle", costOfSales:55, employee:15, rent:1, electricity:0.5, transport:5, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:5, debtorDays:15, creditorDays:10, deprRate:20 },
-  foodServices:{ label:"Food Services (Restaurant / Dhaba / Tea Stall)", costOfSales:40, employee:20, rent:8, electricity:5, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:2, creditorDays:10, deprRate:15 },
-  digitalServices:{ label:"Digital / Business Services", costOfSales:20, employee:30, rent:6, electricity:3, transport:1, admin:3, selling:3, repairs:1, otherOpex:2, stockDays:0, debtorDays:20, creditorDays:10, deprRate:20 },
-  rentalLogistics:{ label:"Equipment Rental / Warehousing / Logistics", costOfSales:35, employee:15, rent:3, electricity:2, transport:3, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:10, debtorDays:20, creditorDays:15, deprRate:15 }
+  fastMovingRetail:{ label:"Fast-Moving Retail (Grocery / Kirana)", labelHi:"तीव्र-गति खुदरा व्यापार (किराना)", costOfSales:85, employee:3, rent:3, electricity:1, transport:1, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:30, debtorDays:5, creditorDays:20, deprRate:10 },
+  garmentFootwearRetail:{ label:"Garment / Footwear Retail", labelHi:"वस्त्र / जूता खुदरा व्यापार", costOfSales:65, employee:8, rent:5, electricity:1.5, transport:1, admin:1.5, selling:2, repairs:0.5, otherOpex:1, stockDays:60, debtorDays:10, creditorDays:30, deprRate:10 },
+  hardwareBuilding:{ label:"Hardware / Building Material Trading", labelHi:"हार्डवेयर / भवन निर्माण सामग्री व्यापार", costOfSales:80, employee:4, rent:3, electricity:1, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:45, debtorDays:20, creditorDays:30, deprRate:10 },
+  agriTrading:{ label:"Agricultural Inputs / Produce Trading", labelHi:"कृषि आदान / उपज व्यापार", costOfSales:88, employee:2, rent:1, electricity:0.5, transport:2, admin:1, selling:1, repairs:0.5, otherOpex:0.5, stockDays:20, debtorDays:10, creditorDays:15, deprRate:10 },
+  foodProcessing:{ label:"Food Processing (Mills / Oil / Processing)", labelHi:"खाद्य प्रसंस्करण (मिल / तेल / प्रसंस्करण)", costOfSales:65, employee:10, rent:2, electricity:3, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:20, creditorDays:20, deprRate:15 },
+  bakeryFood:{ label:"Bakery / Sweets / Snacks Manufacturing", labelHi:"बेकरी / मिठाई / नमकीन निर्माण", costOfSales:55, employee:15, rent:3, electricity:4, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:15, debtorDays:10, creditorDays:15, deprRate:15 },
+  textileGarments:{ label:"Textile / Garment Manufacturing", labelHi:"वस्त्र निर्माण", costOfSales:60, employee:15, rent:2, electricity:3, transport:1, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
+  furnitureWood:{ label:"Furniture / Wood Products", labelHi:"फर्नीचर / लकड़ी उत्पाद", costOfSales:60, employee:15, rent:2, electricity:2, transport:2, admin:2, selling:2, repairs:1, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:20, deprRate:15 },
+  engineeringFab:{ label:"Engineering / Fabrication / Welding", labelHi:"इंजीनियरिंग / फैब्रिकेशन / वेल्डिंग", costOfSales:60, employee:15, rent:2, electricity:3, transport:2, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:30, debtorDays:30, creditorDays:25, deprRate:15 },
+  constructionProducts:{ label:"Construction Products (Bricks/Blocks/Precast)", labelHi:"निर्माण उत्पाद (ईंट/ब्लॉक/प्रीकास्ट)", costOfSales:55, employee:15, rent:2, electricity:4, transport:3, admin:2, selling:1, repairs:2, otherOpex:1, stockDays:20, debtorDays:30, creditorDays:20, deprRate:15 },
+  personalServices:{ label:"Personal Services (Salon / Tailoring / Laundry)", labelHi:"व्यक्तिगत सेवाएँ (सैलून / दर्जी / लॉन्ड्री)", costOfSales:25, employee:25, rent:8, electricity:4, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:3, creditorDays:5, deprRate:15 },
+  repairServices:{ label:"Repair Services (Mobile/Electronics/Auto)", labelHi:"मरम्मत सेवाएँ (मोबाइल/इलेक्ट्रॉनिक्स/वाहन)", costOfSales:40, employee:20, rent:5, electricity:3, transport:2, admin:2, selling:1, repairs:1, otherOpex:1, stockDays:15, debtorDays:5, creditorDays:15, deprRate:15 },
+  transport:{ label:"Transport / Goods Vehicle", labelHi:"परिवहन / माल वाहन", costOfSales:55, employee:15, rent:1, electricity:0.5, transport:5, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:5, debtorDays:15, creditorDays:10, deprRate:20 },
+  foodServices:{ label:"Food Services (Restaurant / Dhaba / Tea Stall)", labelHi:"खाद्य सेवाएँ (रेस्तरां / ढाबा / चाय स्टॉल)", costOfSales:40, employee:20, rent:8, electricity:5, transport:1, admin:2, selling:2, repairs:1, otherOpex:2, stockDays:7, debtorDays:2, creditorDays:10, deprRate:15 },
+  digitalServices:{ label:"Digital / Business Services", labelHi:"डिजिटल / व्यवसाय सेवाएँ", costOfSales:20, employee:30, rent:6, electricity:3, transport:1, admin:3, selling:3, repairs:1, otherOpex:2, stockDays:0, debtorDays:20, creditorDays:10, deprRate:20 },
+  rentalLogistics:{ label:"Equipment Rental / Warehousing / Logistics", labelHi:"उपकरण किराया / भंडारण / रसद", costOfSales:35, employee:15, rent:3, electricity:2, transport:3, admin:2, selling:1, repairs:3, otherOpex:2, stockDays:10, debtorDays:20, creditorDays:15, deprRate:15 }
 };
+function modelLabel(key){ const m = MODELS[key]; if(!m) return key; return LANG==='hi' ? m.labelHi : m.label; }
 
 /* ---------------- Activity Library ---------------- */
 const ACTIVITIES = [
@@ -294,9 +395,9 @@ function persistAllProjects(list){ localStorage.setItem(STORAGE_KEY, JSON.string
 function uid(){ return 'p'+Date.now()+Math.random().toString(16).slice(2,8); }
 
 /* ---------------- App State ---------------- */
-let current = null; // active project object (in-memory, editable)
+let current = null;
 let wizardStep = 1;
-let reportTab = 'cover';
+let reportTab = 'application';
 
 function blankProject(){
   const m = getSettings();
@@ -307,10 +408,11 @@ function blankProject(){
     activityCategory:"", activityName:"", activityModel:"", customActivity:false,
     loan:{ total:0, purpose:"New Business", termLoan:0, wcLoan:0 },
     sales:{ mode:"direct", y1:0, y2:0, y3:0, currentSales:0, growthPct:10 },
-    assumptions:null, // filled from model, editable per-project; null means "use model default"
+    assumptions:null,
     settings: JSON.parse(JSON.stringify(m)),
     loanTerms:{ interestRatePct:m.interestRatePct, tenureYears:m.tenureYears, moratoriumMonths:m.moratoriumMonths, instalmentFreq:m.instalmentFreq },
-    openingCash:0
+    openingCash:0,
+    application:{ bankName:"", place:"", date:new Date().toISOString().slice(0,10) }
   };
 }
 
@@ -328,7 +430,6 @@ function inr(n){
 }
 function pct(n,dp){ if(n===null||n===undefined||isNaN(n)) return "—"; return (Math.round(n*Math.pow(10,dp||1))/Math.pow(10,dp||1))+"%"; }
 function num(n){ return (n===null||n===undefined||isNaN(n))?0:n; }
-function daysFmt(n){ return n+" days"; }
 
 /* ============================================================
    CALCULATION ENGINE
@@ -352,15 +453,20 @@ function getSalesSeries(p){
   }
   return [num(p.sales.y1), num(p.sales.y2), num(p.sales.y3)];
 }
+function computeEMI(principal, annualRatePct, months){
+  if(principal<=0 || months<=0) return 0;
+  const r = annualRatePct/100/12;
+  if(r===0) return principal/months;
+  const f = Math.pow(1+r, months);
+  return principal*r*f/(f-1);
+}
 
 function calculate(p){
   const a = getAssumptions(p);
   const s = p.settings;
   const sales = getSalesSeries(p);
-  const years = [1,2,3];
 
-  // ---- P&L ----
-  const pnl = years.map((yr,i)=>{
+  const pnl = [0,1,2].map(i=>{
     const S = sales[i];
     const cos = S*a.costOfSales/100;
     const gp = S-cos;
@@ -372,7 +478,6 @@ function calculate(p){
     return {sales:S,cos,gp,employee,rent,elec,transport,admin,selling,repairs,other,totalOpex,ebitda};
   });
 
-  // ---- Project cost & means of finance ----
   const termLoan = num(p.loan.termLoan) || num(p.loan.total);
   const fixedAssetReq = s.promoterMarginFixedPct<100 ? termLoan/(1-s.promoterMarginFixedPct/100) : termLoan;
   const promoterMarginFixed = fixedAssetReq - termLoan;
@@ -383,7 +488,7 @@ function calculate(p){
     vehicle: fixedAssetReq*split.vehicle/100, preliminary: fixedAssetReq*split.preliminary/100,
     other: fixedAssetReq*split.other/100
   };
-  const grossBlock = fixedAssetReq - fa.land; // land not depreciated
+  const grossBlock = fixedAssetReq - fa.land;
 
   const y1Sales = sales[0];
   const wcReq = y1Sales*s.wcTurnoverPct/100;
@@ -398,7 +503,6 @@ function calculate(p){
     total: promoterContributionTotal+termLoan+wcBank
   };
 
-  // ---- Operating cycle method (per year) ----
   const opCycle = pnl.map((row,i)=>{
     const S = sales[i];
     const inventory = row.cos*a.stockDays/365;
@@ -412,8 +516,7 @@ function calculate(p){
     return {inventory,receivables,otherCA,creditors,otherCL,gap,borrowerContribution,bankFinance};
   });
 
-  // ---- Loan repayment schedule (Term Loan, equal principal, monthly) ----
-  const tenureMonths = Math.round(s?.tenureYears ? p.loanTerms.tenureYears*12 : p.loanTerms.tenureYears*12) || (p.loanTerms.tenureYears*12);
+  const tenureMonths = p.loanTerms.tenureYears*12;
   const moraMonths = num(p.loanTerms.moratoriumMonths);
   const rate = num(p.loanTerms.interestRatePct)/100/12;
   const repayMonths = Math.max(tenureMonths - moraMonths,1);
@@ -428,7 +531,6 @@ function calculate(p){
     bal = bal - principal;
     schedule.push({month:m, open:openBal, interest, principal, close:bal, inMoratorium: m<=moraMonths});
   }
-  // annualize into 3 yearly buckets (12 months each)
   function yearBucket(yr){
     const from=(yr-1)*12+1, to=yr*12;
     const rows = schedule.filter(r=>r.month>=from && r.month<=to);
@@ -439,21 +541,15 @@ function calculate(p){
     return {openBal,closeBal,interest,principal};
   }
   const tlYearly = [1,2,3].map(yearBucket);
+  const emi = computeEMI(termLoan, p.loanTerms.interestRatePct, repayMonths);
 
-  // WC interest per year (utilised = year's assessed bank finance under turnover method, revolving)
   const wcYearly = sales.map(S=> S*s.wcBankPct/100);
   const wcInterestYearly = wcYearly.map(w=> w*num(p.loanTerms.interestRatePct)/100);
 
-  // ---- Depreciation (WDV) per year ----
   let wdv = grossBlock;
   const deprYearly = [];
-  for(let i=0;i<3;i++){
-    const d = wdv*a.deprRate/100;
-    deprYearly.push(d);
-    wdv = wdv-d;
-  }
+  for(let i=0;i<3;i++){ const d = wdv*a.deprRate/100; deprYearly.push(d); wdv = wdv-d; }
 
-  // ---- Full P&L with interest, depreciation, tax ----
   const pnlFull = pnl.map((row,i)=>{
     const depr = deprYearly[i];
     const interest = tlYearly[i].interest + wcInterestYearly[i];
@@ -463,20 +559,16 @@ function calculate(p){
     return Object.assign({}, row, {depr, interest, pbt, tax, pat, termInterest:tlYearly[i].interest, wcInterest:wcInterestYearly[i]});
   });
 
-  // ---- Owner drawings & retained earnings ----
   let cumRE = 0;
   const drawingsYearly = pnlFull.map(r=> Math.max(r.pat,0)*s.ownerDrawingsPct/100);
   const reYearly = pnlFull.map((r,i)=>{ cumRE += (r.pat - drawingsYearly[i]); return cumRE; });
 
-  // ---- Net Fixed Assets per year ----
-  let nfaOpen = grossBlock;
   const nfaYearly = [];
   for(let i=0;i<3;i++){
     const close = (i===0?grossBlock:nfaYearly[i-1].close) - deprYearly[i];
     nfaYearly.push({open:(i===0?grossBlock:nfaYearly[i-1].close), close});
   }
 
-  // ---- Cash flow (indirect) ----
   let cash = num(p.openingCash);
   const cashFlow = [];
   for(let i=0;i<3;i++){
@@ -496,28 +588,21 @@ function calculate(p){
     const net = operating+investing+financing;
     const closing = cash+net;
     cashFlow.push({operating,investing,financing,net,opening:cash,closing,
-      termLoanDisb,termPrincipalRepaid,promoterInfusion,wcChg,drawings,
-      opChgInv,opChgRec,opChgOCA,opChgCred,opChgOCL});
+      termLoanDisb,termPrincipalRepaid,promoterInfusion,wcChg,drawings});
     cash = closing;
   }
 
-  // ---- Balance Sheet ----
   const balanceSheet = [0,1,2].map(i=>{
-    const assets = {
-      nfa: nfaYearly[i].close, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
-      cash: cashFlow[i].closing, otherCA: opCycle[i].otherCA
-    };
+    const assets = { nfa: nfaYearly[i].close, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
+      cash: cashFlow[i].closing, otherCA: opCycle[i].otherCA };
     assets.total = assets.nfa+assets.inventory+assets.receivables+assets.cash+assets.otherCA;
     const promoterCapital = promoterContributionTotal;
-    const liabilities = {
-      promoterCapital, retainedEarnings: reYearly[i], termLoan: tlYearly[i].closeBal,
-      wcBorrowing: wcYearly[i], creditors: opCycle[i].creditors, otherCL: opCycle[i].otherCL
-    };
+    const liabilities = { promoterCapital, retainedEarnings: reYearly[i], termLoan: tlYearly[i].closeBal,
+      wcBorrowing: wcYearly[i], creditors: opCycle[i].creditors, otherCL: opCycle[i].otherCL };
     liabilities.total = promoterCapital+reYearly[i]+tlYearly[i].closeBal+wcYearly[i]+opCycle[i].creditors+opCycle[i].otherCL;
     return {assets, liabilities, diff: assets.total-liabilities.total};
   });
 
-  // ---- DSCR ----
   const dscrYearly = pnlFull.map((r,i)=>{
     const cashAccrual = r.pat + r.depr;
     const debtService = r.termInterest + tlYearly[i].principal;
@@ -528,7 +613,6 @@ function calculate(p){
   const avgDscr = validDscr.length? validDscr.reduce((a,b)=>a+b,0)/validDscr.length : null;
   const minDscr = validDscr.length? Math.min(...validDscr) : null;
 
-  // ---- Ratios ----
   const ratios = [0,1,2].map(i=>{
     const bs = balanceSheet[i], r = pnlFull[i];
     const ca = bs.assets.inventory+bs.assets.receivables+bs.assets.cash+bs.assets.otherCA;
@@ -544,11 +628,9 @@ function calculate(p){
     const npMargin = r.sales>0? (r.pat/r.sales)*100 : null;
     const interestCoverage = r.interest>0? r.ebitda/r.interest : null;
     return {currentRatio,debtEquity,tolTnw,gpMargin,ebitdaMargin,npMargin,interestCoverage,
-      stockDays:a.stockDays, debtorDays:a.debtorDays, creditorDays:a.creditorDays,
-      wcCycle:a.stockDays+a.debtorDays-a.creditorDays};
+      stockDays:a.stockDays, debtorDays:a.debtorDays, creditorDays:a.creditorDays, wcCycle:a.stockDays+a.debtorDays-a.creditorDays};
   });
 
-  // ---- Break-even ----
   const breakeven = pnlFull.map((r,i)=>{
     const S = sales[i];
     const variable = r.cos + r.transport + r.selling;
@@ -560,27 +642,26 @@ function calculate(p){
     return {fixed,variable,contribution,pvRatio:pvRatio*100,beSales,bePct};
   });
 
-  // ---- Validation checklist ----
   const checklist = [];
-  checklist.push({label:"Borrower & Activity Details", pass: !!(p.borrower.name && p.activityModel)});
-  checklist.push({label:"Sales Projection Entered", pass: sales.every(v=>v>0)});
-  checklist.push({label:"Assumptions Reviewed", pass:true});
-  checklist.push({label:"Project Cost = Means of Finance", pass: Math.abs(totalProjectCost-meansOfFinance.total)<1});
-  checklist.push({label:"Working Capital Calculated", pass: wcReq>0});
-  checklist.push({label:"Profit & Loss Calculated", pass: pnlFull.every(r=>!isNaN(r.pat))});
-  checklist.push({label:"Balance Sheet Balanced", pass: balanceSheet.every(b=>Math.abs(b.diff)<2)});
-  checklist.push({label:"Cash Flow Calculated", pass: cashFlow.every(c=>!isNaN(c.closing))});
-  checklist.push({label:"Repayment Schedule Calculated", pass: termLoan>=0});
-  checklist.push({label:"Ratios Calculated", pass: ratios.every(r=>r!==null)});
+  checklist.push({key:"chkBorrower", pass: !!(p.borrower.name && p.activityModel)});
+  checklist.push({key:"chkSales", pass: sales.every(v=>v>0)});
+  checklist.push({key:"chkAssump", pass:true});
+  checklist.push({key:"chkCost", pass: Math.abs(totalProjectCost-meansOfFinance.total)<1});
+  checklist.push({key:"chkWC", pass: wcReq>0});
+  checklist.push({key:"chkPnl", pass: pnlFull.every(r=>!isNaN(r.pat))});
+  checklist.push({key:"chkBS", pass: balanceSheet.every(b=>Math.abs(b.diff)<2)});
+  checklist.push({key:"chkCF", pass: cashFlow.every(c=>!isNaN(c.closing))});
+  checklist.push({key:"chkRepay", pass: termLoan>=0});
+  checklist.push({key:"chkRatios", pass: ratios.every(r=>r!==null)});
   const allPass = checklist.every(c=>c.pass);
-  checklist.push({label:"Report Ready", pass: allPass});
+  checklist.push({key:"chkReady", pass: allPass});
 
   return {
     a, sales, pnl:pnlFull, fixedAssetReq, promoterMarginFixed, fa, grossBlock,
     wcReq, wcNwc, wcBank, totalProjectCost, meansOfFinance, opCycle,
     schedule, tlYearly, wcYearly, wcInterestYearly, deprYearly, nfaYearly,
     drawingsYearly, reYearly, cashFlow, balanceSheet, dscrYearly, avgDscr, minDscr,
-    ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths
+    ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths, emi, repayMonths
   };
 }
 
@@ -590,45 +671,47 @@ function calculate(p){
 function goDashboard(){
   wizardStep=1; current=null;
   document.getElementById('saveTopBtn').style.display='none';
-  document.getElementById('topbarSub').textContent = "Offline • v"+APP_VERSION;
   renderDashboard();
 }
 function renderDashboard(){
+  currentScreenRenderer = renderDashboard;
+  document.getElementById('topbarSub').textContent = tt('dashTitleSub')+" • v"+APP_VERSION;
+  document.getElementById('topbarTitle').textContent = tt('appTitle');
   const projects = loadAllProjects();
-  let html = `<div class="card">
-    <h2>MSME Project Report Generator</h2>
-    <p class="muted">Ask less. Calculate more. Show assumptions. Explain clearly.<br>
-    Enter Borrower Details, Activity, Loan Requirement and Sales Projection — the rest is calculated automatically using transparent, editable assumptions.</p>
+  let html = `<div class="dev-credit">${byline()}</div>
+  <div class="card">
+    <h2>${tt('appTitle')}</h2>
+    <p class="muted">${tt('tagline')}<br>${tt('taglineSub')}</p>
     <div class="btnrow">
-      <button class="btn gold" onclick="startNewProject()">+ New Project</button>
-      <button class="btn secondary" onclick="loadSampleProjects()">Load Sample Projects</button>
-      <button class="btn secondary" onclick="document.getElementById('importFile').click()">Import Project</button>
-      <button class="btn secondary" onclick="openSettingsScreen()">Settings / Default Assumptions</button>
+      <button class="btn gold" onclick="startNewProject()">${tt('newProject')}</button>
+      <button class="btn secondary" onclick="loadSampleProjects()">${tt('loadSamples')}</button>
+      <button class="btn secondary" onclick="document.getElementById('importFile').click()">${tt('importProject')}</button>
+      <button class="btn secondary" onclick="openSettingsScreen()">${tt('settingsBtn')}</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImportFile(event)">
     </div>
   </div>`;
 
-  html += `<div class="card"><h3>Saved Projects (${projects.length})</h3>`;
+  html += `<div class="card"><h3>${tt('savedProjects')} (${projects.length})</h3>`;
   if(projects.length===0){
-    html += `<p class="muted">No saved projects yet. Start a new project or load sample projects to explore the app.</p>`;
+    html += `<p class="muted">${tt('noProjects')}</p>`;
   } else {
     projects.slice().reverse().forEach(pr=>{
       html += `<div class="proj-item">
         <div class="meta">
           <b>${escapeHtml(pr.borrower.business||pr.borrower.name||"Untitled Project")} ${pr.isDemo?'<span class="demo-tag">DEMO DATA</span>':''}</b>
-          <span>${escapeHtml(pr.activityName||'')} • Loan ₹${inr(pr.loan.total).replace('₹','')} • ${new Date(pr.createdAt).toLocaleDateString('en-IN')}</span>
+          <span>${escapeHtml(pr.activityName||'')} • ${inr(pr.loan.total)} • ${new Date(pr.createdAt).toLocaleDateString('en-IN')}</span>
         </div>
         <div class="proj-actions">
-          <button class="btn secondary" onclick="openProject('${pr.id}')">Open</button>
-          <button class="btn secondary" onclick="duplicateProject('${pr.id}')">Duplicate</button>
-          <button class="btn secondary" onclick="exportProject('${pr.id}')">Export</button>
-          <button class="btn danger" onclick="deleteProjectConfirm('${pr.id}')">Delete</button>
+          <button class="btn secondary" onclick="openProject('${pr.id}')">${tt('open')}</button>
+          <button class="btn secondary" onclick="duplicateProject('${pr.id}')">${tt('duplicate')}</button>
+          <button class="btn secondary" onclick="exportProject('${pr.id}')">${tt('exportBtn')}</button>
+          <button class="btn danger" onclick="deleteProjectConfirm('${pr.id}')">${tt('deleteBtn')}</button>
         </div>
       </div>`;
     });
   }
   html += `</div>`;
-  html += `<div class="card small muted">Version ${APP_VERSION} — 100% offline. Data stays only on this device (browser storage). Developed by Anil Sharma, Former General Manager, Central Bank of India.</div>`;
+  html += `<div class="card small muted">${tt('version')} ${APP_VERSION} — ${tt('offlineNote')}<br>${byline()}</div>`;
   document.getElementById('mainArea').innerHTML = html;
 }
 function escapeHtml(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -637,6 +720,7 @@ function startNewProject(){ current = blankProject(); wizardStep=1; renderWizard
 function openProject(id){
   const pr = loadAllProjects().find(x=>x.id===id);
   if(!pr) return;
+  if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
   current = pr; wizardStep=1;
   document.getElementById('saveTopBtn').style.display='inline-block';
   renderWizard();
@@ -651,7 +735,7 @@ function duplicateProject(id){
   list.push(copy); persistAllProjects(list); renderDashboard();
 }
 function deleteProjectConfirm(id){
-  if(!confirm("Delete this project permanently from this device?")) return;
+  if(!confirm("Delete this project permanently from this device? / इस परियोजना को स्थायी रूप से हटाएँ?")) return;
   let list = loadAllProjects().filter(x=>x.id!==id);
   persistAllProjects(list); renderDashboard();
 }
@@ -672,6 +756,7 @@ function handleImportFile(ev){
     try{
       const pr = JSON.parse(e.target.result);
       pr.id = uid(); pr.createdAt = new Date().toISOString();
+      if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
       const list = loadAllProjects(); list.push(pr); persistAllProjects(list);
       renderDashboard();
     }catch(err){ alert("Could not read this file. Please select a valid exported project JSON file."); }
@@ -686,9 +771,7 @@ function loadSampleProjects(){
   const list = loadAllProjects();
   const existingDemoNames = new Set(list.filter(p=>p.isDemo).map(p=>p.borrower.business));
   let added=0;
-  samples.forEach(sp=>{
-    if(!existingDemoNames.has(sp.borrower.business)){ list.push(sp); added++; }
-  });
+  samples.forEach(sp=>{ if(!existingDemoNames.has(sp.borrower.business)){ list.push(sp); added++; } });
   persistAllProjects(list);
   alert(added+" sample project(s) added (labelled DEMO DATA – NOT FOR BANK SUBMISSION).");
   renderDashboard();
@@ -714,14 +797,16 @@ function buildSampleProjects(){
     p.activityCategory = d[1]; p.activityName = d[2]; p.activityModel = d[3];
     p.loan.total = d[4]; p.loan.termLoan = d[5]; p.loan.wcLoan = d[6]; p.loan.purpose = d[7];
     p.sales.mode = 'direct'; p.sales.y1 = d[8]; p.sales.y2 = d[9]; p.sales.y3 = d[10];
+    p.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
     return p;
   });
 }
 
 /* ---------------- Settings screen ---------------- */
 function openSettingsScreen(){
+  currentScreenRenderer = openSettingsScreen;
   const s = getSettings();
-  let html = `<div class="card"><h2>Default Assumptions & Settings</h2>
+  let html = `<div class="card"><h2>${tt('settingsBtn')}</h2>
   <p class="muted">These apply as defaults to new projects. Each project can still override its own assumptions.</p>
   <h3>Working Capital – Turnover Method (Nayak Method) Parameters</h3>
   <div class="grid">
@@ -752,8 +837,8 @@ function openSettingsScreen(){
   </div>
   <div class="note-box">These are indicative default assumptions. The applicable methodology, ratios and final sanction terms remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>
   <div class="btnrow">
-    <button class="btn gold" onclick="saveSettingsScreen()">Save Defaults</button>
-    <button class="btn secondary" onclick="goDashboard()">Cancel</button>
+    <button class="btn gold" onclick="saveSettingsScreen()">${tt('save')} Defaults</button>
+    <button class="btn secondary" onclick="goDashboard()">${tt('cancel')}</button>
   </div></div>`;
   document.getElementById('mainArea').innerHTML = html;
 }
@@ -776,12 +861,14 @@ function val(id){ return document.getElementById(id).value; }
 /* ============================================================
    WIZARD
    ============================================================ */
-const WIZARD_TITLES = ["Borrower Details","Business Activity","Loan Requirement","Sales Projection","Loan Terms"];
 function renderWizard(){
+  currentScreenRenderer = renderWizard;
   document.getElementById('saveTopBtn').style.display='inline-block';
-  document.getElementById('topbarSub').textContent = (current.borrower.business||"New Project")+" • Step "+wizardStep+" of 5";
+  document.getElementById('topbarTitle').textContent = tt('appTitle');
+  document.getElementById('topbarSub').textContent = (current.borrower.business||"New Project")+" • "+wizardStep+"/5";
   let bars = "";
   for(let i=1;i<=5;i++){ bars += `<div class="${i<wizardStep?'done':(i===wizardStep?'current':'')}"></div>`; }
+  const titles = [tt('stepBorrower'),tt('stepActivity'),tt('stepLoan'),tt('stepSales'),tt('stepLoanTerms')];
   let body = "";
   if(wizardStep===1) body = stepBorrower();
   else if(wizardStep===2) body = stepActivity();
@@ -790,12 +877,12 @@ function renderWizard(){
   else if(wizardStep===5) body = stepLoanTerms();
 
   const html = `<div class="card">
-    <h2>${WIZARD_TITLES[wizardStep-1]}</h2>
+    <h2>${titles[wizardStep-1]}</h2>
     <div class="progressbar">${bars}</div>
     ${body}
     <div class="btnrow">
-      ${wizardStep>1?`<button class="btn secondary" onclick="wizardBack()">Back</button>`:`<button class="btn secondary" onclick="goDashboard()">Cancel</button>`}
-      ${wizardStep<5?`<button class="btn gold" onclick="wizardNext()">Next</button>`:`<button class="btn gold" onclick="goToAssumptions()">Review Assumptions</button>`}
+      ${wizardStep>1?`<button class="btn secondary" onclick="wizardBack()">${tt('back')}</button>`:`<button class="btn secondary" onclick="goDashboard()">${tt('cancel')}</button>`}
+      ${wizardStep<5?`<button class="btn gold" onclick="wizardNext()">${tt('next')}</button>`:`<button class="btn gold" onclick="goToAssumptions()">${tt('reviewAssumptions')}</button>`}
     </div>
   </div>`;
   document.getElementById('mainArea').innerHTML = html;
@@ -803,39 +890,39 @@ function renderWizard(){
 function stepBorrower(){
   const b = current.borrower;
   return `<div class="grid">
-    <div><label>Borrower Name *</label><input type="text" id="w_name" value="${escapeHtml(b.name)}"></div>
-    <div><label>Business Name *</label><input type="text" id="w_business" value="${escapeHtml(b.business)}"></div>
-    <div><label>Constitution</label><select id="w_constitution">
+    <div><label>${tt('borrowerName')}</label><input type="text" id="w_name" value="${escapeHtml(b.name)}"></div>
+    <div><label>${tt('businessName')}</label><input type="text" id="w_business" value="${escapeHtml(b.business)}"></div>
+    <div><label>${tt('constitution')}</label><select id="w_constitution">
       ${["Proprietorship","Partnership","SHG/JLG","Private Limited","LLP","Other"].map(o=>`<option ${b.constitution===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
-    <div><label>Mobile</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}"></div>
-    <div style="grid-column:1/-1;"><label>Address</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea></div>
-    <div><label>Business Status</label><select id="w_existing">
+    <div><label>${tt('mobile')}</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}"></div>
+    <div style="grid-column:1/-1;"><label>${tt('address')}</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea></div>
+    <div><label>${tt('businessStatus')}</label><select id="w_existing">
       <option ${b.existing==='New'?'selected':''}>New</option><option ${b.existing==='Existing'?'selected':''}>Existing</option>
     </select></div>
-    <div><label>Business Experience</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}"></div>
-    <div><label>Udyam Registration (if available)</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}"></div>
-    <div><label>GSTIN (if applicable)</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}"></div>
-    <div style="grid-column:1/-1;"><label>Bank / Branch (if required)</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}"></div>
+    <div><label>${tt('businessExperience')}</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}"></div>
+    <div><label>${tt('udyam')}</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}"></div>
+    <div><label>${tt('gstin')}</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}"></div>
+    <div style="grid-column:1/-1;"><label>${tt('bankBranch')}</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}"></div>
   </div>`;
 }
 function stepActivity(){
   const cats = ["Trading","Manufacturing","Services"];
-  let catPills = cats.map(c=>`<div class="pill ${current.activityCategory===c?'active':''}" onclick="selectActivityCategory('${c}')">${c}</div>`).join('');
+  let catPills = cats.map(c=>`<div class="pill ${current.activityCategory===c?'active':''}" onclick="selectActivityCategory('${c}')">${tt('cat_'+c)}</div>`).join('');
   let listHtml = '';
   if(current.activityCategory){
     const items = ACTIVITIES.filter(a=>a[0]===current.activityCategory);
-    listHtml = `<div class="searchbox"><input type="text" id="actSearch" placeholder="Search activity..." oninput="filterActivityList()"></div>
+    listHtml = `<div class="searchbox"><input type="text" id="actSearch" placeholder="${tt('searchActivity')}" oninput="filterActivityList()"></div>
       <div class="activity-list" id="actList">${items.map(a=>`<div class="act-item ${current.activityName===a[1]?'sel':''}" data-name="${escapeHtml(a[1])}" onclick="selectActivity('${escapeHtml(a[1]).replace(/'/g,"\\'")}','${a[2]}')">${escapeHtml(a[1])}</div>`).join('')}</div>
-      <div class="chk"><input type="checkbox" id="w_customAct" ${current.customActivity?'checked':''} onchange="toggleCustomActivity()"> My activity is not listed — enter manually and pick the nearest financial model</div>
+      <div class="chk"><input type="checkbox" id="w_customAct" ${current.customActivity?'checked':''} onchange="toggleCustomActivity()"> ${tt('notListed')}</div>
       <div id="customActBox" class="${current.customActivity?'':'hidden'}">
-        <label>Activity Name</label><input type="text" id="w_customActName" value="${escapeHtml(current.customActivity?current.activityName:'')}">
-        <label>Nearest Financial Model</label>
-        <select id="w_customModel">${Object.keys(MODELS).map(k=>`<option value="${k}" ${current.activityModel===k?'selected':''}>${MODELS[k].label}</option>`).join('')}</select>
+        <label>${tt('activityNameLabel')}</label><input type="text" id="w_customActName" value="${escapeHtml(current.customActivity?current.activityName:'')}">
+        <label>${tt('nearestModel')}</label>
+        <select id="w_customModel">${Object.keys(MODELS).map(k=>`<option value="${k}" ${current.activityModel===k?'selected':''}>${modelLabel(k)}</option>`).join('')}</select>
       </div>`;
   }
   return `<div class="pillrow">${catPills}</div>${listHtml}
-    <p class="muted small">Selected: <b>${escapeHtml(current.activityName||'None')}</b> ${current.activityModel?('— financial model: '+MODELS[current.activityModel].label):''}</p>`;
+    <p class="muted small">${tt('selectedLabel')} <b>${escapeHtml(current.activityName||tt('none'))}</b> ${current.activityModel?('— '+tt('modelWord')+' '+modelLabel(current.activityModel)):''}</p>`;
 }
 function selectActivityCategory(c){ current.activityCategory=c; current.activityName=""; current.activityModel=""; current.customActivity=false; renderWizard(); }
 function selectActivity(name, model){ current.activityName=name; current.activityModel=model; current.customActivity=false; renderWizard(); }
@@ -849,56 +936,65 @@ function filterActivityList(){
 function stepLoan(){
   const l = current.loan;
   return `<div class="grid">
-    <div><label>Total Loan Required (₹) *</label><input type="number" id="w_loanTotal" value="${l.total||''}"></div>
-    <div><label>Purpose of Loan</label><select id="w_purpose">
+    <div><label>${tt('totalLoanRequired')}</label><input type="number" id="w_loanTotal" value="${l.total||''}"></div>
+    <div><label>${tt('purposeOfLoan')}</label><select id="w_purpose">
       ${["New Business","Expansion","Working Capital","Machinery/Equipment","Vehicle","Composite Loan","Other"].map(o=>`<option ${l.purpose===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
-    <div><label>Term Loan Amount (₹, if known)</label><input type="number" id="w_termLoan" value="${l.termLoan||''}"></div>
-    <div><label>Working Capital Amount (₹, if known)</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}"></div>
+    <div><label>${tt('termLoanAmount')}</label><input type="number" id="w_termLoan" value="${l.termLoan||''}"></div>
+    <div><label>${tt('wcAmount')}</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}"></div>
   </div>
-  <p class="muted small">If Term Loan / Working Capital split is not known, leave blank — the app will estimate the split using the Turnover Method and fixed-asset assumptions.</p>`;
+  <p class="muted small">${tt('loanSplitNote')}</p>`;
 }
 function stepSales(){
   const s = current.sales;
   return `<div class="pillrow">
-    <div class="pill ${s.mode==='direct'?'active':''}" onclick="setSalesMode('direct')">Enter 3-Year Sales Directly</div>
-    <div class="pill ${s.mode==='growth'?'active':''}" onclick="setSalesMode('growth')">Current Sales + Growth %</div>
+    <div class="pill ${s.mode==='direct'?'active':''}" onclick="setSalesMode('direct')">${tt('salesModeDirect')}</div>
+    <div class="pill ${s.mode==='growth'?'active':''}" onclick="setSalesMode('growth')">${tt('salesModeGrowth')}</div>
   </div>
   ${s.mode==='direct' ? `
   <div class="grid">
-    <div><label>Current Year Projected Sales (₹)</label><input type="number" id="w_y1" value="${s.y1||''}"></div>
-    <div><label>Following Year Projected Sales (₹)</label><input type="number" id="w_y2" value="${s.y2||''}"></div>
-    <div><label>Next Year Projected Sales (₹)</label><input type="number" id="w_y3" value="${s.y3||''}"></div>
+    <div><label>${tt('currentYearSales')}</label><input type="number" id="w_y1" value="${s.y1||''}"></div>
+    <div><label>${tt('followingYearSales')}</label><input type="number" id="w_y2" value="${s.y2||''}"></div>
+    <div><label>${tt('nextYearSales')}</label><input type="number" id="w_y3" value="${s.y3||''}"></div>
   </div>` : `
   <div class="grid">
-    <div><label>Current Annual Sales (₹)</label><input type="number" id="w_currentSales" value="${s.currentSales||''}"></div>
-    <div><label>Expected Annual Growth (%)</label><input type="number" id="w_growth" value="${s.growthPct||10}"></div>
+    <div><label>${tt('currentAnnualSales')}</label><input type="number" id="w_currentSales" value="${s.currentSales||''}"></div>
+    <div><label>${tt('growthPctLabel')}</label><input type="number" id="w_growth" value="${s.growthPct||10}"></div>
   </div>
-  <p class="muted small">Subsequent years will be calculated automatically. You can still override any year on the Assumptions screen.</p>`}`;
+  <p class="muted small">${tt('growthNote')}</p>`}`;
 }
 function setSalesMode(m){ current.sales.mode=m; renderWizard(); }
 function stepLoanTerms(){
   const t = current.loanTerms;
+  const previewMonths = Math.max(t.tenureYears*12 - t.moratoriumMonths,1);
+  const previewEmi = computeEMI(current.loan.termLoan||current.loan.total, t.interestRatePct, previewMonths);
   return `<div class="grid">
-    <div><label>Interest Rate (% p.a.)</label><input type="number" id="w_rate" value="${t.interestRatePct}"></div>
-    <div><label>Repayment Period (Years)</label><input type="number" id="w_tenure" value="${t.tenureYears}"></div>
-    <div><label>Moratorium (Months)</label><input type="number" id="w_mora" value="${t.moratoriumMonths}"></div>
-    <div><label>Instalment Frequency</label><select id="w_freq">
+    <div><label>${tt('interestRate')}</label><input type="number" id="w_rate" value="${t.interestRatePct}" onchange="wizardTermsPreview()"></div>
+    <div><label>${tt('repaymentPeriod')}</label><input type="number" id="w_tenure" value="${t.tenureYears}" onchange="wizardTermsPreview()"></div>
+    <div><label>${tt('moratorium')}</label><input type="number" id="w_mora" value="${t.moratoriumMonths}" onchange="wizardTermsPreview()"></div>
+    <div><label>${tt('instalmentFreq')}</label><select id="w_freq">
       ${["Monthly","Quarterly"].map(o=>`<option ${t.instalmentFreq===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
   </div>
-  <p class="muted small">These are editable defaults. Term loan is repaid on an equal-principal basis for full transparency of the schedule.</p>`;
+  <p class="muted small">${tt('loanTermsNote')}</p>
+  <div class="emi-box" id="emiPreviewBox">${tt('emiPreview')}: ${inr(previewEmi)} ${tt('perMonth')}</div>`;
+}
+function wizardTermsPreview(){
+  const rate = +val('w_rate')||0, tenure = +val('w_tenure')||1, mora = +val('w_mora')||0;
+  const months = Math.max(tenure*12-mora,1);
+  const emi = computeEMI(current.loan.termLoan||current.loan.total, rate, months);
+  document.getElementById('emiPreviewBox').textContent = tt('emiPreview')+': '+inr(emi)+' '+tt('perMonth');
 }
 function wizardBack(){ persistWizardStep(); wizardStep--; renderWizard(); }
 function wizardNext(){
-  if(wizardStep===1 && (!val('w_name') || !val('w_business'))){ alert("Please enter Borrower Name and Business Name."); return; }
-  if(wizardStep===2 && !current.customActivity && !current.activityModel){ alert("Please select a business activity."); return; }
+  if(wizardStep===1 && (!val('w_name') || !val('w_business'))){ alert("Please enter Borrower Name and Business Name. / कृपया उधारकर्ता व व्यवसाय का नाम भरें।"); return; }
+  if(wizardStep===2 && !current.customActivity && !current.activityModel){ alert("Please select a business activity. / कृपया व्यवसाय गतिविधि चुनें।"); return; }
   persistWizardStep();
   if(wizardStep===2 && current.customActivity){
     const nm = val('w_customActName'); if(!nm){ alert("Please enter the activity name."); return; }
     current.activityName = nm; current.activityModel = val('w_customModel');
   }
-  if(wizardStep===3 && !val('w_loanTotal')){ alert("Please enter the total loan required."); return; }
+  if(wizardStep===3 && !val('w_loanTotal')){ alert("Please enter the total loan required. / कृपया कुल आवश्यक ऋण दर्ज करें।"); return; }
   wizardStep++; renderWizard();
 }
 function persistWizardStep(){
@@ -927,31 +1023,36 @@ function goToAssumptions(){ persistWizardStep(); renderAssumptions(); }
    ASSUMPTIONS REVIEW
    ============================================================ */
 const ASSUMPTION_FIELDS = [
-  ["costOfSales","Cost of Sales (%)"],["employee","Employee Cost (% of Sales)"],["rent","Rent (% of Sales)"],
-  ["electricity","Electricity (% of Sales)"],["transport","Transport (% of Sales)"],["admin","Administrative Expenses (% of Sales)"],
-  ["selling","Selling Expenses (% of Sales)"],["repairs","Repairs & Maintenance (% of Sales)"],["otherOpex","Other Operating Expenses (% of Sales)"],
-  ["stockDays","Stock Holding (Days)"],["debtorDays","Debtor Days"],["creditorDays","Creditor Days"],["deprRate","Depreciation Rate (% WDV)"]
+  ["costOfSales","Cost of Sales (%)","बिक्री लागत (%)"],["employee","Employee Cost (% of Sales)","कर्मचारी लागत (बिक्री का %)"],
+  ["rent","Rent (% of Sales)","किराया (बिक्री का %)"],["electricity","Electricity (% of Sales)","बिजली (बिक्री का %)"],
+  ["transport","Transport (% of Sales)","परिवहन (बिक्री का %)"],["admin","Administrative Expenses (% of Sales)","प्रशासनिक व्यय (बिक्री का %)"],
+  ["selling","Selling Expenses (% of Sales)","विक्रय व्यय (बिक्री का %)"],["repairs","Repairs & Maintenance (% of Sales)","मरम्मत व रखरखाव (बिक्री का %)"],
+  ["otherOpex","Other Operating Expenses (% of Sales)","अन्य परिचालन व्यय (बिक्री का %)"],["stockDays","Stock Holding (Days)","स्टॉक अवधि (दिन)"],
+  ["debtorDays","Debtor Days","देनदार अवधि (दिन)"],["creditorDays","Creditor Days","लेनदार अवधि (दिन)"],
+  ["deprRate","Depreciation Rate (% WDV)","मूल्यह्रास दर (% WDV)"]
 ];
+function afLabel(row){ return LANG==='hi' ? row[2] : row[1]; }
 function renderAssumptions(){
+  currentScreenRenderer = renderAssumptions;
   const a = getAssumptions(current);
-  let rows = ASSUMPTION_FIELDS.map(([k,label])=>{
-    const mod = isModified(current,k);
+  let rows = ASSUMPTION_FIELDS.map(row=>{
+    const k = row[0]; const mod = isModified(current,k);
     return `<div class="assump-row">
-      <span>${label} ${mod?'<span class="badge modified">Modified</span>':'<span class="badge default">Default</span>'}</span>
+      <span>${afLabel(row)} ${mod?'<span class="badge modified">'+tt('modifiedTag')+'</span>':'<span class="badge default">'+tt('defaultTag')+'</span>'}</span>
       <span class="val"><input type="number" style="width:90px" id="asf_${k}" value="${a[k]}" onchange="assumptionChanged('${k}')"></span>
     </div>`;
   }).join('');
   const html = `<div class="card">
-    <h2>Assumptions Used</h2>
-    <p class="muted">Model: <b>${MODELS[current.activityModel]?MODELS[current.activityModel].label:current.activityModel}</b> — Activity: <b>${escapeHtml(current.activityName)}</b></p>
+    <h2>${tt('assumptionsUsed')}</h2>
+    <p class="muted">${tt('modelLabel')} <b>${modelLabel(current.activityModel)}</b> — ${tt('activityLabel')} <b>${escapeHtml(current.activityName)}</b></p>
     ${rows}
     <div class="btnrow">
-      <button class="btn secondary" onclick="resetAssumptions()">Reset to Model Defaults</button>
+      <button class="btn secondary" onclick="resetAssumptions()">${tt('resetDefaults')}</button>
     </div>
-    <div class="note-box">Changing any assumption immediately recalculates the complete financial model, project report and ratios. Never hidden — every figure below has a visible "How calculated?" link on the report.</div>
+    <div class="note-box">${tt('assumptionNote')}</div>
     <div class="btnrow">
-      <button class="btn secondary" onclick="renderWizard()">Back to Wizard</button>
-      <button class="btn gold" onclick="goToProjectCost()">Continue → Project Cost</button>
+      <button class="btn secondary" onclick="renderWizard()">${tt('backToWizard')}</button>
+      <button class="btn gold" onclick="goToProjectCost()">${tt('continueProjectCost')}</button>
     </div>
   </div>`;
   document.getElementById('mainArea').innerHTML = html;
@@ -965,38 +1066,39 @@ function resetAssumptions(){ current.assumptions=null; renderAssumptions(); }
 
 function goToProjectCost(){ renderProjectCost(); }
 function renderProjectCost(){
+  currentScreenRenderer = renderProjectCost;
   const c = calculate(current);
-  const s = current.settings;
   const html = `<div class="card">
-    <h2>Project Cost & Means of Finance</h2>
-    <p class="note-box">All fixed-asset figures below are <b>Indicative</b> — please modify if actual figures are available. Adjust the split in Settings before creating the project if needed.</p>
-    <h3>Project Cost</h3>
+    <h2>${tt('projectCostTitle')} & ${tt('meansOfFinanceTitle')}</h2>
+    <p class="note-box">${tt('indicativeNote')}</p>
+    <h3>${tt('projectCostTitle')}</h3>
     <table>
-      <tr><th>Component</th><th>Amount</th></tr>
-      <tr><td>Land</td><td>${inr(c.fa.land)}</td></tr>
-      <tr><td>Building</td><td>${inr(c.fa.building)}</td></tr>
-      <tr><td>Machinery / Equipment</td><td>${inr(c.fa.machinery)}</td></tr>
-      <tr><td>Furniture</td><td>${inr(c.fa.furniture)}</td></tr>
-      <tr><td>Vehicle</td><td>${inr(c.fa.vehicle)}</td></tr>
-      <tr><td>Preliminary Expenses</td><td>${inr(c.fa.preliminary)}</td></tr>
-      <tr><td>Other Fixed Assets</td><td>${inr(c.fa.other)}</td></tr>
-      <tr><td>Working Capital Margin (Turnover Method)</td><td>${inr(c.wcReq)}</td></tr>
-      <tr class="total"><td>Total Project Cost</td><td>${inr(c.totalProjectCost)}</td></tr>
+      <tr><th>${tt('componentHdr')}</th><th>${tt('amountHdr')}</th></tr>
+      <tr><td>${tt('land')}</td><td>${inr(c.fa.land)}</td></tr>
+      <tr><td>${tt('building')}</td><td>${inr(c.fa.building)}</td></tr>
+      <tr><td>${tt('machinery')}</td><td>${inr(c.fa.machinery)}</td></tr>
+      <tr><td>${tt('furniture')}</td><td>${inr(c.fa.furniture)}</td></tr>
+      <tr><td>${tt('vehicle')}</td><td>${inr(c.fa.vehicle)}</td></tr>
+      <tr><td>${tt('preliminary')}</td><td>${inr(c.fa.preliminary)}</td></tr>
+      <tr><td>${tt('otherFixedAssets')}</td><td>${inr(c.fa.other)}</td></tr>
+      <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcReq)}</td></tr>
+      <tr class="total"><td>${tt('totalProjectCostRow')}</td><td>${inr(c.totalProjectCost)}</td></tr>
     </table>
-    <h3>Means of Finance</h3>
+    <h3>${tt('meansOfFinanceTitle')}</h3>
     <table>
-      <tr><th>Source</th><th>Amount</th></tr>
-      <tr><td>Promoter Contribution</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
-      <tr><td>Term Loan</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
-      <tr><td>Working Capital Finance</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
-      <tr><td>Other Sources</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
-      <tr><td>Subsidy</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
-      <tr class="total"><td>Total Means of Finance</td><td>${inr(c.meansOfFinance.total)}</td></tr>
+      <tr><th>${tt('sourceHdr')}</th><th>${tt('amountHdr')}</th></tr>
+      <tr><td>${tt('promoterContribution')}</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
+      <tr><td>${tt('termLoanRow')}</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
+      <tr><td>${tt('wcFinanceRow')}</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
+      <tr><td>${tt('otherSourcesRow')}</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
+      <tr><td>${tt('subsidyRow')}</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
+      <tr class="total"><td>${tt('totalMeansRow')}</td><td>${inr(c.meansOfFinance.total)}</td></tr>
     </table>
-    <p class="muted small">Total Project Cost equals Total Means of Finance by construction — no unexplained balancing figure is used.</p>
+    <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
+    <p class="muted small">${tt('balanceNote')}</p>
     <div class="btnrow">
-      <button class="btn secondary" onclick="renderAssumptions()">Back</button>
-      <button class="btn gold" onclick="renderReportScreen()">Generate Full Report</button>
+      <button class="btn secondary" onclick="renderAssumptions()">${tt('back')}</button>
+      <button class="btn gold" onclick="renderReportScreen()">${tt('generateReport')}</button>
     </div>
   </div>`;
   document.getElementById('mainArea').innerHTML = html;
@@ -1011,31 +1113,41 @@ function saveCurrentProject(){
   const idx = list.findIndex(x=>x.id===current.id);
   if(idx>=0) list[idx]=current; else list.push(current);
   persistAllProjects(list);
-  alert("Project saved.");
+  alert(LANG==='hi' ? "परियोजना सहेजी गई।" : "Project saved.");
 }
 
 /* ============================================================
    REPORT
    ============================================================ */
 const REPORT_SECTIONS = [
-  ["cover","Cover Page"],["summary","Executive Summary"],["borrower","Borrower Profile"],["activity","Business Activity"],
-  ["purpose","Purpose of Loan"],["cost","Project Cost"],["finance","Means of Finance"],["assumptions","Activity Assumptions"],
-  ["sales","Projected Sales"],["pnl","Projected P&L"],["bs","Projected Balance Sheet"],["cf","Projected Cash Flow"],
-  ["wc","Working Capital Assessment"],["mpbf","Turnover Method / MPBF"],["repayment","Loan Repayment Schedule"],
-  ["ratios","Financial Ratios"],["breakeven","Break-even Analysis"],["interpretation","Financial Interpretation"],
-  ["methodology","Key Assumptions & Methodology"],["checklist","Report Readiness Checklist"],["conclusion","Conclusion"]
+  ["application","Application to Bank","बैंक हेतु आवेदन"],
+  ["cover","Cover Page","आवरण पृष्ठ"],["summary","Executive Summary","कार्यकारी सारांश"],
+  ["borrower","Borrower Profile","उधारकर्ता विवरण"],["activity","Business Activity","व्यवसाय गतिविधि"],
+  ["purpose","Purpose of Loan","ऋण का उद्देश्य"],["cost","Project Cost","परियोजना लागत"],
+  ["finance","Means of Finance","वित्त के साधन"],["assumptions","Activity Assumptions","गतिविधि मान्यताएँ"],
+  ["sales","Projected Sales","अनुमानित बिक्री"],["pnl","Projected P&L","अनुमानित लाभ-हानि"],
+  ["bs","Projected Balance Sheet","अनुमानित तुलन पत्र"],["cf","Projected Cash Flow","अनुमानित नकदी प्रवाह"],
+  ["wc","Working Capital Assessment","कार्यशील पूंजी आकलन"],["mpbf","Turnover Method / MPBF","टर्नओवर पद्धति / एमपीबीएफ"],
+  ["repayment","Loan Repayment Schedule","ऋण चुकौती अनुसूची"],["ratios","Financial Ratios","वित्तीय अनुपात"],
+  ["breakeven","Break-even Analysis","सम-विच्छेद विश्लेषण"],["interpretation","Financial Interpretation","वित्तीय व्याख्या"],
+  ["methodology","Key Assumptions & Methodology","मुख्य मान्यताएँ व पद्धति"],["checklist","Report Readiness Checklist","रिपोर्ट तैयारी सूची"],
+  ["conclusion","Conclusion","निष्कर्ष"]
 ];
+function rsLabel(row){ return LANG==='hi' ? row[2] : row[1]; }
 function renderReportScreen(){
-  reportTab='cover';
+  reportTab='application';
   const c = calculate(current);
   window._reportCalc = c;
+  currentScreenRenderer = drawReport;
   drawReport();
 }
 function drawReport(){
-  const c = window._reportCalc;
-  const tabs = REPORT_SECTIONS.map(([id,label])=>`<button class="${reportTab===id?'active':''}" onclick="switchReportTab('${id}')">${label}</button>`).join('');
+  const c = window._reportCalc || calculate(current);
+  window._reportCalc = c;
+  const tabs = REPORT_SECTIONS.map(row=>`<button class="${reportTab===row[0]?'active':''}" onclick="switchReportTab('${row[0]}')">${rsLabel(row)}</button>`).join('');
   let body = "";
   switch(reportTab){
+    case 'application': body = rApplication(c); break;
     case 'cover': body = rCover(); break;
     case 'summary': body = rSummary(c); break;
     case 'borrower': body = rBorrower(); break;
@@ -1060,9 +1172,9 @@ function drawReport(){
   }
   const html = `<div class="card no-print">
     <div class="btnrow" style="margin-top:0;">
-      <button class="btn secondary" onclick="renderProjectCost()">Back to Editing</button>
-      <button class="btn gold" onclick="printReport()">Print / Save as PDF</button>
-      <button class="btn secondary" onclick="showFullReport()">View Full Report (All Sections)</button>
+      <button class="btn secondary" onclick="renderProjectCost()">${tt('backToEditing')}</button>
+      <button class="btn gold" onclick="printReport()">${tt('printSave')}</button>
+      <button class="btn secondary" onclick="showFullReport()">${tt('viewFull')}</button>
     </div>
   </div>
   <div class="card no-print"><div class="tabs">${tabs}</div></div>
@@ -1072,17 +1184,17 @@ function drawReport(){
 function switchReportTab(id){ reportTab=id; drawReport(); }
 function showFullReport(){
   const c = window._reportCalc;
-  let all = "";
-  REPORT_SECTIONS.forEach(([id,label])=>{
-    reportTab=id;
-    let fn = {cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,purpose:()=>rPurpose(c),
+  let all = `<div class="dev-credit cover">${byline()}</div>`;
+  REPORT_SECTIONS.forEach(row=>{
+    const id = row[0];
+    let fn = {application:()=>rApplication(c),cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,purpose:()=>rPurpose(c),
       cost:()=>rCost(c),finance:()=>rFinance(c),assumptions:rAssumptions,sales:()=>rSales(c),pnl:()=>rPnl(c),
       bs:()=>rBS(c),cf:()=>rCF(c),wc:()=>rWC(c),mpbf:()=>rMPBF(c),repayment:()=>rRepayment(c),ratios:()=>rRatios(c),
       breakeven:()=>rBreakeven(c),interpretation:()=>rInterpretation(c),methodology:rMethodology,checklist:()=>rChecklist(c),
       conclusion:()=>rConclusion(c)}[id];
     all += `<div class="section-anchor">${fn()}</div><hr style="border:none;border-top:1px solid var(--line);margin:22px 0;">`;
   });
-  all += `<div class="footer-byline">Developed by Anil Sharma, Former General Manager, Central Bank of India.<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline</div>`;
+  all += `<div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline</div>`;
   document.getElementById('reportBody').innerHTML = all;
 }
 function printReport(){ showFullReport(); setTimeout(()=>window.print(),150); }
@@ -1090,226 +1202,330 @@ function printReport(){ showFullReport(); setTimeout(()=>window.print(),150); }
 function demoNote(){
   return current.isDemo ? `<div class="warn-box"><b>DEMO DATA – NOT FOR BANK SUBMISSION.</b> This is a sample project for illustration only.</div>` : "";
 }
+
+/* ---------------- Application to Bank ---------------- */
+function applicationFieldChanged(){
+  current.application.bankName = document.getElementById('appBankName').value;
+  current.application.place = document.getElementById('appPlace').value;
+  current.application.date = document.getElementById('appDate').value;
+  drawReport();
+}
+function rApplication(c){
+  const app = current.application || {bankName:"",place:"",date:new Date().toISOString().slice(0,10)};
+  const b = current.borrower;
+  const dateDisp = app.date ? new Date(app.date).toLocaleDateString(LANG==='hi'?'hi-IN':'en-IN') : '';
+  const editForm = `<div class="no-print grid" style="margin-bottom:14px;">
+    <div><label>${LANG==='hi'?'बैंक का नाम':'Bank Name'}</label><input type="text" id="appBankName" value="${escapeHtml(app.bankName)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. सेंट्रल बैंक ऑफ इंडिया':'e.g. Central Bank of India'}"></div>
+    <div><label>${LANG==='hi'?'शाखा / स्थान':'Branch / Place'}</label><input type="text" id="appPlace" value="${escapeHtml(app.place)}" onchange="applicationFieldChanged()" placeholder="${LANG==='hi'?'उदा. शाखा व स्थान':'e.g. Branch & Place'}"></div>
+    <div><label>${LANG==='hi'?'दिनांक':'Date'}</label><input type="text" id="appDate" value="${escapeHtml(app.date)}" onchange="applicationFieldChanged()" placeholder="YYYY-MM-DD"></div>
+  </div>`;
+
+  const termLoan = c.termLoan, wcAmt = c.wcBank;
+  let letterEn = `<p>To,<br>The Branch Manager,<br><b>${escapeHtml(app.bankName)||'[Bank Name]'}</b>,<br>${escapeHtml(app.place)||'[Branch / Place]'}</p>
+    <p>Date: ${dateDisp||'[Date]'}</p>
+    <p><b>Subject: Application for sanction of ${escapeHtml(current.loan.purpose)} loan of ${inr(current.loan.total)}</b></p>
+    <p>Sir / Madam,</p>
+    <p>I, <b>${escapeHtml(b.name)}</b>, proprietor of <b>${escapeHtml(b.business)}</b>, residing at ${escapeHtml(b.address)||'[Address]'}, Mobile: ${escapeHtml(b.mobile)||'[Mobile]'},
+    respectfully request sanction of a loan of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>.</p>
+    <p>Loan break-up requested: Term Loan ${inr(termLoan)} and Working Capital ${inr(wcAmt)}.</p>
+    <p>I propose to contribute ${inr(c.meansOfFinance.promoterContribution)} from my own sources towards the total project cost of ${inr(c.totalProjectCost)}.
+    Based on the projected turnover and profitability enclosed in the Project Report, I propose to service the term loan through a monthly instalment (EMI)
+    of approximately <b>${inr(c.emi)} per month</b>, over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
+    <p>I enclose herewith the detailed Project Report containing the projected financials, working capital assessment and other particulars for your kind perusal and favourable consideration.
+    ${b.udyam?('Udyam Registration: '+escapeHtml(b.udyam)+'.'):''} ${b.gstin?('GSTIN: '+escapeHtml(b.gstin)+'.'):''}</p>
+    <p>Thanking you,</p>
+    <p>Yours faithfully,</p>
+    <p style="margin-top:40px;">(______________________)<br><b>${escapeHtml(b.name)}</b><br>${escapeHtml(b.business)}</p>`;
+
+  let letterHi = `<p>सेवा में,<br>शाखा प्रबंधक,<br><b>${escapeHtml(app.bankName)||'[बैंक का नाम]'}</b>,<br>${escapeHtml(app.place)||'[शाखा / स्थान]'}</p>
+    <p>दिनांक: ${dateDisp||'[दिनांक]'}</p>
+    <p><b>विषय: ${escapeHtml(current.loan.purpose)} हेतु ${inr(current.loan.total)} ऋण स्वीकृति हेतु आवेदन</b></p>
+    <p>महोदय / महोदया,</p>
+    <p>मैं, <b>${escapeHtml(b.name)}</b>, प्रोप्राइटर <b>${escapeHtml(b.business)}</b>, निवासी ${escapeHtml(b.address)||'[पता]'}, मोबाइल: ${escapeHtml(b.mobile)||'[मोबाइल]'},
+    सादर निवेदन करता/करती हूँ कि मेरी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> का ऋण <b>${escapeHtml(current.loan.purpose)}</b> के लिए स्वीकृत किया जाए।</p>
+    <p>ऋण विवरण: मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी ${inr(wcAmt)}।</p>
+    <p>मैं कुल परियोजना लागत ${inr(c.totalProjectCost)} में से ${inr(c.meansOfFinance.promoterContribution)} की राशि स्वयं के स्रोतों से देने हेतु सहमत हूँ।
+    संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मैं मीयादी ऋण की चुकौती लगभग <b>${inr(c.emi)} प्रति माह</b> की समान मासिक किस्त (ईएमआई) के रूप में,
+    ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन करने का प्रस्ताव करता/करती हूँ।</p>
+    <p>अनुमानित वित्तीय विवरण, कार्यशील पूंजी आकलन एवं अन्य विवरण सहित विस्तृत परियोजना रिपोर्ट संलग्न है, कृपया अवलोकन कर अनुकूल विचार करें।
+    ${b.udyam?('उद्यम पंजीकरण: '+escapeHtml(b.udyam)+'।'):''} ${b.gstin?('जीएसटीएन: '+escapeHtml(b.gstin)+'।'):''}</p>
+    <p>धन्यवाद सहित,</p>
+    <p>भवदीय,</p>
+    <p style="margin-top:40px;">(______________________)<br><b>${escapeHtml(b.name)}</b><br>${escapeHtml(b.business)}</p>`;
+
+  return `${demoNote()}<h3>${LANG==='hi'?'बैंक हेतु ऋण आवेदन':'Loan Application to Bank'}</h3>
+  ${editForm}
+  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
+  <div class="letter-block">${LANG==='hi'?letterHi:letterEn}</div>
+  <p class="small muted">${LANG==='hi'?'बैंक का नाम, शाखा/स्थान व दिनांक ऊपर बदले जा सकते हैं; पत्र स्वतः अद्यतन हो जाएगा।':'Bank name, branch/place and date above are editable — the letter updates automatically.'}</p>`;
+}
+
 function rCover(){
   return `${demoNote()}<div class="report-cover">
-    <h1>MSME Project Report</h1>
+    <h1>${LANG==='hi'?'एमएसएमई परियोजना रिपोर्ट':'MSME Project Report'}</h1>
     <div class="sub">${escapeHtml(current.borrower.business||'')}</div>
     <table style="width:70%;margin:20px auto;text-align:left;">
-      <tr><td><b>Borrower</b></td><td>${escapeHtml(current.borrower.name)}</td></tr>
-      <tr><td><b>Business Activity</b></td><td>${escapeHtml(current.activityName)}</td></tr>
-      <tr><td><b>Constitution</b></td><td>${escapeHtml(current.borrower.constitution)}</td></tr>
-      <tr><td><b>Loan Required</b></td><td>${inr(current.loan.total)}</td></tr>
-      <tr><td><b>Report Date</b></td><td>${new Date().toLocaleDateString('en-IN')}</td></tr>
+      <tr><td><b>${LANG==='hi'?'उधारकर्ता':'Borrower'}</b></td><td>${escapeHtml(current.borrower.name)}</td></tr>
+      <tr><td><b>${LANG==='hi'?'व्यवसाय गतिविधि':'Business Activity'}</b></td><td>${escapeHtml(current.activityName)}</td></tr>
+      <tr><td><b>${tt('constitution')}</b></td><td>${escapeHtml(current.borrower.constitution)}</td></tr>
+      <tr><td><b>${LANG==='hi'?'आवश्यक ऋण':'Loan Required'}</b></td><td>${inr(current.loan.total)}</td></tr>
+      <tr><td><b>${LANG==='hi'?'रिपोर्ट दिनांक':'Report Date'}</b></td><td>${new Date().toLocaleDateString(LANG==='hi'?'hi-IN':'en-IN')}</td></tr>
     </table>
-    <p class="muted small">Prepared using the MSME Project Report Generator (Offline) — Version ${APP_VERSION}</p>
+    <div class="dev-credit cover">${byline()}</div>
   </div>`;
 }
 function rSummary(c){
   const s = c.sales;
+  if(LANG==='hi'){
+    return `<h3>कार्यकारी सारांश</h3>
+    <p>${escapeHtml(current.borrower.business)}, <b>${escapeHtml(current.activityName)}</b> (${escapeHtml(current.activityCategory)}) व्यवसाय में संलग्न है।
+    उधारकर्ता ने <b>${escapeHtml(current.loan.purpose)}</b> हेतु कुल <b>${inr(current.loan.total)}</b> ऋण का अनुरोध किया है।
+    अनुमानित बिक्री चालू वर्ष में ${inr(s[0])} से बढ़कर अगले दो वर्षों में ${inr(s[1])} व ${inr(s[2])} होने की संभावना है।</p>
+    <p>अनुमानित कर पश्चात लाभ क्रमशः ${inr(c.pnl[0].pat)}, ${inr(c.pnl[1].pat)} व ${inr(c.pnl[2].pat)} है, औसत अनुमानित डीएससीआर ${c.avgDscr!==null?c.avgDscr.toFixed(2):'लागू नहीं'} है।
+    प्रस्तावित मासिक किस्त (ईएमआई) लगभग ${inr(c.emi)} प्रति माह है।</p>
+    <div class="note-box">यह प्रस्ताव सत्यापन, व्यवहार्यता आकलन एवं लागू ऋण मानदंडों के अधीन है।</div>`;
+  }
   return `<h3>Executive Summary</h3>
   <p>${escapeHtml(current.borrower.business)} is engaged in <b>${escapeHtml(current.activityName)}</b> (${escapeHtml(current.activityCategory)}).
   The borrower has requested a total loan of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b>.
   Based on the sales projection provided by the borrower and activity-specific assumptions, projected sales are expected to move from
   ${inr(s[0])} in the current year to ${inr(s[1])} and ${inr(s[2])} over the following two years.</p>
   <p>Projected Profit After Tax is ${inr(c.pnl[0].pat)}, ${inr(c.pnl[1].pat)} and ${inr(c.pnl[2].pat)} respectively across the three years,
-  with an average projected DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'}.</p>
+  with an average projected DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'}. The borrower proposes to service the term loan
+  through a monthly instalment (EMI) of approximately ${inr(c.emi)} per month.</p>
   <div class="note-box">The proposal is subject to verification, viability assessment and applicable lending norms.</div>`;
 }
 function rBorrower(){
   const b = current.borrower;
-  return `<h3>Borrower Profile</h3><table>
-  <tr><td>Borrower Name</td><td>${escapeHtml(b.name)}</td></tr>
-  <tr><td>Business Name</td><td>${escapeHtml(b.business)}</td></tr>
-  <tr><td>Constitution</td><td>${escapeHtml(b.constitution)}</td></tr>
-  <tr><td>Address</td><td>${escapeHtml(b.address)}</td></tr>
-  <tr><td>Mobile</td><td>${escapeHtml(b.mobile)}</td></tr>
-  <tr><td>Business Status</td><td>${escapeHtml(b.existing)}</td></tr>
-  <tr><td>Business Experience</td><td>${escapeHtml(b.experience)}</td></tr>
-  <tr><td>Udyam Registration</td><td>${escapeHtml(b.udyam)||'Not provided'}</td></tr>
-  <tr><td>GSTIN</td><td>${escapeHtml(b.gstin)||'Not applicable'}</td></tr>
-  <tr><td>Bank / Branch</td><td>${escapeHtml(b.bank)||'Not specified'}</td></tr>
+  return `<h3>${tt('stepBorrower')}</h3><table>
+  <tr><td>${tt('borrowerName')}</td><td>${escapeHtml(b.name)}</td></tr>
+  <tr><td>${tt('businessName')}</td><td>${escapeHtml(b.business)}</td></tr>
+  <tr><td>${tt('constitution')}</td><td>${escapeHtml(b.constitution)}</td></tr>
+  <tr><td>${tt('address')}</td><td>${escapeHtml(b.address)}</td></tr>
+  <tr><td>${tt('mobile')}</td><td>${escapeHtml(b.mobile)}</td></tr>
+  <tr><td>${tt('businessStatus')}</td><td>${escapeHtml(b.existing)}</td></tr>
+  <tr><td>${tt('businessExperience')}</td><td>${escapeHtml(b.experience)}</td></tr>
+  <tr><td>${tt('udyam')}</td><td>${escapeHtml(b.udyam)||(LANG==='hi'?'उपलब्ध नहीं':'Not provided')}</td></tr>
+  <tr><td>${tt('gstin')}</td><td>${escapeHtml(b.gstin)||(LANG==='hi'?'लागू नहीं':'Not applicable')}</td></tr>
+  <tr><td>${tt('bankBranch')}</td><td>${escapeHtml(b.bank)||(LANG==='hi'?'निर्दिष्ट नहीं':'Not specified')}</td></tr>
   </table>`;
 }
 function rActivity(){
-  return `<h3>Business Activity</h3><table>
-  <tr><td>Category</td><td>${escapeHtml(current.activityCategory)}</td></tr>
-  <tr><td>Activity</td><td>${escapeHtml(current.activityName)}</td></tr>
-  <tr><td>Financial Model Applied</td><td>${MODELS[current.activityModel]?MODELS[current.activityModel].label:current.activityModel}</td></tr>
+  return `<h3>${tt('stepActivity')}</h3><table>
+  <tr><td>${tt('cat_Trading').split('/')[0]!==undefined?(LANG==='hi'?'श्रेणी':'Category'):''}</td><td>${tt('cat_'+current.activityCategory)}</td></tr>
+  <tr><td>${tt('activityLabel')}</td><td>${escapeHtml(current.activityName)}</td></tr>
+  <tr><td>${LANG==='hi'?'लागू वित्तीय मॉडल':'Financial Model Applied'}</td><td>${modelLabel(current.activityModel)}</td></tr>
   </table>
-  <h3>Business Description</h3>
-  <p>The unit is a ${escapeHtml(current.borrower.existing).toLowerCase()} enterprise engaged in ${escapeHtml(current.activityName).toLowerCase()},
-  operated as a ${escapeHtml(current.borrower.constitution).toLowerCase()}.</p>`;
+  <h3>${LANG==='hi'?'व्यवसाय विवरण':'Business Description'}</h3>
+  <p>${LANG==='hi'?`यह इकाई एक ${current.borrower.existing==='New'?'नई':'चालू'} इकाई है, जो ${escapeHtml(current.activityName)} गतिविधि में संलग्न है तथा ${escapeHtml(current.borrower.constitution)} के रूप में संचालित है।`
+    :`The unit is a ${escapeHtml(current.borrower.existing).toLowerCase()} enterprise engaged in ${escapeHtml(current.activityName).toLowerCase()}, operated as a ${escapeHtml(current.borrower.constitution).toLowerCase()}.`}</p>`;
 }
 function rPurpose(c){
-  return `<h3>Purpose of Loan</h3><table>
-  <tr><td>Purpose</td><td>${escapeHtml(current.loan.purpose)}</td></tr>
-  <tr><td>Total Loan Required</td><td>${inr(current.loan.total)}</td></tr>
-  <tr><td>Term Loan Component</td><td>${inr(c.termLoan)}</td></tr>
-  <tr><td>Working Capital Component (Bank Assessed)</td><td>${inr(c.wcBank)}</td></tr>
+  return `<h3>${tt('stepLoan')}</h3><table>
+  <tr><td>${tt('purposeOfLoan')}</td><td>${escapeHtml(current.loan.purpose)}</td></tr>
+  <tr><td>${tt('totalLoanRequired').replace(' *','')}</td><td>${inr(current.loan.total)}</td></tr>
+  <tr><td>${tt('termLoanRow')}</td><td>${inr(c.termLoan)}</td></tr>
+  <tr><td>${LANG==='hi'?'कार्यशील पूंजी घटक (बैंक आकलित)':'Working Capital Component (Bank Assessed)'}</td><td>${inr(c.wcBank)}</td></tr>
   </table>`;
 }
 function rCost(c){
-  return `<h3>Project Cost</h3>
-  <p class="note-box">Indicative — user should modify if actual figures are available.</p>
-  <table><tr><th>Component</th><th>Amount</th></tr>
-  <tr><td>Land</td><td>${inr(c.fa.land)}</td></tr>
-  <tr><td>Building</td><td>${inr(c.fa.building)}</td></tr>
-  <tr><td>Machinery / Equipment</td><td>${inr(c.fa.machinery)}</td></tr>
-  <tr><td>Furniture</td><td>${inr(c.fa.furniture)}</td></tr>
-  <tr><td>Vehicle</td><td>${inr(c.fa.vehicle)}</td></tr>
-  <tr><td>Preliminary Expenses</td><td>${inr(c.fa.preliminary)}</td></tr>
-  <tr><td>Other Fixed Assets</td><td>${inr(c.fa.other)}</td></tr>
-  <tr><td>Working Capital Margin</td><td>${inr(c.wcReq)}</td></tr>
-  <tr class="total"><td>Total Project Cost</td><td>${inr(c.totalProjectCost)}</td></tr></table>`;
+  return `<h3>${tt('projectCostTitle')}</h3>
+  <p class="note-box">${tt('indicativeNote')}</p>
+  <table><tr><th>${tt('componentHdr')}</th><th>${tt('amountHdr')}</th></tr>
+  <tr><td>${tt('land')}</td><td>${inr(c.fa.land)}</td></tr>
+  <tr><td>${tt('building')}</td><td>${inr(c.fa.building)}</td></tr>
+  <tr><td>${tt('machinery')}</td><td>${inr(c.fa.machinery)}</td></tr>
+  <tr><td>${tt('furniture')}</td><td>${inr(c.fa.furniture)}</td></tr>
+  <tr><td>${tt('vehicle')}</td><td>${inr(c.fa.vehicle)}</td></tr>
+  <tr><td>${tt('preliminary')}</td><td>${inr(c.fa.preliminary)}</td></tr>
+  <tr><td>${tt('otherFixedAssets')}</td><td>${inr(c.fa.other)}</td></tr>
+  <tr><td>${tt('wcMargin')}</td><td>${inr(c.wcReq)}</td></tr>
+  <tr class="total"><td>${tt('totalProjectCostRow')}</td><td>${inr(c.totalProjectCost)}</td></tr></table>`;
 }
 function rFinance(c){
-  return `<h3>Means of Finance</h3><table><tr><th>Source</th><th>Amount</th></tr>
-  <tr><td>Promoter Contribution</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
-  <tr><td>Term Loan</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
-  <tr><td>Working Capital Finance</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
-  <tr><td>Other Sources</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
-  <tr><td>Subsidy</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
-  <tr class="total"><td>Total Means of Finance</td><td>${inr(c.meansOfFinance.total)}</td></tr></table>
-  <p class="small muted">Total Project Cost equals Total Means of Finance.</p>`;
+  return `<h3>${tt('meansOfFinanceTitle')}</h3><table><tr><th>${tt('sourceHdr')}</th><th>${tt('amountHdr')}</th></tr>
+  <tr><td>${tt('promoterContribution')}</td><td>${inr(c.meansOfFinance.promoterContribution)}</td></tr>
+  <tr><td>${tt('termLoanRow')}</td><td>${inr(c.meansOfFinance.termLoan)}</td></tr>
+  <tr><td>${tt('wcFinanceRow')}</td><td>${inr(c.meansOfFinance.wcFinance)}</td></tr>
+  <tr><td>${tt('otherSourcesRow')}</td><td>${inr(c.meansOfFinance.otherSources)}</td></tr>
+  <tr><td>${tt('subsidyRow')}</td><td>${inr(c.meansOfFinance.subsidy)}</td></tr>
+  <tr class="total"><td>${tt('totalMeansRow')}</td><td>${inr(c.meansOfFinance.total)}</td></tr></table>
+  <p class="small muted">${tt('balanceNote')}</p>`;
 }
 function rAssumptions(){
   const a = getAssumptions(current);
-  return `<h3>Activity Assumptions</h3>
-  <table><tr><th>Parameter</th><th>Value</th><th>Status</th></tr>
-  ${ASSUMPTION_FIELDS.map(([k,label])=>`<tr><td>${label}</td><td>${a[k]}${k.includes('Days')?' days':(k==='deprRate'?'%':'%')}</td><td>${isModified(current,k)?'Modified':'Default'}</td></tr>`).join('')}
+  return `<h3>${tt('assumptionsUsed')}</h3>
+  <table><tr><th>${LANG==='hi'?'मापदंड':'Parameter'}</th><th>${LANG==='hi'?'मूल्य':'Value'}</th><th>${LANG==='hi'?'स्थिति':'Status'}</th></tr>
+  ${ASSUMPTION_FIELDS.map(row=>`<tr><td>${afLabel(row)}</td><td>${a[row[0]]}${row[0].includes('Days')?(LANG==='hi'?' दिन':' days'):'%'}</td><td>${isModified(current,row[0])?tt('modifiedTag'):tt('defaultTag')}</td></tr>`).join('')}
   </table>`;
 }
 function rSales(c){
-  return `<h3>Projected Sales</h3><table><tr><th>Year</th><th>Projected Sales</th></tr>
-  <tr><td>Current Year</td><td>${inr(c.sales[0])}</td></tr>
-  <tr><td>Following Year</td><td>${inr(c.sales[1])}</td></tr>
-  <tr><td>Next Year</td><td>${inr(c.sales[2])}</td></tr></table>`;
+  return `<h3>${tt('stepSales')}</h3><table><tr><th>${LANG==='hi'?'वर्ष':'Year'}</th><th>${LANG==='hi'?'अनुमानित बिक्री':'Projected Sales'}</th></tr>
+  <tr><td>${LANG==='hi'?'चालू वर्ष':'Current Year'}</td><td>${inr(c.sales[0])}</td></tr>
+  <tr><td>${LANG==='hi'?'अगला वर्ष':'Following Year'}</td><td>${inr(c.sales[1])}</td></tr>
+  <tr><td>${LANG==='hi'?'तीसरा वर्ष':'Next Year'}</td><td>${inr(c.sales[2])}</td></tr></table>`;
 }
+const PNL_LABELS = {sales:["Sales","बिक्री"],cos:["Cost of Sales","बिक्री लागत"],gp:["Gross Profit","सकल लाभ"],
+  employee:["Employee Cost","कर्मचारी लागत"],rent:["Rent","किराया"],elec:["Electricity","बिजली"],transport:["Transport","परिवहन"],
+  admin:["Administrative Expenses","प्रशासनिक व्यय"],selling:["Selling Expenses","विक्रय व्यय"],repairs:["Repairs","मरम्मत"],
+  other:["Other Operating Expenses","अन्य परिचालन व्यय"],ebitda:["EBITDA","ईबीआईटीडीए"],depr:["Depreciation","मूल्यह्रास"],
+  interest:["Interest","ब्याज"],pbt:["Profit Before Tax","कर पूर्व लाभ"],tax:["Tax","कर"],pat:["Profit After Tax","कर पश्चात लाभ"]};
+function pl(k){ return PNL_LABELS[k][LANG==='hi'?1:0]; }
 function rPnl(c){
-  const rows = [["Sales","sales"],["Cost of Sales","cos"],["Gross Profit","gp"],["Employee Cost","employee"],
-    ["Rent","rent"],["Electricity","elec"],["Transport","transport"],["Administrative Expenses","admin"],
-    ["Selling Expenses","selling"],["Repairs","repairs"],["Other Operating Expenses","other"],["EBITDA","ebitda"],
-    ["Depreciation","depr"],["Interest","interest"],["Profit Before Tax","pbt"],["Tax","tax"],["Profit After Tax","pat"]];
-  return `<h3>Projected Profit & Loss</h3><table><tr><th>Particulars</th><th>Current Yr</th><th>Following Yr</th><th>Next Yr</th></tr>
-  ${rows.map(([label,k])=>`<tr class="${k==='pat'||k==='ebitda'?'total':''}"><td>${label}</td><td>${inr(c.pnl[0][k])}</td><td>${inr(c.pnl[1][k])}</td><td>${inr(c.pnl[2][k])}</td></tr>`).join('')}
-  </table><p class="small muted">All expenses flow from activity-specific assumptions applied to projected sales.</p>`;
+  const rows = ["sales","cos","gp","employee","rent","elec","transport","admin","selling","repairs","other","ebitda","depr","interest","pbt","tax","pat"];
+  const yrHdr = LANG==='hi' ? ["चालू वर्ष","अगला वर्ष","तीसरा वर्ष"] : ["Current Yr","Following Yr","Next Yr"];
+  return `<h3>${tt('stepBorrower')==='Borrower Details'?'Projected Profit & Loss':'अनुमानित लाभ-हानि'}</h3><table><tr><th>${LANG==='hi'?'विवरण':'Particulars'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  ${rows.map(k=>`<tr class="${k==='pat'||k==='ebitda'?'total':''}"><td>${pl(k)}</td><td>${inr(c.pnl[0][k])}</td><td>${inr(c.pnl[1][k])}</td><td>${inr(c.pnl[2][k])}</td></tr>`).join('')}
+  </table><p class="small muted">${LANG==='hi'?'सभी व्यय गतिविधि-विशिष्ट मान्यताओं से अनुमानित बिक्री पर लागू होकर निकाले गए हैं।':'All expenses flow from activity-specific assumptions applied to projected sales.'}</p>`;
 }
+const BS_LABELS = {nfa:["Net Fixed Assets","शुद्ध स्थिर संपत्ति"],inventory:["Inventory","स्टॉक"],receivables:["Receivables","प्राप्य"],
+  cash:["Cash / Bank","नकद / बैंक"],otherCA:["Other Current Assets","अन्य चालू संपत्तियाँ"],total:["Total","कुल"],
+  promoterCapital:["Promoter Capital","प्रवर्तक पूंजी"],retainedEarnings:["Retained Earnings","संचित लाभ"],termLoan:["Term Loan","मीयादी ऋण"],
+  wcBorrowing:["Working Capital Borrowing","कार्यशील पूंजी उधार"],creditors:["Trade Creditors","व्यापारिक लेनदार"],otherCL:["Other Current Liabilities","अन्य चालू देनदारियाँ"]};
+function bl(k){ return BS_LABELS[k][LANG==='hi'?1:0]; }
 function rBS(c){
-  const rows = [["Net Fixed Assets","assets","nfa"],["Inventory","assets","inventory"],["Receivables","assets","receivables"],
-    ["Cash / Bank","assets","cash"],["Other Current Assets","assets","otherCA"],["Total Assets","assets","total"]];
-  const liab = [["Promoter Capital","liabilities","promoterCapital"],["Retained Earnings","liabilities","retainedEarnings"],
-    ["Term Loan","liabilities","termLoan"],["Working Capital Borrowing","liabilities","wcBorrowing"],
-    ["Trade Creditors","liabilities","creditors"],["Other Current Liabilities","liabilities","otherCL"],["Total Liabilities","liabilities","total"]];
-  return `<h3>Projected Balance Sheet</h3>
-  <table><tr><th>Assets</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
-  ${rows.map(([label,g,k])=>`<tr class="${k==='total'?'total':''}"><td>${label}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
+  const rows = [["nfa","assets"],["inventory","assets"],["receivables","assets"],["cash","assets"],["otherCA","assets"],["total","assets"]];
+  const liab = [["promoterCapital","liabilities"],["retainedEarnings","liabilities"],["termLoan","liabilities"],["wcBorrowing","liabilities"],["creditors","liabilities"],["otherCL","liabilities"],["total","liabilities"]];
+  const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  return `<h3>${LANG==='hi'?'अनुमानित तुलन पत्र':'Projected Balance Sheet'}</h3>
+  <table><tr><th>${LANG==='hi'?'संपत्ति':'Assets'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  ${rows.map(([k,g])=>`<tr class="${k==='total'?'total':''}"><td>${bl(k)}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
   </table>
-  <table><tr><th>Liabilities</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
-  ${liab.map(([label,g,k])=>`<tr class="${k==='total'?'total':''}"><td>${label}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
-  </table><p class="small muted">Cash / Bank is derived from the Projected Cash Flow Statement — the Balance Sheet is not force-tallied using any unexplained figure.</p>`;
+  <table><tr><th>${LANG==='hi'?'देनदारियाँ':'Liabilities'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  ${liab.map(([k,g])=>`<tr class="${k==='total'?'total':''}"><td>${bl(k)}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
+  </table><p class="small muted">${LANG==='hi'?'नकद / बैंक, अनुमानित नकदी प्रवाह विवरण से प्राप्त किया गया है — कोई अस्पष्ट संतुलन आंकड़ा उपयोग नहीं किया गया है।':'Cash / Bank is derived from the Projected Cash Flow Statement — the Balance Sheet is not force-tallied using any unexplained figure.'}</p>`;
 }
 function rCF(c){
-  return `<h3>Projected Cash Flow</h3><table><tr><th>Particulars</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
-  <tr><td>Cash from Operating Activities</td><td>${inr(c.cashFlow[0].operating)}</td><td>${inr(c.cashFlow[1].operating)}</td><td>${inr(c.cashFlow[2].operating)}</td></tr>
-  <tr><td>Cash from Investing Activities</td><td>${inr(c.cashFlow[0].investing)}</td><td>${inr(c.cashFlow[1].investing)}</td><td>${inr(c.cashFlow[2].investing)}</td></tr>
-  <tr><td>Cash from Financing Activities</td><td>${inr(c.cashFlow[0].financing)}</td><td>${inr(c.cashFlow[1].financing)}</td><td>${inr(c.cashFlow[2].financing)}</td></tr>
-  <tr class="total"><td>Net Cash Flow</td><td>${inr(c.cashFlow[0].net)}</td><td>${inr(c.cashFlow[1].net)}</td><td>${inr(c.cashFlow[2].net)}</td></tr>
-  <tr><td>Opening Cash</td><td>${inr(c.cashFlow[0].opening)}</td><td>${inr(c.cashFlow[1].opening)}</td><td>${inr(c.cashFlow[2].opening)}</td></tr>
-  <tr class="total"><td>Closing Cash</td><td>${inr(c.cashFlow[0].closing)}</td><td>${inr(c.cashFlow[1].closing)}</td><td>${inr(c.cashFlow[2].closing)}</td></tr>
+  const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  return `<h3>${LANG==='hi'?'अनुमानित नकदी प्रवाह':'Projected Cash Flow'}</h3><table><tr><th>${LANG==='hi'?'विवरण':'Particulars'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  <tr><td>${LANG==='hi'?'परिचालन गतिविधियों से नकदी':'Cash from Operating Activities'}</td><td>${inr(c.cashFlow[0].operating)}</td><td>${inr(c.cashFlow[1].operating)}</td><td>${inr(c.cashFlow[2].operating)}</td></tr>
+  <tr><td>${LANG==='hi'?'निवेश गतिविधियों से नकदी':'Cash from Investing Activities'}</td><td>${inr(c.cashFlow[0].investing)}</td><td>${inr(c.cashFlow[1].investing)}</td><td>${inr(c.cashFlow[2].investing)}</td></tr>
+  <tr><td>${LANG==='hi'?'वित्तपोषण गतिविधियों से नकदी':'Cash from Financing Activities'}</td><td>${inr(c.cashFlow[0].financing)}</td><td>${inr(c.cashFlow[1].financing)}</td><td>${inr(c.cashFlow[2].financing)}</td></tr>
+  <tr class="total"><td>${LANG==='hi'?'शुद्ध नकदी प्रवाह':'Net Cash Flow'}</td><td>${inr(c.cashFlow[0].net)}</td><td>${inr(c.cashFlow[1].net)}</td><td>${inr(c.cashFlow[2].net)}</td></tr>
+  <tr><td>${LANG==='hi'?'प्रारंभिक नकद':'Opening Cash'}</td><td>${inr(c.cashFlow[0].opening)}</td><td>${inr(c.cashFlow[1].opening)}</td><td>${inr(c.cashFlow[2].opening)}</td></tr>
+  <tr class="total"><td>${LANG==='hi'?'अंतिम नकद':'Closing Cash'}</td><td>${inr(c.cashFlow[0].closing)}</td><td>${inr(c.cashFlow[1].closing)}</td><td>${inr(c.cashFlow[2].closing)}</td></tr>
   </table>`;
 }
 function rWC(c){
-  return `<h3>Working Capital Assessment</h3>
-  <table><tr><th></th><th>Turnover Method</th><th>Operating Cycle Method (Yr 1)</th></tr>
-  <tr><td>Working Capital Requirement</td><td>${inr(c.wcReq)}</td><td>${inr(c.opCycle[0].gap)}</td></tr>
-  <tr><td>Borrower's Contribution</td><td>${inr(c.wcNwc)}</td><td>${inr(c.opCycle[0].borrowerContribution)}</td></tr>
-  <tr><td>Bank Finance</td><td>${inr(c.wcBank)}</td><td>${inr(c.opCycle[0].bankFinance)}</td></tr>
+  return `<h3>${LANG==='hi'?'कार्यशील पूंजी आकलन':'Working Capital Assessment'}</h3>
+  <table><tr><th></th><th>${LANG==='hi'?'टर्नओवर पद्धति':'Turnover Method'}</th><th>${LANG==='hi'?'परिचालन चक्र पद्धति (वर्ष 1)':'Operating Cycle Method (Yr 1)'}</th></tr>
+  <tr><td>${LANG==='hi'?'कार्यशील पूंजी आवश्यकता':'Working Capital Requirement'}</td><td>${inr(c.wcReq)}</td><td>${inr(c.opCycle[0].gap)}</td></tr>
+  <tr><td>${LANG==='hi'?'उधारकर्ता का अंशदान':"Borrower's Contribution"}</td><td>${inr(c.wcNwc)}</td><td>${inr(c.opCycle[0].borrowerContribution)}</td></tr>
+  <tr><td>${LANG==='hi'?'बैंक वित्त':'Bank Finance'}</td><td>${inr(c.wcBank)}</td><td>${inr(c.opCycle[0].bankFinance)}</td></tr>
   </table>
-  <div class="note-box">The two methods are shown for comparison only; the higher amount is not automatically selected. The applicable method and final working-capital limit remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>`;
+  <div class="note-box">${LANG==='hi'?'दोनों पद्धतियाँ केवल तुलना हेतु दिखाई गई हैं; अधिक राशि स्वतः नहीं चुनी जाती। लागू पद्धति व अंतिम कार्यशील पूंजी सीमा बैंक की प्रचलित नीति व लागू नियामक आवश्यकताओं के अधीन है।':'The two methods are shown for comparison only; the higher amount is not automatically selected. The applicable method and final working-capital limit remain subject to the lending bank\'s prevailing policy and applicable regulatory requirements.'}</div>`;
 }
 function rMPBF(c){
   const s = current.settings;
-  return `<h3>Working Capital – Turnover Method (Nayak Method)</h3>
-  <p>Formula: Working Capital Requirement = ${s.wcTurnoverPct}% of Projected Annual Turnover; Borrower's NWC/Margin = ${s.wcNwcPct}% of Turnover; Bank Finance = ${s.wcBankPct}% of Turnover.</p>
-  <table><tr><th></th><th>Amount</th></tr>
-  <tr><td>Projected Annual Turnover (Current Year)</td><td>${inr(c.sales[0])}</td></tr>
-  <tr><td>Working Capital Requirement (${s.wcTurnoverPct}%)</td><td>${inr(c.wcReq)}</td></tr>
-  <tr><td>Borrower's NWC / Margin (${s.wcNwcPct}%)</td><td>${inr(c.wcNwc)}</td></tr>
-  <tr><td>Bank Finance (${s.wcBankPct}%)</td><td>${inr(c.wcBank)}</td></tr>
+  return `<h3>${LANG==='hi'?'कार्यशील पूंजी – टर्नओवर पद्धति (नायक पद्धति)':'Working Capital – Turnover Method (Nayak Method)'}</h3>
+  <p>${LANG==='hi'?`सूत्र: कार्यशील पूंजी आवश्यकता = अनुमानित वार्षिक टर्नओवर का ${s.wcTurnoverPct}%; उधारकर्ता का एनडब्ल्यूसी/मार्जिन = टर्नओवर का ${s.wcNwcPct}%; बैंक वित्त = टर्नओवर का ${s.wcBankPct}%।`
+    :`Formula: Working Capital Requirement = ${s.wcTurnoverPct}% of Projected Annual Turnover; Borrower's NWC/Margin = ${s.wcNwcPct}% of Turnover; Bank Finance = ${s.wcBankPct}% of Turnover.`}</p>
+  <table><tr><th></th><th>${tt('amountHdr')}</th></tr>
+  <tr><td>${LANG==='hi'?'अनुमानित वार्षिक टर्नओवर (चालू वर्ष)':'Projected Annual Turnover (Current Year)'}</td><td>${inr(c.sales[0])}</td></tr>
+  <tr><td>${LANG==='hi'?`कार्यशील पूंजी आवश्यकता (${s.wcTurnoverPct}%)`:`Working Capital Requirement (${s.wcTurnoverPct}%)`}</td><td>${inr(c.wcReq)}</td></tr>
+  <tr><td>${LANG==='hi'?`उधारकर्ता का एनडब्ल्यूसी/मार्जिन (${s.wcNwcPct}%)`:`Borrower's NWC / Margin (${s.wcNwcPct}%)`}</td><td>${inr(c.wcNwc)}</td></tr>
+  <tr><td>${LANG==='hi'?`बैंक वित्त (${s.wcBankPct}%)`:`Bank Finance (${s.wcBankPct}%)`}</td><td>${inr(c.wcBank)}</td></tr>
   </table>
-  <p class="small muted">Applicable percentage / eligibility parameters can be changed under Settings rather than being hard-coded.</p>`;
+  <p class="small muted">${LANG==='hi'?'लागू प्रतिशत / पात्रता मापदंड सेटिंग्स में बदले जा सकते हैं, ये स्थायी रूप से निर्धारित नहीं हैं।':'Applicable percentage / eligibility parameters can be changed under Settings rather than being hard-coded.'}</p>`;
 }
 function rRepayment(c){
-  const yearRows = c.tlYearly.map((y,i)=>`<tr><td>Year ${i+1}</td><td>${inr(y.openBal)}</td><td>${inr(y.principal)}</td><td>${inr(y.interest)}</td><td>${inr(y.principal+y.interest)}</td><td>${inr(y.closeBal)}</td></tr>`).join('');
-  return `<h3>Loan Repayment Schedule (Annual Summary)</h3>
-  <table><tr><th>Year</th><th>Opening Balance</th><th>Principal Repayment</th><th>Interest</th><th>Total Debt Service</th><th>Closing Balance</th></tr>
+  const yrLbl = LANG==='hi'?'वर्ष':'Year';
+  const yearRows = c.tlYearly.map((y,i)=>`<tr><td>${yrLbl} ${i+1}</td><td>${inr(y.openBal)}</td><td>${inr(y.principal)}</td><td>${inr(y.interest)}</td><td>${inr(y.principal+y.interest)}</td><td>${inr(y.closeBal)}</td></tr>`).join('');
+  return `<h3>${LANG==='hi'?'ऋण चुकौती अनुसूची (वार्षिक सारांश)':'Loan Repayment Schedule (Annual Summary)'}</h3>
+  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${LANG==='hi'?'उधारकर्ता द्वारा दी जाने वाली प्रस्तावित मासिक किस्त':'the proposed monthly instalment payable by the borrower'}</div>
+  <table><tr><th>${yrLbl}</th><th>${LANG==='hi'?'प्रारंभिक शेष':'Opening Balance'}</th><th>${LANG==='hi'?'मूलधन चुकौती':'Principal Repayment'}</th><th>${LANG==='hi'?'ब्याज':'Interest'}</th><th>${LANG==='hi'?'कुल ऋण सेवा':'Total Debt Service'}</th><th>${LANG==='hi'?'अंतिम शेष':'Closing Balance'}</th></tr>
   ${yearRows}</table>
-  <p class="small muted">Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years,
-  moratorium ${current.loanTerms.moratoriumMonths} months, equal-principal ${current.loanTerms.instalmentFreq.toLowerCase()} instalments.
-  Working Capital is a revolving fund-based limit — interest is charged on utilisation and it is not repaid through this term schedule.</p>`;
+  <p class="small muted">${LANG==='hi'?`मीयादी ऋण: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% वार्षिक, अवधि ${current.loanTerms.tenureYears} वर्ष, स्थगन ${current.loanTerms.moratoriumMonths} माह। तालिका में समान-मूलधन किस्तें दर्शाई गई हैं (पारदर्शिता हेतु); ऊपर दी गई ईएमआई एक समतुल्य समान मासिक किस्त है जो बैंक द्वारा भी प्रस्तावित की जा सकती है। कार्यशील पूंजी एक चक्रीय सीमा है और इस अनुसूची से नहीं चुकाई जाती।`
+    :`Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years, moratorium ${current.loanTerms.moratoriumMonths} months. The table above shows equal-principal instalments for full transparency; the EMI shown is an equivalent equal-monthly-instalment figure that a bank may also offer. Working Capital is a revolving fund-based limit and is not repaid through this schedule.`}</p>`;
 }
 function rRatios(c){
-  const rows = [["Current Ratio","currentRatio",""],["Debt Equity Ratio","debtEquity",""],["TOL/TNW","tolTnw",""],
-    ["Gross Profit Margin","gpMargin","%"],["EBITDA Margin","ebitdaMargin","%"],["Net Profit Margin","npMargin","%"],
-    ["Interest Coverage Ratio","interestCoverage",""],["Stock Holding Period","stockDays"," days"],
-    ["Debtor Holding Period","debtorDays"," days"],["Creditor Holding Period","creditorDays"," days"],
-    ["Working Capital Cycle","wcCycle"," days"]];
-  const dscrRows = c.dscrYearly.map((d,i)=>`<tr><td>Year ${i+1}</td><td>${inr(d.cashAccrual)}</td><td>${inr(d.interest)}</td><td>${inr(d.principal)}</td><td>${inr(d.debtService)}</td><td>${d.dscr!==null?d.dscr.toFixed(2):'Not Applicable'}</td></tr>`).join('');
-  return `<h3>Financial Ratios</h3>
-  <table><tr><th>Ratio</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
-  ${rows.map(([label,k,suf])=>`<tr><td>${label}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?'Not Applicable':(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
+  const rows = [["Current Ratio","धारा अनुपात","currentRatio",""],["Debt Equity Ratio","ऋण इक्विटी अनुपात","debtEquity",""],
+    ["TOL/TNW","टीओएल/टीएनडब्ल्यू","tolTnw",""],["Gross Profit Margin","सकल लाभ मार्जिन","gpMargin","%"],
+    ["EBITDA Margin","ईबीआईटीडीए मार्जिन","ebitdaMargin","%"],["Net Profit Margin","शुद्ध लाभ मार्जिन","npMargin","%"],
+    ["Interest Coverage Ratio","ब्याज कवरेज अनुपात","interestCoverage",""],["Stock Holding Period","स्टॉक अवधि","stockDays",LANG==='hi'?' दिन':' days'],
+    ["Debtor Holding Period","देनदार अवधि","debtorDays",LANG==='hi'?' दिन':' days'],["Creditor Holding Period","लेनदार अवधि","creditorDays",LANG==='hi'?' दिन':' days'],
+    ["Working Capital Cycle","कार्यशील पूंजी चक्र","wcCycle",LANG==='hi'?' दिन':' days']];
+  const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  const dscrRows = c.dscrYearly.map((d,i)=>`<tr><td>${LANG==='hi'?'वर्ष':'Year'} ${i+1}</td><td>${inr(d.cashAccrual)}</td><td>${inr(d.interest)}</td><td>${inr(d.principal)}</td><td>${inr(d.debtService)}</td><td>${d.dscr!==null?d.dscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}</td></tr>`).join('');
+  return `<h3>${LANG==='hi'?'वित्तीय अनुपात':'Financial Ratios'}</h3>
+  <table><tr><th>${LANG==='hi'?'अनुपात':'Ratio'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  ${rows.map(([en,hi,k,suf])=>`<tr><td>${LANG==='hi'?hi:en}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?(LANG==='hi'?'लागू नहीं':'Not Applicable'):(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
   </table>
   <h3>DSCR</h3>
-  <table><tr><th>Year</th><th>Cash Accrual</th><th>Interest</th><th>Principal Repayment</th><th>Total Debt Service</th><th>DSCR</th></tr>
+  <table><tr><th>${LANG==='hi'?'वर्ष':'Year'}</th><th>${LANG==='hi'?'नकदी संचयन':'Cash Accrual'}</th><th>${LANG==='hi'?'ब्याज':'Interest'}</th><th>${LANG==='hi'?'मूलधन चुकौती':'Principal Repayment'}</th><th>${LANG==='hi'?'कुल ऋण सेवा':'Total Debt Service'}</th><th>DSCR</th></tr>
   ${dscrRows}</table>
-  <p><b>Average DSCR:</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} &nbsp; <b>Minimum DSCR:</b> ${c.minDscr!==null?c.minDscr.toFixed(2):'Not Applicable'}</p>`;
+  <p><b>${LANG==='hi'?'औसत डीएससीआर:':'Average DSCR:'}</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')} &nbsp; <b>${LANG==='hi'?'न्यूनतम डीएससीआर:':'Minimum DSCR:'}</b> ${c.minDscr!==null?c.minDscr.toFixed(2):(LANG==='hi'?'लागू नहीं':'Not Applicable')}</p>`;
 }
 function rBreakeven(c){
-  return `<h3>Break-even Analysis</h3><table><tr><th>Particulars</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th></tr>
-  <tr><td>Fixed Cost</td><td>${inr(c.breakeven[0].fixed)}</td><td>${inr(c.breakeven[1].fixed)}</td><td>${inr(c.breakeven[2].fixed)}</td></tr>
-  <tr><td>Variable Cost</td><td>${inr(c.breakeven[0].variable)}</td><td>${inr(c.breakeven[1].variable)}</td><td>${inr(c.breakeven[2].variable)}</td></tr>
-  <tr><td>Contribution</td><td>${inr(c.breakeven[0].contribution)}</td><td>${inr(c.breakeven[1].contribution)}</td><td>${inr(c.breakeven[2].contribution)}</td></tr>
-  <tr><td>P/V Ratio</td><td>${pct(c.breakeven[0].pvRatio,1)}</td><td>${pct(c.breakeven[1].pvRatio,1)}</td><td>${pct(c.breakeven[2].pvRatio,1)}</td></tr>
-  <tr class="total"><td>Break-even Sales</td><td>${c.breakeven[0].beSales!==null?inr(c.breakeven[0].beSales):'Not Applicable'}</td><td>${c.breakeven[1].beSales!==null?inr(c.breakeven[1].beSales):'Not Applicable'}</td><td>${c.breakeven[2].beSales!==null?inr(c.breakeven[2].beSales):'Not Applicable'}</td></tr>
-  <tr><td>Break-even % of Projected Sales</td><td>${c.breakeven[0].bePct!==null?pct(c.breakeven[0].bePct,1):'Not Applicable'}</td><td>${c.breakeven[1].bePct!==null?pct(c.breakeven[1].bePct,1):'Not Applicable'}</td><td>${c.breakeven[2].bePct!==null?pct(c.breakeven[2].bePct,1):'Not Applicable'}</td></tr>
+  const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  const na = LANG==='hi'?'लागू नहीं':'Not Applicable';
+  return `<h3>${LANG==='hi'?'सम-विच्छेद विश्लेषण':'Break-even Analysis'}</h3><table><tr><th>${LANG==='hi'?'विवरण':'Particulars'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
+  <tr><td>${LANG==='hi'?'स्थिर लागत':'Fixed Cost'}</td><td>${inr(c.breakeven[0].fixed)}</td><td>${inr(c.breakeven[1].fixed)}</td><td>${inr(c.breakeven[2].fixed)}</td></tr>
+  <tr><td>${LANG==='hi'?'परिवर्तनशील लागत':'Variable Cost'}</td><td>${inr(c.breakeven[0].variable)}</td><td>${inr(c.breakeven[1].variable)}</td><td>${inr(c.breakeven[2].variable)}</td></tr>
+  <tr><td>${LANG==='hi'?'अंशदान':'Contribution'}</td><td>${inr(c.breakeven[0].contribution)}</td><td>${inr(c.breakeven[1].contribution)}</td><td>${inr(c.breakeven[2].contribution)}</td></tr>
+  <tr><td>P/V ${LANG==='hi'?'अनुपात':'Ratio'}</td><td>${pct(c.breakeven[0].pvRatio,1)}</td><td>${pct(c.breakeven[1].pvRatio,1)}</td><td>${pct(c.breakeven[2].pvRatio,1)}</td></tr>
+  <tr class="total"><td>${LANG==='hi'?'सम-विच्छेद बिक्री':'Break-even Sales'}</td><td>${c.breakeven[0].beSales!==null?inr(c.breakeven[0].beSales):na}</td><td>${c.breakeven[1].beSales!==null?inr(c.breakeven[1].beSales):na}</td><td>${c.breakeven[2].beSales!==null?inr(c.breakeven[2].beSales):na}</td></tr>
+  <tr><td>${LANG==='hi'?'अनुमानित बिक्री का सम-विच्छेद %':'Break-even % of Projected Sales'}</td><td>${c.breakeven[0].bePct!==null?pct(c.breakeven[0].bePct,1):na}</td><td>${c.breakeven[1].bePct!==null?pct(c.breakeven[1].bePct,1):na}</td><td>${c.breakeven[2].bePct!==null?pct(c.breakeven[2].bePct,1):na}</td></tr>
   </table>
-  <p class="small muted">Fixed cost includes employee cost, rent, electricity, administrative expenses, repairs, other operating expenses, depreciation and interest. Variable cost includes cost of sales, transport and selling expenses. This is an indicative approximation based on the granularity of activity assumptions used.</p>`;
+  <p class="small muted">${LANG==='hi'?'स्थिर लागत में कर्मचारी लागत, किराया, बिजली, प्रशासनिक व्यय, मरम्मत, अन्य परिचालन व्यय, मूल्यह्रास व ब्याज शामिल हैं। परिवर्तनशील लागत में बिक्री लागत, परिवहन व विक्रय व्यय शामिल हैं। यह मान्यताओं की सीमा के अनुसार एक अनुमानित सन्निकटन है।':'Fixed cost includes employee cost, rent, electricity, administrative expenses, repairs, other operating expenses, depreciation and interest. Variable cost includes cost of sales, transport and selling expenses. This is an indicative approximation based on the granularity of activity assumptions used.'}</p>`;
 }
 function rInterpretation(c){
   const s = c.sales;
   const profitable = c.pnl.every(r=>r.pat>0);
+  if(LANG==='hi'){
+    return `<h3>वित्तीय व्याख्या</h3>
+    <p><b>बिक्री:</b> अनुमानित बिक्री ${inr(s[0])} से बढ़कर ${inr(s[1])} व ${inr(s[2])} होने की संभावना है।</p>
+    <p><b>लाभप्रदता:</b> उपयोग की गई मान्यताओं के अंतर्गत प्रस्तावित व्यवसाय ${profitable?'लाभप्रद बना रहता है':'कम से कम एक वर्ष में हानि दर्शाता है'}, ईबीआईटीडीए मार्जिन ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} व ${pct(c.ratios[2].ebitdaMargin,1)} है।</p>
+    <p><b>चुकौती:</b> अनुमानित नकदी संचयन एवं औसत डीएससीआर ${c.avgDscr!==null?c.avgDscr.toFixed(2):'लागू नहीं'} ऋण चुकौती क्षमता दर्शाते हैं। प्रस्तावित मासिक किस्त (ईएमआई) लगभग ${inr(c.emi)} प्रति माह है।</p>
+    <p><b>कार्यशील पूंजी:</b> कार्यशील पूंजी का आकलन टर्नओवर पद्धति द्वारा किया गया है, जिसे परिचालन चक्र पद्धति से क्रॉस-चेक किया गया है।</p>
+    <div class="note-box">यह प्रस्ताव सत्यापन, व्यवहार्यता आकलन एवं लागू ऋण मानदंडों के अधीन है।</div>`;
+  }
   return `<h3>Financial Interpretation</h3>
   <p><b>Sales:</b> Sales are projected to move from ${inr(s[0])} to ${inr(s[1])} and ${inr(s[2])} over three years.</p>
   <p><b>Profitability:</b> The projected business ${profitable?'remains profitable':'shows losses in at least one projected year'} under the assumptions used, with EBITDA margins of ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} and ${pct(c.ratios[2].ebitdaMargin,1)}.</p>
-  <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} indicate the estimated debt-servicing capacity.</p>
+  <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} indicate the estimated debt-servicing capacity. The proposed monthly instalment (EMI) is approximately ${inr(c.emi)} per month.</p>
   <p><b>Working Capital:</b> Working capital is assessed using the Turnover Method, cross-checked against the Operating Cycle Method.</p>
   <div class="note-box">The proposal is subject to verification, viability assessment and applicable lending norms.</div>`;
 }
 function rMethodology(){
   const a = getAssumptions(current);
   const s = current.settings;
-  return `<h3>Key Assumptions & Methodology</h3>
-  <p>The financial projections have been prepared using the sales estimates provided by the borrower and the activity-specific assumptions selected in the application. The assumptions should be reviewed and modified wherever actual business information is available.</p>
-  <table><tr><th>Parameter</th><th>Value</th></tr>
-  ${ASSUMPTION_FIELDS.map(([k,label])=>`<tr><td>${label}</td><td>${a[k]}${k.includes('Days')?' days':'%'}</td></tr>`).join('')}
-  <tr><td>Working Capital – Turnover Method</td><td>${s.wcTurnoverPct}% / ${s.wcNwcPct}% / ${s.wcBankPct}%</td></tr>
-  <tr><td>Promoter Margin on Fixed Assets</td><td>${s.promoterMarginFixedPct}%</td></tr>
-  <tr><td>Owner Drawings</td><td>${s.ownerDrawingsPct}% of Profit After Tax</td></tr>
-  <tr><td>Tax Rate</td><td>${s.taxRatePct}%</td></tr>
-  <tr><td>Interest Rate</td><td>${current.loanTerms.interestRatePct}% p.a.</td></tr>
+  return `<h3>${LANG==='hi'?'मुख्य मान्यताएँ व पद्धति':'Key Assumptions & Methodology'}</h3>
+  <p>${LANG==='hi'?'वित्तीय अनुमान उधारकर्ता द्वारा दिए गए बिक्री अनुमान एवं ऐप में चयनित गतिविधि-विशिष्ट मान्यताओं के आधार पर तैयार किए गए हैं। वास्तविक व्यावसायिक जानकारी उपलब्ध होने पर मान्यताओं की समीक्षा व संशोधन किया जाना चाहिए।'
+    :'The financial projections have been prepared using the sales estimates provided by the borrower and the activity-specific assumptions selected in the application. The assumptions should be reviewed and modified wherever actual business information is available.'}</p>
+  <table><tr><th>${LANG==='hi'?'मापदंड':'Parameter'}</th><th>${LANG==='hi'?'मूल्य':'Value'}</th></tr>
+  ${ASSUMPTION_FIELDS.map(row=>`<tr><td>${afLabel(row)}</td><td>${a[row[0]]}${row[0].includes('Days')?(LANG==='hi'?' दिन':' days'):'%'}</td></tr>`).join('')}
+  <tr><td>${LANG==='hi'?'कार्यशील पूंजी – टर्नओवर पद्धति':'Working Capital – Turnover Method'}</td><td>${s.wcTurnoverPct}% / ${s.wcNwcPct}% / ${s.wcBankPct}%</td></tr>
+  <tr><td>${LANG==='hi'?'स्थिर संपत्ति पर प्रवर्तक मार्जिन':'Promoter Margin on Fixed Assets'}</td><td>${s.promoterMarginFixedPct}%</td></tr>
+  <tr><td>${LANG==='hi'?'स्वामी आहरण':'Owner Drawings'}</td><td>${s.ownerDrawingsPct}% ${LANG==='hi'?'कर पश्चात लाभ का':'of Profit After Tax'}</td></tr>
+  <tr><td>${LANG==='hi'?'कर दर':'Tax Rate'}</td><td>${s.taxRatePct}%</td></tr>
+  <tr><td>${LANG==='hi'?'ब्याज दर':'Interest Rate'}</td><td>${current.loanTerms.interestRatePct}% ${LANG==='hi'?'वार्षिक':'p.a.'}</td></tr>
   </table>`;
 }
+const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारकर्ता व गतिविधि विवरण"],chkSales:["Sales Projection Entered","बिक्री अनुमान दर्ज"],
+  chkAssump:["Assumptions Reviewed","मान्यताएँ समीक्षित"],chkCost:["Project Cost = Means of Finance","परियोजना लागत = वित्त के साधन"],
+  chkWC:["Working Capital Calculated","कार्यशील पूंजी गणना"],chkPnl:["Profit & Loss Calculated","लाभ-हानि गणना"],
+  chkBS:["Balance Sheet Balanced","तुलन पत्र संतुलित"],chkCF:["Cash Flow Calculated","नकदी प्रवाह गणना"],
+  chkRepay:["Repayment Schedule Calculated","चुकौती अनुसूची गणना"],chkRatios:["Ratios Calculated","अनुपात गणना"],chkReady:["Report Ready","रिपोर्ट तैयार"]};
 function rChecklist(c){
-  return `<h3>Report Readiness Checklist</h3><ul class="check-list">
-  ${c.checklist.map(x=>`<li class="${x.pass?'pass':'fail'}">${x.label}</li>`).join('')}
+  return `<h3>${LANG==='hi'?'रिपोर्ट तैयारी सूची':'Report Readiness Checklist'}</h3><ul class="check-list">
+  ${c.checklist.map(x=>`<li class="${x.pass?'pass':'fail'}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
   </ul>`;
 }
 function rConclusion(c){
+  if(LANG==='hi'){
+    return `<h3>निष्कर्ष</h3>
+    <p>गतिविधि-विशिष्ट मान्यताओं एवं दिए गए बिक्री अनुमान के आधार पर, ${escapeHtml(current.borrower.business)} हेतु प्रस्तावित परियोजना
+    ${c.checklist[c.checklist.length-1].pass?'गणितीय रूप से सुसंगत व पूर्ण':'अपूर्ण'} वित्तीय अनुमान प्रस्तुत करती है।
+    प्रस्तावित मासिक किस्त (ईएमआई) लगभग ${inr(c.emi)} प्रति माह है। अंतिम आकलन, स्वीकृति व शर्तें बैंक के स्वतंत्र सत्यापन, व्यवहार्यता आकलन एवं लागू नियामक आवश्यकताओं के अधीन हैं।</p>
+    <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — ${new Date().toLocaleString('hi-IN')} को ऑफलाइन तैयार किया गया</div>`;
+  }
   return `<h3>Conclusion</h3>
   <p>Based on the activity-specific assumptions and the sales projection provided, the proposed project for ${escapeHtml(current.borrower.business)}
   indicates ${c.checklist[c.checklist.length-1].pass?'a mathematically consistent and complete':'an incomplete'} set of financial projections.
-  Final assessment, sanction and terms remain subject to the lending bank's independent verification, viability assessment and applicable regulatory requirements.</p>
-  <div class="footer-byline">Developed by Anil Sharma, Former General Manager, Central Bank of India.<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
+  The proposed monthly instalment (EMI) is approximately ${inr(c.emi)} per month. Final assessment, sanction and terms remain subject to the lending bank's
+  independent verification, viability assessment and applicable regulatory requirements.</p>
+  <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
 }
 
 /* ---------------- Boot ---------------- */
