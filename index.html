@@ -274,7 +274,16 @@ const I18N = {
   helpBtn:["Help","सहायता"],
   helpTitle:["User Guide & Help","उपयोगकर्ता मार्गदर्शिका व सहायता"],
   shareBtn:["Share","साझा करें"],
-  printShareScope:["Print and Share bundle only the Loan Application and the full Project Report — ready for bank submission. The Report Readiness Checklist (for your own reference) is not included.","प्रिंट व साझा करें में केवल ऋण आवेदन एवं पूर्ण परियोजना रिपोर्ट शामिल है — बैंक में जमा करने हेतु तैयार। रिपोर्ट तैयारी सूची (केवल आपके संदर्भ हेतु) इसमें शामिल नहीं है।"]
+  printShareScope:["Print and Share bundle only the Loan Application and the full Project Report — ready for bank submission. The Report Readiness Checklist (for your own reference) is not included.","प्रिंट व साझा करें में केवल ऋण आवेदन एवं पूर्ण परियोजना रिपोर्ट शामिल है — बैंक में जमा करने हेतु तैयार। रिपोर्ट तैयारी सूची (केवल आपके संदर्भ हेतु) इसमें शामिल नहीं है।"],
+  actualsTitle:["Last Year's Actual Financials (Existing Unit)","पिछले वर्ष का वास्तविक वित्तीय विवरण (चालू इकाई)"],
+  actualsNote:["Since this is an existing business, entering last year's actual figures (as per books/audited or provisional balance sheet) lets the report compare them against this year's projections.","चूँकि यह एक चालू व्यवसाय है, पिछले वर्ष के वास्तविक आंकड़े (बहीखाता/लेखापरीक्षित अथवा अनंतिम तुलन पत्र अनुसार) दर्ज करने से रिपोर्ट उन्हें इस वर्ष के अनुमानों से तुलना कर सकती है।"],
+  actualSales:["Actual Sales / Turnover (Last Year)","वास्तविक बिक्री / टर्नओवर (पिछला वर्ष)"],
+  actualNetProfit:["Actual Net Profit (Last Year)","वास्तविक शुद्ध लाभ (पिछला वर्ष)"],
+  actualNetWorth:["Net Worth / Capital (Last Year)","निवल मूल्य / पूंजी (पिछला वर्ष)"],
+  actualTOL:["Total Outside Liabilities (Last Year)","कुल बाह्य देनदारियाँ (पिछला वर्ष)"],
+  actualCA:["Current Assets (Last Year)","चालू संपत्तियाँ (पिछला वर्ष)"],
+  actualCL:["Current Liabilities (Last Year)","चालू देनदारियाँ (पिछला वर्ष)"],
+  actualTermLoanOS:["Existing Term Loan Outstanding (Last Year, if any)","विद्यमान मीयादी ऋण बकाया (पिछला वर्ष, यदि कोई हो)"]
 };
 function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
 function colorLegend(){
@@ -306,7 +315,14 @@ const HINTS = {
   activityNameLabel:["Type the activity in your own words if it is not in the list.","यदि सूची में गतिविधि नहीं है तो अपने शब्दों में लिखें।"],
   appBankName:["Type the exact bank name this application will be submitted to.","वह बैंक का नाम लिखें जहाँ यह आवेदन प्रस्तुत किया जाएगा।"],
   appPlace:["Branch name and place/town.","शाखा का नाम व स्थान/कस्बा।"],
-  appDate:["Date of submission (YYYY-MM-DD).","प्रस्तुतीकरण की तिथि (YYYY-MM-DD)।"]
+  appDate:["Date of submission (YYYY-MM-DD).","प्रस्तुतीकरण की तिथि (YYYY-MM-DD)।"],
+  actualSales:["From last year's books, audited or provisional balance sheet.","पिछले वर्ष के बहीखाता, लेखापरीक्षित अथवा अनंतिम तुलन पत्र से।"],
+  actualNetProfit:["Profit after tax for last year, as per the P&L account.","पिछले वर्ष का कर पश्चात लाभ, लाभ-हानि खाते अनुसार।"],
+  actualNetWorth:["Owner's capital plus reserves, as per last year's balance sheet.","स्वामी की पूंजी व संचित निधि, पिछले वर्ष के तुलन पत्र अनुसार।"],
+  actualTOL:["All borrowings and outside liabilities put together, as per last year's balance sheet.","सभी उधार व बाह्य देनदारियाँ मिलाकर, पिछले वर्ष के तुलन पत्र अनुसार।"],
+  actualCA:["Stock, receivables and cash/bank, as per last year's balance sheet.","स्टॉक, प्राप्य व नकद/बैंक, पिछले वर्ष के तुलन पत्र अनुसार।"],
+  actualCL:["Trade creditors and short-term borrowings, as per last year's balance sheet.","व्यापारिक लेनदार व अल्पकालिक उधार, पिछले वर्ष के तुलन पत्र अनुसार।"],
+  actualTermLoanOS:["Balance of any existing term loan still outstanding. Leave blank/0 if none.","किसी विद्यमान मीयादी ऋण का बकाया शेष। कोई न हो तो खाली/0 छोड़ें।"]
 };
 function hint(key){ const h = HINTS[key]; return h ? `<div class="hint">${h[LANG==='hi'?1:0]}</div>` : ''; }
 
@@ -437,7 +453,7 @@ function defaultSettings(){
     ownerDrawingsPct:50, taxRatePct:0,
     interestRatePct:12, tenureYears:5, moratoriumMonths:6, instalmentFreq:"Monthly",
     ratioNorms:{ currentRatioMin:1.33, debtEquityMax:3, tolTnwMax:4, dscrAvgMin:1.5, dscrMinMin:1.25, interestCoverageMin:1.5 },
-    loanMismatchTolerancePct:5
+    loanMismatchTolerancePct:5, maxSalesGrowthPct:50
   };
 }
 function getSettings(){
@@ -471,7 +487,8 @@ function blankProject(){
     settings: JSON.parse(JSON.stringify(m)),
     loanTerms:{ interestRatePct:m.interestRatePct, tenureYears:m.tenureYears, moratoriumMonths:m.moratoriumMonths, instalmentFreq:m.instalmentFreq },
     openingCash:0,
-    application:{ bankName:"", place:"", date:new Date().toISOString().slice(0,10) }
+    application:{ bankName:"", place:"", date:new Date().toISOString().slice(0,10) },
+    actuals:{ sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 }
   };
 }
 
@@ -585,6 +602,20 @@ function calculate(p){
     tolerancePct
   };
   loanCheck.anyMismatch = loanCheck.totalMismatch || loanCheck.wcMismatch || loanCheck.splitMismatch;
+
+  /* Last Year's Actuals (existing units only) — compare against this year's Year-1 projection
+     and flag an unusually large jump so it can be reconciled before submission. */
+  const ac = p.actuals || {sales:0,netProfit:0,netWorth:0,totalOutsideLiab:0,currentAssets:0,currentLiabilities:0,termLoanOS:0};
+  const hasActuals = p.borrower.existing==='Existing' && num(ac.sales)>0;
+  const actualsCheck = { hasActuals, actuals: ac,
+    currentRatio: num(ac.currentLiabilities)>0 ? num(ac.currentAssets)/num(ac.currentLiabilities) : null,
+    tolTnw: num(ac.netWorth)>0 ? num(ac.totalOutsideLiab)/num(ac.netWorth) : null,
+    salesGrowthPct: hasActuals ? ((sales[0]-num(ac.sales))/num(ac.sales))*100 : null,
+    highGrowthFlag: false
+  };
+  if(hasActuals && actualsCheck.salesGrowthPct!==null){
+    actualsCheck.highGrowthFlag = actualsCheck.salesGrowthPct > (s.maxSalesGrowthPct===undefined?50:s.maxSalesGrowthPct);
+  }
 
   const opCycle = pnl.map((row,i)=>{
     const S = sales[i];
@@ -765,6 +796,7 @@ function calculate(p){
   checklist.push({key:"chkReady", pass: allPass});
   checklist.push({key:"chkRatioNorm", pass: belowNormList.length===0, info:true});
   checklist.push({key:"chkLoanMatch", pass: !loanCheck.anyMismatch, info:true});
+  if(actualsCheck.hasActuals){ checklist.push({key:"chkGrowthCheck", pass: !actualsCheck.highGrowthFlag, info:true}); }
 
   return {
     a, sales, pnl:pnlFull, fixedAssetReq, promoterMarginFixed, fa, grossBlock,
@@ -772,7 +804,7 @@ function calculate(p){
     schedule, tlYearly, wcYearly, wcInterestYearly, deprYearly, nfaYearly,
     drawingsYearly, reYearly, cashFlow, balanceSheet, dscrYearly, avgDscr, minDscr,
     ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths, emi, repayMonths,
-    norms, dscrCompliance, belowNormList, loanCheck
+    norms, dscrCompliance, belowNormList, loanCheck, actualsCheck
   };
 }
 
@@ -833,6 +865,7 @@ function openProject(id){
   const pr = loadAllProjects().find(x=>x.id===id);
   if(!pr) return;
   if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
+  if(!pr.actuals) pr.actuals = { sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 };
   current = pr; wizardStep=1;
   document.getElementById('saveTopBtn').style.display='inline-block';
   renderWizard();
@@ -880,6 +913,7 @@ function handleImportFile(ev){
       const pr = JSON.parse(e.target.result);
       pr.id = uid(); pr.createdAt = new Date().toISOString();
       if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
+  if(!pr.actuals) pr.actuals = { sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 };
       const list = loadAllProjects(); list.push(pr); persistAllProjects(list);
       renderDashboard();
     }catch(err){ alert("Could not read this file. Please select a valid exported project JSON file."); }
@@ -973,6 +1007,7 @@ function openSettingsScreen(){
   <p class="muted small">${LANG==='hi'?'यदि उधारकर्ता द्वारा आवेदित ऋण राशि, इस सहनशीलता से अधिक इस रिपोर्ट की आकलित आवश्यकता से भिन्न हो, तो उसे लाल रंग में उजागर किया जाता है।':'If the loan amount the borrower applied for differs from this report\'s assessed requirement by more than this tolerance, it is highlighted in red.'}</p>
   <div class="grid default-zone">
     <div><label>${LANG==='hi'?'सहनशीलता (%)':'Tolerance (%)'}</label><input type="number" step="1" id="s_loanTol" value="${s.loanMismatchTolerancePct}"></div>
+    <div><label>${LANG==='hi'?'अधिकतम उचित बिक्री वृद्धि (%, पिछले वर्ष के वास्तविक की तुलना में)':'Maximum reasonable sales jump (%, vs last year\'s actual)'}</label><input type="number" step="1" id="s_maxGrowth" value="${s.maxSalesGrowthPct}"></div>
   </div>
   <div class="note-box">These are indicative default assumptions. The applicable methodology, ratios and final sanction terms remain subject to the lending bank's prevailing policy and applicable regulatory requirements.</div>
   <div class="btnrow">
@@ -992,7 +1027,7 @@ function saveSettingsScreen(){
     interestRatePct:+val('s_rate'), tenureYears:+val('s_tenure'), moratoriumMonths:+val('s_mora'), instalmentFreq:"Monthly",
     ratioNorms:{ currentRatioMin:+val('s_curRatio'), debtEquityMax:+val('s_deRatio'), tolTnwMax:+val('s_tolTnw'),
       interestCoverageMin:+val('s_icr'), dscrAvgMin:+val('s_dscrAvg'), dscrMinMin:+val('s_dscrMin') },
-    loanMismatchTolerancePct:+val('s_loanTol')
+    loanMismatchTolerancePct:+val('s_loanTol'), maxSalesGrowthPct:+val('s_maxGrowth')
   };
   saveSettingsObj(s);
   alert("Default assumptions saved.");
@@ -1085,6 +1120,7 @@ function renderWizard(){
 }
 function stepBorrower(){
   const b = current.borrower;
+  const ac = current.actuals || {sales:0,netProfit:0,netWorth:0,totalOutsideLiab:0,currentAssets:0,currentLiabilities:0,termLoanOS:0};
   return `${colorLegend()}<div class="grid fill-zone">
     <div><label>${tt('borrowerName')}</label><input type="text" id="w_name" value="${escapeHtml(b.name)}">${hint('borrowerName')}</div>
     <div><label>${tt('businessName')}</label><input type="text" id="w_business" value="${escapeHtml(b.business)}">${hint('businessName')}</div>
@@ -1093,14 +1129,32 @@ function stepBorrower(){
     </select></div>
     <div><label>${tt('mobile')}</label><input type="tel" id="w_mobile" value="${escapeHtml(b.mobile)}">${hint('mobile')}</div>
     <div style="grid-column:1/-1;"><label>${tt('address')}</label><textarea id="w_address" rows="2">${escapeHtml(b.address)}</textarea>${hint('address')}</div>
-    <div><label>${tt('businessStatus')}</label><select id="w_existing">
+    <div><label>${tt('businessStatus')}</label><select id="w_existing" onchange="borrowerStatusChanged()">
       <option ${b.existing==='New'?'selected':''}>New</option><option ${b.existing==='Existing'?'selected':''}>Existing</option>
     </select></div>
     <div><label>${tt('businessExperience')}</label><input type="text" id="w_experience" placeholder="e.g. 3 years" value="${escapeHtml(b.experience)}">${hint('businessExperience')}</div>
     <div><label>${tt('udyam')}</label><input type="text" id="w_udyam" value="${escapeHtml(b.udyam)}">${hint('udyam')}</div>
     <div><label>${tt('gstin')}</label><input type="text" id="w_gstin" value="${escapeHtml(b.gstin)}">${hint('gstin')}</div>
     <div style="grid-column:1/-1;"><label>${tt('bankBranch')}</label><input type="text" id="w_bank" value="${escapeHtml(b.bank)}">${hint('bankBranch')}</div>
-  </div>`;
+  </div>
+  ${b.existing==='Existing' ? `
+  <h3>${tt('actualsTitle')}</h3>
+  <p class="muted small">${tt('actualsNote')}</p>
+  <div class="grid fill-zone">
+    <div><label>${tt('actualSales')}</label><input type="number" id="w_ac_sales" value="${ac.sales||''}">${hint('actualSales')}</div>
+    <div><label>${tt('actualNetProfit')}</label><input type="number" id="w_ac_netProfit" value="${ac.netProfit||''}">${hint('actualNetProfit')}</div>
+    <div><label>${tt('actualNetWorth')}</label><input type="number" id="w_ac_netWorth" value="${ac.netWorth||''}">${hint('actualNetWorth')}</div>
+    <div><label>${tt('actualTOL')}</label><input type="number" id="w_ac_tol" value="${ac.totalOutsideLiab||''}">${hint('actualTOL')}</div>
+    <div><label>${tt('actualCA')}</label><input type="number" id="w_ac_ca" value="${ac.currentAssets||''}">${hint('actualCA')}</div>
+    <div><label>${tt('actualCL')}</label><input type="number" id="w_ac_cl" value="${ac.currentLiabilities||''}">${hint('actualCL')}</div>
+    <div><label>${tt('actualTermLoanOS')}</label><input type="number" id="w_ac_tlos" value="${ac.termLoanOS||''}">${hint('actualTermLoanOS')}</div>
+  </div>` : ''}`;
+}
+function borrowerStatusChanged(){
+  current.borrower.name=val('w_name'); current.borrower.business=val('w_business'); current.borrower.constitution=val('w_constitution');
+  current.borrower.address=val('w_address'); current.borrower.mobile=val('w_mobile'); current.borrower.existing=val('w_existing');
+  current.borrower.experience=val('w_experience'); current.borrower.udyam=val('w_udyam'); current.borrower.gstin=val('w_gstin'); current.borrower.bank=val('w_bank');
+  renderWizard();
 }
 function stepActivity(){
   const cats = ["Trading","Manufacturing","Services"];
@@ -1198,6 +1252,10 @@ function persistWizardStep(){
     current.borrower = { name:val('w_name'), business:val('w_business'), constitution:val('w_constitution'),
       address:val('w_address'), mobile:val('w_mobile'), existing:val('w_existing'), experience:val('w_experience'),
       udyam:val('w_udyam'), gstin:val('w_gstin'), bank:val('w_bank') };
+    if(current.borrower.existing==='Existing' && document.getElementById('w_ac_sales')){
+      current.actuals = { sales:+val('w_ac_sales')||0, netProfit:+val('w_ac_netProfit')||0, netWorth:+val('w_ac_netWorth')||0,
+        totalOutsideLiab:+val('w_ac_tol')||0, currentAssets:+val('w_ac_ca')||0, currentLiabilities:+val('w_ac_cl')||0, termLoanOS:+val('w_ac_tlos')||0 };
+    }
   } else if(wizardStep===2){
     if(current.customActivity){ current.activityName = val('w_customActName'); current.activityModel = val('w_customModel'); }
   } else if(wizardStep===3){
@@ -1321,6 +1379,7 @@ const REPORT_SECTIONS = [
   ["application","Application to Bank","बैंक हेतु आवेदन"],
   ["cover","Cover Page","आवरण पृष्ठ"],["summary","Executive Summary","कार्यकारी सारांश"],
   ["borrower","Borrower Profile","उधारकर्ता विवरण"],["activity","Business Activity","व्यवसाय गतिविधि"],
+  ["actuals","Last Year's Actuals","पिछले वर्ष के वास्तविक"],
   ["purpose","Purpose of Loan","ऋण का उद्देश्य"],["cost","Project Cost","परियोजना लागत"],
   ["finance","Means of Finance","वित्त के साधन"],["assumptions","Activity Assumptions","गतिविधि मान्यताएँ"],
   ["sales","Projected Sales","अनुमानित बिक्री"],["pnl","Projected P&L","अनुमानित लाभ-हानि"],
@@ -1332,10 +1391,16 @@ const REPORT_SECTIONS = [
   ["conclusion","Conclusion","निष्कर्ष"]
 ];
 function rsLabel(row){ return LANG==='hi' ? row[2] : row[1]; }
+/* "actuals" only applies to an Existing unit; hide it entirely for a New business. */
+function visibleSections(list){
+  return list.filter(row=> row[0]!=='actuals' || (current && current.borrower && current.borrower.existing==='Existing'));
+}
 /* Only these sections are bundled into Print / Share / "View Full Report" — the document
    actually submitted to the bank. The Report Readiness Checklist is an internal self-check
    for the preparer and is deliberately excluded from the bank-facing bundle. */
-const PRINTABLE_SECTIONS = REPORT_SECTIONS.filter(row=>row[0]!=='checklist');
+function printableSections(){
+  return visibleSections(REPORT_SECTIONS).filter(row=>row[0]!=='checklist');
+}
 function renderReportScreen(){
   reportTab='application';
   const c = calculate(current);
@@ -1346,7 +1411,7 @@ function renderReportScreen(){
 function drawReport(){
   const c = window._reportCalc || calculate(current);
   window._reportCalc = c;
-  const tabs = REPORT_SECTIONS.map(row=>`<button class="${reportTab===row[0]?'active':''}" onclick="switchReportTab('${row[0]}')">${rsLabel(row)}</button>`).join('');
+  const tabs = visibleSections(REPORT_SECTIONS).map(row=>`<button class="${reportTab===row[0]?'active':''}" onclick="switchReportTab('${row[0]}')">${rsLabel(row)}</button>`).join('');
   let body = "";
   switch(reportTab){
     case 'application': body = rApplication(c); break;
@@ -1354,6 +1419,7 @@ function drawReport(){
     case 'summary': body = rSummary(c); break;
     case 'borrower': body = rBorrower(); break;
     case 'activity': body = rActivity(); break;
+    case 'actuals': body = rActuals(c); break;
     case 'purpose': body = rPurpose(c); break;
     case 'cost': body = rCost(c); break;
     case 'finance': body = rFinance(c); break;
@@ -1389,9 +1455,9 @@ function switchReportTab(id){ reportTab=id; drawReport(); }
 function buildFullReportHtml(){
   const c = window._reportCalc;
   let all = `<div class="dev-credit cover">${byline()}</div>`;
-  PRINTABLE_SECTIONS.forEach(row=>{
+  printableSections().forEach(row=>{
     const id = row[0];
-    let fn = {application:()=>rApplication(c),cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,purpose:()=>rPurpose(c),
+    let fn = {application:()=>rApplication(c),cover:rCover,summary:()=>rSummary(c),borrower:rBorrower,activity:rActivity,actuals:()=>rActuals(c),purpose:()=>rPurpose(c),
       cost:()=>rCost(c),finance:()=>rFinance(c),assumptions:rAssumptions,sales:()=>rSales(c),pnl:()=>rPnl(c),
       bs:()=>rBS(c),cf:()=>rCF(c),wc:()=>rWC(c),mpbf:()=>rMPBF(c),repayment:()=>rRepayment(c),ratios:()=>rRatios(c),
       breakeven:()=>rBreakeven(c),interpretation:()=>rInterpretation(c),methodology:rMethodology,checklist:()=>rChecklist(c),
@@ -1569,6 +1635,40 @@ function rActivity(){
   <h3>${LANG==='hi'?'व्यवसाय विवरण':'Business Description'}</h3>
   <p>${LANG==='hi'?`यह इकाई एक ${current.borrower.existing==='New'?'नई':'चालू'} इकाई है, जो ${escapeHtml(current.activityName)} गतिविधि में संलग्न है तथा ${escapeHtml(current.borrower.constitution)} के रूप में संचालित है।`
     :`The unit is a ${escapeHtml(current.borrower.existing).toLowerCase()} enterprise engaged in ${escapeHtml(current.activityName).toLowerCase()}, operated as a ${escapeHtml(current.borrower.constitution).toLowerCase()}.`}</p>`;
+}
+function rActuals(c){
+  const hi = LANG==='hi';
+  const ac = c.actualsCheck;
+  if(current.borrower.existing!=='Existing'){
+    return `<h3>${tt('actualsTitle')}</h3><p class="muted">${hi?'यह एक नई इकाई है, अतः पिछले वर्ष का कोई वास्तविक वित्तीय विवरण लागू नहीं है।':'This is a new unit, so no prior year actual financials apply.'}</p>`;
+  }
+  if(!ac.hasActuals){
+    return `<h3>${tt('actualsTitle')}</h3><p class="muted">${hi?'पिछले वर्ष के वास्तविक आंकड़े दर्ज नहीं किए गए। उधारकर्ता विवरण (चरण 1) में जाकर दर्ज करें।':'Last year\'s actual figures were not entered. Go back to Borrower Details (Step 1) to add them.'}</p>`;
+  }
+  const a = ac.actuals;
+  const rows = [
+    [hi?'बिक्री / टर्नओवर':'Sales / Turnover', inr(a.sales), inr(c.sales[0])],
+    [hi?'शुद्ध लाभ':'Net Profit', inr(a.netProfit), inr(c.pnl[0].pat)],
+  ];
+  return `<h3>${tt('actualsTitle')}</h3>
+  <table><tr><th>${hi?'विवरण':'Particulars'}</th><th>${hi?'पिछला वर्ष (वास्तविक)':'Last Year (Actual)'}</th><th>${hi?'चालू वर्ष (अनुमानित)':'Current Year (Projected)'}</th></tr>
+  ${rows.map(([l,v1,v2])=>`<tr><td>${l}</td><td>${v1}</td><td>${v2}</td></tr>`).join('')}
+  </table>
+  <table><tr><th>${hi?'अन्य वास्तविक आंकड़े (पिछला वर्ष)':'Other Actuals (Last Year)'}</th><th>${hi?'राशि':'Amount'}</th></tr>
+  <tr><td>${tt('actualNetWorth')}</td><td>${inr(a.netWorth)}</td></tr>
+  <tr><td>${tt('actualTOL')}</td><td>${inr(a.totalOutsideLiab)}</td></tr>
+  <tr><td>${tt('actualCA')}</td><td>${inr(a.currentAssets)}</td></tr>
+  <tr><td>${tt('actualCL')}</td><td>${inr(a.currentLiabilities)}</td></tr>
+  <tr><td>${tt('actualTermLoanOS')}</td><td>${inr(a.termLoanOS)}</td></tr>
+  <tr><td>${hi?'वास्तविक धारा अनुपात (पिछला वर्ष)':'Actual Current Ratio (Last Year)'}</td><td>${ac.currentRatio!==null?ac.currentRatio.toFixed(2):(hi?'लागू नहीं':'Not Applicable')}</td></tr>
+  <tr><td>${hi?'वास्तविक टीओएल/टीएनडब्ल्यू (पिछला वर्ष)':'Actual TOL/TNW (Last Year)'}</td><td>${ac.tolTnw!==null?ac.tolTnw.toFixed(2):(hi?'लागू नहीं':'Not Applicable')}</td></tr>
+  <tr class="${ac.highGrowthFlag?'mismatch-row':''}"><td>${hi?'अनुमानित बिक्री वृद्धि (पिछले वास्तविक की तुलना में)':'Projected Sales Growth (vs Last Year Actual)'}</td><td><span class="${ac.highGrowthFlag?'mismatch':''}">${ac.salesGrowthPct!==null?pct(ac.salesGrowthPct,1):(hi?'लागू नहीं':'Not Applicable')}</span></td></tr>
+  </table>
+  ${ac.highGrowthFlag ? `<div class="mismatch-box"><b>${hi?'⚠ बिक्री वृद्धि जाँच:':'⚠ Sales Growth Check:'}</b> ${hi
+    ? `अनुमानित बिक्री, पिछले वर्ष के वास्तविक आंकड़े की तुलना में ${pct(ac.salesGrowthPct,1)} अधिक है, जो असामान्य रूप से उच्च प्रतीत होती है (निर्धारित सीमा: ${current.settings.maxSalesGrowthPct}%)। कृपया उधारकर्ता से इस वृद्धि का औचित्य स्पष्ट करें या अनुमान की समीक्षा करें।`
+    : `Projected sales are ${pct(ac.salesGrowthPct,1)} higher than last year's actual, which appears unusually high (threshold: ${current.settings.maxSalesGrowthPct}%). Please ask the borrower to justify this growth, or review the projection.`}</div>`
+  : `<div class="note-box">${hi?'अनुमानित बिक्री वृद्धि, निर्धारित उचित सीमा के भीतर है।':'Projected sales growth is within the reasonable threshold.'}</div>`}
+  <p class="small muted">${hi?'ये आंकड़े उधारकर्ता द्वारा दिए गए पिछले वर्ष के बहीखाता/लेखापरीक्षित अथवा अनंतिम तुलन पत्र पर आधारित हैं, केवल तुलना हेतु।':'These figures are as provided by the borrower from last year\'s books/audited or provisional balance sheet, shown for comparison only.'}</p>`;
 }
 function rPurpose(c){
   const lc = c.loanCheck;
@@ -1798,7 +1898,8 @@ const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारक�
   chkBS:["Balance Sheet Balanced","तुलन पत्र संतुलित"],chkCF:["Cash Flow Calculated","नकदी प्रवाह गणना"],
   chkRepay:["Repayment Schedule Calculated","चुकौती अनुसूची गणना"],chkRatios:["Ratios Calculated","अनुपात गणना"],chkReady:["Report Ready","रिपोर्ट तैयार"],
   chkRatioNorm:["All Ratios Meet Prescribed Norms","सभी अनुपात निर्धारित मानकों को पूरा करते हैं"],
-  chkLoanMatch:["Loan Applied Matches Assessed Requirement","आवेदित ऋण, आकलित आवश्यकता से मेल खाता है"]};
+  chkLoanMatch:["Loan Applied Matches Assessed Requirement","आवेदित ऋण, आकलित आवश्यकता से मेल खाता है"],
+  chkGrowthCheck:["Projected Sales Growth is Reasonable vs Last Year's Actual","अनुमानित बिक्री वृद्धि, पिछले वर्ष के वास्तविक की तुलना में उचित है"]};
 function rChecklist(c){
   return `<h3>${LANG==='hi'?'रिपोर्ट तैयारी सूची':'Report Readiness Checklist'}</h3><ul class="check-list">
   ${c.checklist.map(x=>`<li class="${x.pass?'pass':(x.info?'warn':'fail')}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
