@@ -276,14 +276,25 @@ const I18N = {
   shareBtn:["Share","साझा करें"],
   printShareScope:["Print and Share bundle only the Loan Application and the full Project Report — ready for bank submission. The Report Readiness Checklist (for your own reference) is not included.","प्रिंट व साझा करें में केवल ऋण आवेदन एवं पूर्ण परियोजना रिपोर्ट शामिल है — बैंक में जमा करने हेतु तैयार। रिपोर्ट तैयारी सूची (केवल आपके संदर्भ हेतु) इसमें शामिल नहीं है।"],
   actualsTitle:["Last Year's Actual Financials (Existing Unit)","पिछले वर्ष का वास्तविक वित्तीय विवरण (चालू इकाई)"],
-  actualsNote:["Since this is an existing business, entering last year's actual figures (as per books/audited or provisional balance sheet) lets the report compare them against this year's projections.","चूँकि यह एक चालू व्यवसाय है, पिछले वर्ष के वास्तविक आंकड़े (बहीखाता/लेखापरीक्षित अथवा अनंतिम तुलन पत्र अनुसार) दर्ज करने से रिपोर्ट उन्हें इस वर्ष के अनुमानों से तुलना कर सकती है।"],
-  actualSales:["Actual Sales / Turnover (Last Year)","वास्तविक बिक्री / टर्नओवर (पिछला वर्ष)"],
-  actualNetProfit:["Actual Net Profit (Last Year)","वास्तविक शुद्ध लाभ (पिछला वर्ष)"],
-  actualNetWorth:["Net Worth / Capital (Last Year)","निवल मूल्य / पूंजी (पिछला वर्ष)"],
-  actualTOL:["Total Outside Liabilities (Last Year)","कुल बाह्य देनदारियाँ (पिछला वर्ष)"],
-  actualCA:["Current Assets (Last Year)","चालू संपत्तियाँ (पिछला वर्ष)"],
-  actualCL:["Current Liabilities (Last Year)","चालू देनदारियाँ (पिछला वर्ष)"],
-  actualTermLoanOS:["Existing Term Loan Outstanding (Last Year, if any)","विद्यमान मीयादी ऋण बकाया (पिछला वर्ष, यदि कोई हो)"]
+  actualsNote:["Since this is an existing business, entering last year's actual figures (as per books/audited or provisional balance sheet) lets the report compare them against this year's projections and calibrate the assumptions to real performance.","चूँकि यह एक चालू व्यवसाय है, पिछले वर्ष के वास्तविक आंकड़े (बहीखाता/लेखापरीक्षित अथवा अनंतिम तुलन पत्र अनुसार) दर्ज करने से रिपोर्ट उन्हें इस वर्ष के अनुमानों से तुलना कर, वास्तविक प्रदर्शन के अनुरूप मान्यताओं को समायोजित कर सकती है।"],
+  actualPnlTitle:["Actual Profit & Loss (Last Year)","वास्तविक लाभ-हानि (पिछला वर्ष)"],
+  actualBsTitle:["Actual Balance Sheet (Last Year)","वास्तविक तुलन पत्र (पिछला वर्ष)"],
+  actualSales:["Sales / Turnover","बिक्री / टर्नओवर"],
+  actualCOS:["Cost of Sales / Purchases","बिक्री लागत / क्रय"],
+  actualOpex:["Total Operating Expenses (all expenses combined)","कुल परिचालन व्यय (सभी व्यय मिलाकर)"],
+  actualDepr:["Depreciation","मूल्यह्रास"],
+  actualInterest:["Interest Paid","भुगतान किया गया ब्याज"],
+  actualNetProfit:["Net Profit (after tax)","शुद्ध लाभ (कर पश्चात)"],
+  actualNFA:["Net Fixed Assets","शुद्ध स्थिर संपत्ति"],
+  actualInventory:["Inventory / Stock","स्टॉक"],
+  actualReceivables:["Receivables / Debtors","प्राप्य / देनदार"],
+  actualCashBank:["Cash / Bank","नकद / बैंक"],
+  actualOtherCA:["Other Current Assets","अन्य चालू संपत्तियाँ"],
+  actualNetWorth:["Net Worth / Capital","निवल मूल्य / पूंजी"],
+  actualTermLoanOS:["Existing Term Loan Outstanding (if any)","विद्यमान मीयादी ऋण बकाया (यदि कोई हो)"],
+  actualWcOS:["Working Capital Borrowing Outstanding (if any)","कार्यशील पूंजी उधार बकाया (यदि कोई हो)"],
+  actualCreditors:["Trade Creditors","व्यापारिक लेनदार"],
+  actualOtherCL:["Other Current Liabilities","अन्य चालू देनदारियाँ"]
 };
 function tt(key){ const v = I18N[key]; return v ? v[LANG==='hi'?1:0] : key; }
 function wcMemoNote(amount){
@@ -322,12 +333,21 @@ const HINTS = {
   appPlace:["Branch name and place/town.","शाखा का नाम व स्थान/कस्बा।"],
   appDate:["Date of submission (YYYY-MM-DD).","प्रस्तुतीकरण की तिथि (YYYY-MM-DD)।"],
   actualSales:["From last year's books, audited or provisional balance sheet.","पिछले वर्ष के बहीखाता, लेखापरीक्षित अथवा अनंतिम तुलन पत्र से।"],
+  actualCOS:["Cost of goods/materials sold or purchased during the year.","वर्ष के दौरान बेचे/खरीदे गए माल/सामग्री की लागत।"],
+  actualOpex:["Add up rent, salaries, electricity and all other running expenses into one figure.","किराया, वेतन, बिजली व अन्य सभी चालू व्यय जोड़कर एक राशि दें।"],
+  actualDepr:["As claimed/booked last year. Leave 0 if not tracked separately.","पिछले वर्ष दावा/दर्ज किया गया मूल्यह्रास। अलग से न रखा गया हो तो 0 छोड़ें।"],
+  actualInterest:["Interest paid on any existing loans last year. Leave 0 if none.","पिछले वर्ष किसी विद्यमान ऋण पर भुगतान किया गया ब्याज। कोई न हो तो 0 छोड़ें।"],
   actualNetProfit:["Profit after tax for last year, as per the P&L account.","पिछले वर्ष का कर पश्चात लाभ, लाभ-हानि खाते अनुसार।"],
+  actualNFA:["Value of machinery, furniture, vehicle etc. after depreciation, as per last year's balance sheet.","मशीनरी, फर्नीचर, वाहन आदि का मूल्यह्रास पश्चात मूल्य, पिछले वर्ष के तुलन पत्र अनुसार।"],
+  actualInventory:["Value of stock held at last year end.","पिछले वर्ष के अंत में उपलब्ध स्टॉक का मूल्य।"],
+  actualReceivables:["Amount customers owed at last year end.","पिछले वर्ष के अंत में ग्राहकों पर बकाया राशि।"],
+  actualCashBank:["Cash in hand plus bank balance at last year end.","पिछले वर्ष के अंत में हाथ में नकद व बैंक शेष।"],
+  actualOtherCA:["Anything else owned that isn't stock, receivables or cash. Leave 0 if none.","स्टॉक, प्राप्य या नकद के अलावा अन्य कोई संपत्ति। कोई न हो तो 0 छोड़ें।"],
   actualNetWorth:["Owner's capital plus reserves, as per last year's balance sheet.","स्वामी की पूंजी व संचित निधि, पिछले वर्ष के तुलन पत्र अनुसार।"],
-  actualTOL:["All borrowings and outside liabilities put together, as per last year's balance sheet.","सभी उधार व बाह्य देनदारियाँ मिलाकर, पिछले वर्ष के तुलन पत्र अनुसार।"],
-  actualCA:["Stock, receivables and cash/bank, as per last year's balance sheet.","स्टॉक, प्राप्य व नकद/बैंक, पिछले वर्ष के तुलन पत्र अनुसार।"],
-  actualCL:["Trade creditors and short-term borrowings, as per last year's balance sheet.","व्यापारिक लेनदार व अल्पकालिक उधार, पिछले वर्ष के तुलन पत्र अनुसार।"],
-  actualTermLoanOS:["Balance of any existing term loan still outstanding. Leave blank/0 if none.","किसी विद्यमान मीयादी ऋण का बकाया शेष। कोई न हो तो खाली/0 छोड़ें।"]
+  actualTermLoanOS:["Balance of any existing term loan still outstanding. Leave 0 if none.","किसी विद्यमान मीयादी ऋण का बकाया शेष। कोई न हो तो 0 छोड़ें।"],
+  actualWcOS:["Balance outstanding in any cash credit/overdraft account. Leave 0 if none.","किसी नकद ऋण/ओवरड्राफ्ट खाते में बकाया शेष। कोई न हो तो 0 छोड़ें।"],
+  actualCreditors:["Amount owed to suppliers at last year end.","पिछले वर्ष के अंत में आपूर्तिकर्ताओं पर बकाया राशि।"],
+  actualOtherCL:["Any other short-term dues. Leave 0 if none.","कोई अन्य अल्पकालिक देय राशि। कोई न हो तो 0 छोड़ें।"]
 };
 function hint(key){ const h = HINTS[key]; return h ? `<div class="hint">${h[LANG==='hi'?1:0]}</div>` : ''; }
 
@@ -493,7 +513,9 @@ function blankProject(){
     loanTerms:{ interestRatePct:m.interestRatePct, tenureYears:m.tenureYears, moratoriumMonths:m.moratoriumMonths, instalmentFreq:m.instalmentFreq },
     openingCash:0,
     application:{ bankName:"", place:"", date:new Date().toISOString().slice(0,10) },
-    actuals:{ sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 }
+    actuals:{ sales:0, costOfSales:0, operatingExpenses:0, depreciation:0, interestPaid:0, netProfit:0,
+      netFixedAssets:0, inventory:0, receivables:0, cashBank:0, otherCurrentAssets:0,
+      netWorth:0, termLoanOS:0, wcBorrowingOS:0, tradeCreditors:0, otherCurrentLiab:0 }
   };
 }
 
@@ -614,15 +636,54 @@ function calculate(p){
   };
   loanCheck.anyMismatch = loanCheck.totalMismatch || loanCheck.wcMismatch || loanCheck.splitMismatch;
 
-  /* Last Year's Actuals (existing units only) — compare against this year's Year-1 projection
-     and flag an unusually large jump so it can be reconciled before submission. */
-  const ac = p.actuals || {sales:0,netProfit:0,netWorth:0,totalOutsideLiab:0,currentAssets:0,currentLiabilities:0,termLoanOS:0};
+  /* Last Year's Actuals (existing units only) — a full actual P&L and Balance Sheet, used to
+     (a) compare against this year's Year-1 projection and flag an unusually large sales jump,
+     and (b) derive real historical percentages/days so assumptions can be calibrated to actual
+     performance instead of the generic model defaults (see applyActualsToAssumptions()). */
+  const defAc = {sales:0,costOfSales:0,operatingExpenses:0,depreciation:0,interestPaid:0,netProfit:0,
+    netFixedAssets:0,inventory:0,receivables:0,cashBank:0,otherCurrentAssets:0,
+    netWorth:0,termLoanOS:0,wcBorrowingOS:0,tradeCreditors:0,otherCurrentLiab:0};
+  const ac = Object.assign({}, defAc, p.actuals||{});
   const hasActuals = p.borrower.existing==='Existing' && num(ac.sales)>0;
+
+  const acCA = num(ac.inventory)+num(ac.receivables)+num(ac.cashBank)+num(ac.otherCurrentAssets);
+  const acCL = num(ac.wcBorrowingOS)+num(ac.tradeCreditors)+num(ac.otherCurrentLiab);
+  const acTOL = num(ac.termLoanOS)+num(ac.wcBorrowingOS)+num(ac.tradeCreditors)+num(ac.otherCurrentLiab);
+  const acTotalAssets = num(ac.netFixedAssets)+acCA;
+  const acTotalLiabEquity = num(ac.netWorth)+acTOL;
+  const acGrossProfit = num(ac.sales)-num(ac.costOfSales);
+  const acEbitda = acGrossProfit-num(ac.operatingExpenses);
+  const acPBT = acEbitda-num(ac.depreciation)-num(ac.interestPaid);
+
+  const modelOpexPct = a.employee+a.rent+a.electricity+a.transport+a.admin+a.selling+a.repairs+a.otherOpex;
+  const actualCostOfSalesPct = num(ac.sales)>0 ? (num(ac.costOfSales)/num(ac.sales))*100 : null;
+  const actualOpexPct = num(ac.sales)>0 ? (num(ac.operatingExpenses)/num(ac.sales))*100 : null;
+  const actualDeprRatePct = num(ac.netFixedAssets)>0 ? (num(ac.depreciation)/num(ac.netFixedAssets))*100 : null;
+  const actualStockDays = num(ac.costOfSales)>0 ? (num(ac.inventory)/num(ac.costOfSales))*365 : null;
+  const actualDebtorDays = num(ac.sales)>0 ? (num(ac.receivables)/num(ac.sales))*365 : null;
+  const actualCreditorDays = num(ac.costOfSales)>0 ? (num(ac.tradeCreditors)/num(ac.costOfSales))*365 : null;
+
+  function devFlag(model, actual){ return (actual!==null && model>0) ? Math.abs(actual-model)/model>0.25 : false; }
+  const assumptionComparisons = [
+    {key:'costOfSales', labelEn:'Cost of Sales', labelHi:'बिक्री लागत', model:a.costOfSales, actual:actualCostOfSalesPct, unit:'%', flag:devFlag(a.costOfSales,actualCostOfSalesPct)},
+    {key:'opexAggregate', labelEn:'Total Operating Expenses', labelHi:'कुल परिचालन व्यय', model:modelOpexPct, actual:actualOpexPct, unit:'%', flag:devFlag(modelOpexPct,actualOpexPct)},
+    {key:'deprRate', labelEn:'Depreciation Rate', labelHi:'मूल्यह्रास दर', model:a.deprRate, actual:actualDeprRatePct, unit:'%', flag:devFlag(a.deprRate,actualDeprRatePct)},
+    {key:'stockDays', labelEn:'Stock Holding', labelHi:'स्टॉक अवधि', model:a.stockDays, actual:actualStockDays, unit:'days', flag:devFlag(a.stockDays,actualStockDays)},
+    {key:'debtorDays', labelEn:'Debtor Days', labelHi:'देनदार अवधि', model:a.debtorDays, actual:actualDebtorDays, unit:'days', flag:devFlag(a.debtorDays,actualDebtorDays)},
+    {key:'creditorDays', labelEn:'Creditor Days', labelHi:'लेनदार अवधि', model:a.creditorDays, actual:actualCreditorDays, unit:'days', flag:devFlag(a.creditorDays,actualCreditorDays)}
+  ];
+
   const actualsCheck = { hasActuals, actuals: ac,
-    currentRatio: num(ac.currentLiabilities)>0 ? num(ac.currentAssets)/num(ac.currentLiabilities) : null,
-    tolTnw: num(ac.netWorth)>0 ? num(ac.totalOutsideLiab)/num(ac.netWorth) : null,
+    currentAssets: acCA, currentLiabilities: acCL, totalOutsideLiab: acTOL,
+    totalAssets: acTotalAssets, totalLiabEquity: acTotalLiabEquity,
+    balanceGapPct: acTotalAssets>0 ? (Math.abs(acTotalAssets-acTotalLiabEquity)/acTotalAssets)*100 : null,
+    grossProfit: acGrossProfit, ebitda: acEbitda, pbt: acPBT,
+    currentRatio: acCL>0 ? acCA/acCL : null,
+    tolTnw: num(ac.netWorth)>0 ? acTOL/num(ac.netWorth) : null,
     salesGrowthPct: hasActuals ? ((sales[0]-num(ac.sales))/num(ac.sales))*100 : null,
-    highGrowthFlag: false
+    highGrowthFlag: false,
+    assumptionComparisons, modelOpexPct,
+    actualCostOfSalesPct, actualOpexPct, actualDeprRatePct, actualStockDays, actualDebtorDays, actualCreditorDays
   };
   if(hasActuals && actualsCheck.salesGrowthPct!==null){
     actualsCheck.highGrowthFlag = actualsCheck.salesGrowthPct > (s.maxSalesGrowthPct===undefined?50:s.maxSalesGrowthPct);
@@ -876,7 +937,10 @@ function openProject(id){
   const pr = loadAllProjects().find(x=>x.id===id);
   if(!pr) return;
   if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
-  if(!pr.actuals) pr.actuals = { sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 };
+  if(!pr.actuals) pr.actuals = { sales:0, costOfSales:0, operatingExpenses:0, depreciation:0, interestPaid:0, netProfit:0,
+    netFixedAssets:0, inventory:0, receivables:0, cashBank:0, otherCurrentAssets:0,
+    netWorth:0, termLoanOS:0, wcBorrowingOS:0, tradeCreditors:0, otherCurrentLiab:0 };
+  else { const d = {sales:0,costOfSales:0,operatingExpenses:0,depreciation:0,interestPaid:0,netProfit:0,netFixedAssets:0,inventory:0,receivables:0,cashBank:0,otherCurrentAssets:0,netWorth:0,termLoanOS:0,wcBorrowingOS:0,tradeCreditors:0,otherCurrentLiab:0}; pr.actuals = Object.assign({}, d, pr.actuals); }
   current = pr; wizardStep=1;
   document.getElementById('saveTopBtn').style.display='inline-block';
   renderWizard();
@@ -924,7 +988,10 @@ function handleImportFile(ev){
       const pr = JSON.parse(e.target.result);
       pr.id = uid(); pr.createdAt = new Date().toISOString();
       if(!pr.application) pr.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
-  if(!pr.actuals) pr.actuals = { sales:0, netProfit:0, netWorth:0, totalOutsideLiab:0, currentAssets:0, currentLiabilities:0, termLoanOS:0 };
+  if(!pr.actuals) pr.actuals = { sales:0, costOfSales:0, operatingExpenses:0, depreciation:0, interestPaid:0, netProfit:0,
+    netFixedAssets:0, inventory:0, receivables:0, cashBank:0, otherCurrentAssets:0,
+    netWorth:0, termLoanOS:0, wcBorrowingOS:0, tradeCreditors:0, otherCurrentLiab:0 };
+  else { const d = {sales:0,costOfSales:0,operatingExpenses:0,depreciation:0,interestPaid:0,netProfit:0,netFixedAssets:0,inventory:0,receivables:0,cashBank:0,otherCurrentAssets:0,netWorth:0,termLoanOS:0,wcBorrowingOS:0,tradeCreditors:0,otherCurrentLiab:0}; pr.actuals = Object.assign({}, d, pr.actuals); }
       const list = loadAllProjects(); list.push(pr); persistAllProjects(list);
       renderDashboard();
     }catch(err){ alert("Could not read this file. Please select a valid exported project JSON file."); }
@@ -1131,7 +1198,8 @@ function renderWizard(){
 }
 function stepBorrower(){
   const b = current.borrower;
-  const ac = current.actuals || {sales:0,netProfit:0,netWorth:0,totalOutsideLiab:0,currentAssets:0,currentLiabilities:0,termLoanOS:0};
+  const dac = {sales:0,costOfSales:0,operatingExpenses:0,depreciation:0,interestPaid:0,netProfit:0,netFixedAssets:0,inventory:0,receivables:0,cashBank:0,otherCurrentAssets:0,netWorth:0,termLoanOS:0,wcBorrowingOS:0,tradeCreditors:0,otherCurrentLiab:0};
+  const ac = Object.assign({}, dac, current.actuals||{});
   return `${colorLegend()}<div class="grid fill-zone">
     <div><label>${tt('borrowerName')}</label><input type="text" id="w_name" value="${escapeHtml(b.name)}">${hint('borrowerName')}</div>
     <div><label>${tt('businessName')}</label><input type="text" id="w_business" value="${escapeHtml(b.business)}">${hint('businessName')}</div>
@@ -1151,14 +1219,27 @@ function stepBorrower(){
   ${b.existing==='Existing' ? `
   <h3>${tt('actualsTitle')}</h3>
   <p class="muted small">${tt('actualsNote')}</p>
+  <h3>${tt('actualPnlTitle')}</h3>
   <div class="grid fill-zone">
     <div><label>${tt('actualSales')}</label><input type="number" id="w_ac_sales" value="${ac.sales||''}">${hint('actualSales')}</div>
+    <div><label>${tt('actualCOS')}</label><input type="number" id="w_ac_cos" value="${ac.costOfSales||''}">${hint('actualCOS')}</div>
+    <div><label>${tt('actualOpex')}</label><input type="number" id="w_ac_opex" value="${ac.operatingExpenses||''}">${hint('actualOpex')}</div>
+    <div><label>${tt('actualDepr')}</label><input type="number" id="w_ac_depr" value="${ac.depreciation||''}">${hint('actualDepr')}</div>
+    <div><label>${tt('actualInterest')}</label><input type="number" id="w_ac_interest" value="${ac.interestPaid||''}">${hint('actualInterest')}</div>
     <div><label>${tt('actualNetProfit')}</label><input type="number" id="w_ac_netProfit" value="${ac.netProfit||''}">${hint('actualNetProfit')}</div>
+  </div>
+  <h3>${tt('actualBsTitle')}</h3>
+  <div class="grid fill-zone">
+    <div><label>${tt('actualNFA')}</label><input type="number" id="w_ac_nfa" value="${ac.netFixedAssets||''}">${hint('actualNFA')}</div>
+    <div><label>${tt('actualInventory')}</label><input type="number" id="w_ac_inv" value="${ac.inventory||''}">${hint('actualInventory')}</div>
+    <div><label>${tt('actualReceivables')}</label><input type="number" id="w_ac_rec" value="${ac.receivables||''}">${hint('actualReceivables')}</div>
+    <div><label>${tt('actualCashBank')}</label><input type="number" id="w_ac_cash" value="${ac.cashBank||''}">${hint('actualCashBank')}</div>
+    <div><label>${tt('actualOtherCA')}</label><input type="number" id="w_ac_oca" value="${ac.otherCurrentAssets||''}">${hint('actualOtherCA')}</div>
     <div><label>${tt('actualNetWorth')}</label><input type="number" id="w_ac_netWorth" value="${ac.netWorth||''}">${hint('actualNetWorth')}</div>
-    <div><label>${tt('actualTOL')}</label><input type="number" id="w_ac_tol" value="${ac.totalOutsideLiab||''}">${hint('actualTOL')}</div>
-    <div><label>${tt('actualCA')}</label><input type="number" id="w_ac_ca" value="${ac.currentAssets||''}">${hint('actualCA')}</div>
-    <div><label>${tt('actualCL')}</label><input type="number" id="w_ac_cl" value="${ac.currentLiabilities||''}">${hint('actualCL')}</div>
     <div><label>${tt('actualTermLoanOS')}</label><input type="number" id="w_ac_tlos" value="${ac.termLoanOS||''}">${hint('actualTermLoanOS')}</div>
+    <div><label>${tt('actualWcOS')}</label><input type="number" id="w_ac_wcos" value="${ac.wcBorrowingOS||''}">${hint('actualWcOS')}</div>
+    <div><label>${tt('actualCreditors')}</label><input type="number" id="w_ac_cred" value="${ac.tradeCreditors||''}">${hint('actualCreditors')}</div>
+    <div><label>${tt('actualOtherCL')}</label><input type="number" id="w_ac_ocl" value="${ac.otherCurrentLiab||''}">${hint('actualOtherCL')}</div>
   </div>` : ''}`;
 }
 function borrowerStatusChanged(){
@@ -1264,8 +1345,12 @@ function persistWizardStep(){
       address:val('w_address'), mobile:val('w_mobile'), existing:val('w_existing'), experience:val('w_experience'),
       udyam:val('w_udyam'), gstin:val('w_gstin'), bank:val('w_bank') };
     if(current.borrower.existing==='Existing' && document.getElementById('w_ac_sales')){
-      current.actuals = { sales:+val('w_ac_sales')||0, netProfit:+val('w_ac_netProfit')||0, netWorth:+val('w_ac_netWorth')||0,
-        totalOutsideLiab:+val('w_ac_tol')||0, currentAssets:+val('w_ac_ca')||0, currentLiabilities:+val('w_ac_cl')||0, termLoanOS:+val('w_ac_tlos')||0 };
+      current.actuals = { sales:+val('w_ac_sales')||0, costOfSales:+val('w_ac_cos')||0, operatingExpenses:+val('w_ac_opex')||0,
+        depreciation:+val('w_ac_depr')||0, interestPaid:+val('w_ac_interest')||0, netProfit:+val('w_ac_netProfit')||0,
+        netFixedAssets:+val('w_ac_nfa')||0, inventory:+val('w_ac_inv')||0, receivables:+val('w_ac_rec')||0,
+        cashBank:+val('w_ac_cash')||0, otherCurrentAssets:+val('w_ac_oca')||0, netWorth:+val('w_ac_netWorth')||0,
+        termLoanOS:+val('w_ac_tlos')||0, wcBorrowingOS:+val('w_ac_wcos')||0, tradeCreditors:+val('w_ac_cred')||0,
+        otherCurrentLiab:+val('w_ac_ocl')||0 };
     }
   } else if(wizardStep===2){
     if(current.customActivity){ current.activityName = val('w_customActName'); current.activityModel = val('w_customModel'); }
@@ -1300,6 +1385,7 @@ function afLabel(row){ return LANG==='hi' ? row[2] : row[1]; }
 function renderAssumptions(){
   currentScreenRenderer = renderAssumptions;
   const a = getAssumptions(current);
+  const hi = LANG==='hi';
   let rows = ASSUMPTION_FIELDS.map(row=>{
     const k = row[0]; const mod = isModified(current,k);
     return `<div class="assump-row">
@@ -1307,6 +1393,24 @@ function renderAssumptions(){
       <span class="val"><input type="number" style="width:90px" class="default-input" id="asf_${k}" value="${a[k]}" onchange="assumptionChanged('${k}')"></span>
     </div>`;
   }).join('');
+  let actualsBlock = '';
+  if(current.borrower.existing==='Existing'){
+    const c = calculate(current);
+    const ck = c.actualsCheck;
+    if(ck.hasActuals){
+      const cmpRows = ck.assumptionComparisons.map(cmp=>{
+        const label = hi?cmp.labelHi:cmp.labelEn;
+        const unit = cmp.unit==='%' ? '%' : (hi?' दिन':' days');
+        const actualTxt = cmp.actual!==null ? cmp.actual.toFixed(1)+unit : (hi?'लागू नहीं':'Not Applicable');
+        return `<tr class="${cmp.flag?'mismatch-row':''}"><td>${label}</td><td>${cmp.model.toFixed(1)}${unit}</td><td><span class="${cmp.flag?'mismatch':''}">${actualTxt}</span></td></tr>`;
+      }).join('');
+      actualsBlock = `<h3>${hi?'पिछले वर्ष के वास्तविक बनाम मॉडल मान्यताएँ':'Last Year\'s Actual vs Model Assumptions'}</h3>
+      <table><tr><th>${hi?'मापदंड':'Parameter'}</th><th>${hi?'मॉडल':'Model'}</th><th>${hi?'वास्तविक (पिछला वर्ष)':'Actual (Last Year)'}</th></tr>
+      ${cmpRows}</table>
+      <div class="btnrow"><button class="btn secondary" onclick="applyActualsToAssumptions()">${hi?'वास्तविक अनुपात मान्यताओं में लागू करें':'Use Actual Ratios as Assumptions'}</button></div>
+      <p class="muted small">${hi?'इससे मॉडल की डिफ़ॉल्ट मान्यताएँ, पिछले वर्ष के वास्तविक प्रदर्शन के अनुरूप बदल जाएँगी — अनुमान वास्तविकता पर आधारित बनेंगे।':'This replaces the model\'s default assumptions with figures calibrated to last year\'s actual performance — grounding the projection in real numbers.'}</p>`;
+    }
+  }
   const html = `<div class="card">
     <h2>${tt('assumptionsUsed')}</h2>
     <p class="muted">${tt('modelLabel')} <b>${modelLabel(current.activityModel)}</b> — ${tt('activityLabel')} <b>${escapeHtml(current.activityName)}</b></p>
@@ -1316,12 +1420,32 @@ function renderAssumptions(){
       <button class="btn secondary" onclick="resetAssumptions()">${tt('resetDefaults')}</button>
     </div>
     <div class="note-box">${tt('assumptionNote')}</div>
+    ${actualsBlock}
     <div class="btnrow">
       <button class="btn secondary" onclick="renderWizard()">${tt('backToWizard')}</button>
       <button class="btn gold" onclick="goToProjectCost()">${tt('continueProjectCost')}</button>
     </div>
   </div>`;
   document.getElementById('mainArea').innerHTML = html;
+}
+function applyActualsToAssumptions(){
+  const c = calculate(current);
+  const ck = c.actualsCheck;
+  if(!ck.hasActuals) return;
+  if(!current.assumptions) current.assumptions = {};
+  if(ck.actualCostOfSalesPct!==null) current.assumptions.costOfSales = Math.round(ck.actualCostOfSalesPct*10)/10;
+  if(ck.actualDeprRatePct!==null) current.assumptions.deprRate = Math.round(ck.actualDeprRatePct*10)/10;
+  if(ck.actualStockDays!==null) current.assumptions.stockDays = Math.round(ck.actualStockDays);
+  if(ck.actualDebtorDays!==null) current.assumptions.debtorDays = Math.round(ck.actualDebtorDays);
+  if(ck.actualCreditorDays!==null) current.assumptions.creditorDays = Math.round(ck.actualCreditorDays);
+  if(ck.actualOpexPct!==null && ck.modelOpexPct>0){
+    const scale = ck.actualOpexPct/ck.modelOpexPct;
+    const a = getAssumptions(current);
+    ["employee","rent","electricity","transport","admin","selling","repairs","otherOpex"].forEach(k=>{
+      current.assumptions[k] = Math.round(a[k]*scale*10)/10;
+    });
+  }
+  renderAssumptions();
 }
 function assumptionChanged(k){
   if(!current.assumptions) current.assumptions={};
@@ -1657,28 +1781,61 @@ function rActuals(c){
     return `<h3>${tt('actualsTitle')}</h3><p class="muted">${hi?'पिछले वर्ष के वास्तविक आंकड़े दर्ज नहीं किए गए। उधारकर्ता विवरण (चरण 1) में जाकर दर्ज करें।':'Last year\'s actual figures were not entered. Go back to Borrower Details (Step 1) to add them.'}</p>`;
   }
   const a = ac.actuals;
-  const rows = [
-    [hi?'बिक्री / टर्नओवर':'Sales / Turnover', inr(a.sales), inr(c.sales[0])],
-    [hi?'शुद्ध लाभ':'Net Profit', inr(a.netProfit), inr(c.pnl[0].pat)],
+  const na = hi?'लागू नहीं':'Not Applicable';
+  const pnlRows = [
+    [hi?'बिक्री / टर्नओवर':'Sales / Turnover', a.sales, c.sales[0]],
+    [hi?'बिक्री लागत':'Cost of Sales', a.costOfSales, c.pnl[0].cos],
+    [hi?'सकल लाभ':'Gross Profit', ac.grossProfit, c.pnl[0].gp],
+    [hi?'कुल परिचालन व्यय':'Total Operating Expenses', a.operatingExpenses, c.pnl[0].totalOpex],
+    ['EBITDA', ac.ebitda, c.pnl[0].ebitda],
+    [hi?'मूल्यह्रास':'Depreciation', a.depreciation, c.pnl[0].depr],
+    [hi?'ब्याज':'Interest', a.interestPaid, c.pnl[0].interest],
+    [hi?'कर पूर्व लाभ':'Profit Before Tax', ac.pbt, c.pnl[0].pbt],
+    [hi?'शुद्ध लाभ (कर पश्चात)':'Net Profit (after tax)', a.netProfit, c.pnl[0].pat]
   ];
   return `<h3>${tt('actualsTitle')}</h3>
+  <h3>${tt('actualPnlTitle')}</h3>
   <table><tr><th>${hi?'विवरण':'Particulars'}</th><th>${hi?'पिछला वर्ष (वास्तविक)':'Last Year (Actual)'}</th><th>${hi?'चालू वर्ष (अनुमानित)':'Current Year (Projected)'}</th></tr>
-  ${rows.map(([l,v1,v2])=>`<tr><td>${l}</td><td>${v1}</td><td>${v2}</td></tr>`).join('')}
+  ${pnlRows.map(([l,v1,v2])=>`<tr><td>${l}</td><td>${inr(v1)}</td><td>${inr(v2)}</td></tr>`).join('')}
   </table>
-  <table><tr><th>${hi?'अन्य वास्तविक आंकड़े (पिछला वर्ष)':'Other Actuals (Last Year)'}</th><th>${hi?'राशि':'Amount'}</th></tr>
+  <h3>${tt('actualBsTitle')}</h3>
+  <table><tr><th>${hi?'संपत्ति':'Assets'}</th><th>${hi?'राशि':'Amount'}</th></tr>
+  <tr><td>${tt('actualNFA')}</td><td>${inr(a.netFixedAssets)}</td></tr>
+  <tr><td>${tt('actualInventory')}</td><td>${inr(a.inventory)}</td></tr>
+  <tr><td>${tt('actualReceivables')}</td><td>${inr(a.receivables)}</td></tr>
+  <tr><td>${tt('actualCashBank')}</td><td>${inr(a.cashBank)}</td></tr>
+  <tr><td>${tt('actualOtherCA')}</td><td>${inr(a.otherCurrentAssets)}</td></tr>
+  <tr class="total"><td>${hi?'कुल संपत्ति':'Total Assets'}</td><td>${inr(ac.totalAssets)}</td></tr>
+  </table>
+  <table><tr><th>${hi?'देनदारियाँ':'Liabilities'}</th><th>${hi?'राशि':'Amount'}</th></tr>
   <tr><td>${tt('actualNetWorth')}</td><td>${inr(a.netWorth)}</td></tr>
-  <tr><td>${tt('actualTOL')}</td><td>${inr(a.totalOutsideLiab)}</td></tr>
-  <tr><td>${tt('actualCA')}</td><td>${inr(a.currentAssets)}</td></tr>
-  <tr><td>${tt('actualCL')}</td><td>${inr(a.currentLiabilities)}</td></tr>
   <tr><td>${tt('actualTermLoanOS')}</td><td>${inr(a.termLoanOS)}</td></tr>
-  <tr><td>${hi?'वास्तविक धारा अनुपात (पिछला वर्ष)':'Actual Current Ratio (Last Year)'}</td><td>${ac.currentRatio!==null?ac.currentRatio.toFixed(2):(hi?'लागू नहीं':'Not Applicable')}</td></tr>
-  <tr><td>${hi?'वास्तविक टीओएल/टीएनडब्ल्यू (पिछला वर्ष)':'Actual TOL/TNW (Last Year)'}</td><td>${ac.tolTnw!==null?ac.tolTnw.toFixed(2):(hi?'लागू नहीं':'Not Applicable')}</td></tr>
-  <tr class="${ac.highGrowthFlag?'mismatch-row':''}"><td>${hi?'अनुमानित बिक्री वृद्धि (पिछले वास्तविक की तुलना में)':'Projected Sales Growth (vs Last Year Actual)'}</td><td><span class="${ac.highGrowthFlag?'mismatch':''}">${ac.salesGrowthPct!==null?pct(ac.salesGrowthPct,1):(hi?'लागू नहीं':'Not Applicable')}</span></td></tr>
+  <tr><td>${tt('actualWcOS')}</td><td>${inr(a.wcBorrowingOS)}</td></tr>
+  <tr><td>${tt('actualCreditors')}</td><td>${inr(a.tradeCreditors)}</td></tr>
+  <tr><td>${tt('actualOtherCL')}</td><td>${inr(a.otherCurrentLiab)}</td></tr>
+  <tr class="total"><td>${hi?'कुल देनदारियाँ':'Total Liabilities'}</td><td>${inr(ac.totalLiabEquity)}</td></tr>
+  </table>
+  ${(ac.balanceGapPct!==null && ac.balanceGapPct>10) ? `<div class="mismatch-box">${hi?`⚠ दर्ज किए गए वास्तविक आंकड़ों में संपत्ति (${inr(ac.totalAssets)}) व देनदारियाँ (${inr(ac.totalLiabEquity)}) आपस में मेल नहीं खातीं। कृपया आंकड़ों की पुनः जाँच करें।`:`⚠ The actual figures entered don't tally — Assets (${inr(ac.totalAssets)}) vs Liabilities (${inr(ac.totalLiabEquity)}). Please double-check the figures with the borrower.`}</div>` : ''}
+  <h3>${hi?'वास्तविक अनुपात (पिछला वर्ष)':'Actual Ratios (Last Year)'}</h3>
+  <table>
+  <tr><td>${hi?'वास्तविक धारा अनुपात':'Actual Current Ratio'}</td><td>${ac.currentRatio!==null?ac.currentRatio.toFixed(2):na}</td></tr>
+  <tr><td>${hi?'वास्तविक टीओएल/टीएनडब्ल्यू':'Actual TOL/TNW'}</td><td>${ac.tolTnw!==null?ac.tolTnw.toFixed(2):na}</td></tr>
+  <tr class="${ac.highGrowthFlag?'mismatch-row':''}"><td>${hi?'अनुमानित बिक्री वृद्धि (पिछले वास्तविक की तुलना में)':'Projected Sales Growth (vs Last Year Actual)'}</td><td><span class="${ac.highGrowthFlag?'mismatch':''}">${ac.salesGrowthPct!==null?pct(ac.salesGrowthPct,1):na}</span></td></tr>
   </table>
   ${ac.highGrowthFlag ? `<div class="mismatch-box"><b>${hi?'⚠ बिक्री वृद्धि जाँच:':'⚠ Sales Growth Check:'}</b> ${hi
     ? `अनुमानित बिक्री, पिछले वर्ष के वास्तविक आंकड़े की तुलना में ${pct(ac.salesGrowthPct,1)} अधिक है, जो असामान्य रूप से उच्च प्रतीत होती है (निर्धारित सीमा: ${current.settings.maxSalesGrowthPct}%)। कृपया उधारकर्ता से इस वृद्धि का औचित्य स्पष्ट करें या अनुमान की समीक्षा करें।`
     : `Projected sales are ${pct(ac.salesGrowthPct,1)} higher than last year's actual, which appears unusually high (threshold: ${current.settings.maxSalesGrowthPct}%). Please ask the borrower to justify this growth, or review the projection.`}</div>`
   : `<div class="note-box">${hi?'अनुमानित बिक्री वृद्धि, निर्धारित उचित सीमा के भीतर है।':'Projected sales growth is within the reasonable threshold.'}</div>`}
+  <h3>${hi?'वास्तविक बनाम मॉडल मान्यताएँ':'Actual vs Model Assumptions'}</h3>
+  <table><tr><th>${hi?'मापदंड':'Parameter'}</th><th>${hi?'मॉडल':'Model'}</th><th>${hi?'वास्तविक (पिछला वर्ष)':'Actual (Last Year)'}</th></tr>
+  ${ac.assumptionComparisons.map(cmp=>{
+    const label = hi?cmp.labelHi:cmp.labelEn;
+    const unit = cmp.unit==='%' ? '%' : (hi?' दिन':' days');
+    const actualTxt = cmp.actual!==null ? cmp.actual.toFixed(1)+unit : na;
+    return `<tr class="${cmp.flag?'mismatch-row':''}"><td>${label}</td><td>${cmp.model.toFixed(1)}${unit}</td><td><span class="${cmp.flag?'mismatch':''}">${actualTxt}</span></td></tr>`;
+  }).join('')}
+  </table>
+  <p class="small muted">${hi?'बड़ा अंतर लाल रंग में दिखाया गया है। "मान्यताएँ" स्क्रीन पर जाकर "वास्तविक अनुपात मान्यताओं में लागू करें" बटन से इन्हें अपनाया जा सकता है।':'Large deviations are shown in red. Go to the Assumptions screen and use "Use Actual Ratios as Assumptions" to adopt these.'}</p>
   <p class="small muted">${hi?'ये आंकड़े उधारकर्ता द्वारा दिए गए पिछले वर्ष के बहीखाता/लेखापरीक्षित अथवा अनंतिम तुलन पत्र पर आधारित हैं, केवल तुलना हेतु।':'These figures are as provided by the borrower from last year\'s books/audited or provisional balance sheet, shown for comparison only.'}</p>`;
 }
 function rPurpose(c){
