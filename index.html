@@ -1915,15 +1915,17 @@ function rPurpose(c){
   <h3>${hi?'ऋण संरचना — आवेदित राशि व सांकेतिक टर्नओवर पद्धति':'Loan Structure — Requested Amounts & Indicative Turnover Method'}</h3>
   <table><tr><th></th><th>${hi?'राशि':'Amount'}</th></tr>
   <tr><td>${hi?'कुल ऋण आवेदित':'Total Loan Requested'}</td><td>${inr(lc.appliedTotal)}</td></tr>
-  <tr><td>${hi?'मीयादी ऋण आवेदित':'Term Loan Requested'}</td><td>${lc.appliedTermLoan?inr(lc.appliedTermLoan):(hi?'दर्ज नहीं (सांकेतिक: '+inr(lc.termLoanUsed)+')':'Not entered (indicative: '+inr(lc.termLoanUsed)+')')}</td></tr>
-  <tr><td>${hi?'कार्यशील पूंजी वित्त आवेदित':'WC Finance Requested'}</td><td>${lc.appliedWc?inr(lc.appliedWc):(hi?'दर्ज नहीं (सांकेतिक: '+inr(lc.wcFinanceUsed)+')':'Not entered (indicative: '+inr(lc.wcFinanceUsed)+')')}</td></tr>
-  <tr><td>${hi?'सांकेतिक टर्नओवर पद्धति कार्यशील पूंजी (केवल संदर्भ हेतु)':'Indicative Turnover Method WC (reference only)'}</td><td>${inr(lc.indicativeWc)}</td></tr>
-  <tr class="total"><td>${hi?'सांकेतिक अंतर (कुल आवेदित − [प्रयुक्त मीयादी ऋण + प्रयुक्त कार्यशील पूंजी])':'Indicative Difference (Total Requested − [Term Loan Used + WC Finance Used])'}</td><td>${inr(lc.indicativeDifference)}</td></tr>
+  <tr><td>${hi?'मीयादी ऋण आवेदित':'Term Loan Requested'}</td><td>${lc.appliedTermLoan?inr(lc.appliedTermLoan):(hi?('सांकेतिक: '+inr(lc.termLoanUsed)):('Indicative: '+inr(lc.termLoanUsed)))}</td></tr>
+  <tr><td>${hi?'कार्यशील पूंजी वित्त आवेदित':'WC Finance Requested'}</td><td>${lc.appliedWc?inr(lc.appliedWc):(hi?('सांकेतिक: '+inr(lc.wcFinanceUsed)):('Indicative: '+inr(lc.wcFinanceUsed)))}</td></tr>
+  <tr><td>${hi?'सांकेतिक टर्नओवर पद्धति कार्यशील पूंजी (केवल संदर्भ हेतु)':'Indicative Turnover Method WC (Reference Only)'}</td><td>${inr(lc.indicativeWc)}</td></tr>
+  <tr><td>${hi?'अनाबंटित / सांकेतिक अंतर — केवल सूचना हेतु':'Unallocated / Indicative Difference — for information only'}</td><td>${inr(lc.indicativeDifference)}</td></tr>
   </table>
-  <div class="note-box">${hi?'"सांकेतिक अंतर" केवल सूचनात्मक तुलना है, कोई त्रुटि या पात्रता निर्णय नहीं। कार्यशील पूंजी वित्त (आवेदित) व टर्नओवर पद्धति की सांकेतिक कार्यशील पूंजी दो भिन्न अवधारणाएँ हैं — इनके बीच अंतर होना स्वाभाविक है।':'The "Indicative Difference" is an informational comparison only — not an error or an eligibility decision. WC Finance Requested and the Turnover Method\'s indicative WC are two different concepts by design; a difference between them is expected and normal.'}</div>
-  ${lc.structureMismatch ? `<div class="mismatch-box"><b>${hi?'आवेदक द्वारा दर्ज ऋण संरचना की समीक्षा करें:':'Please review the applicant\'s entered loan structure:'}</b> ${hi
-    ? `दर्ज किया गया मीयादी ऋण (${inr(lc.appliedTermLoan)}) व कार्यशील पूंजी वित्त (${inr(lc.appliedWc)}) का योग (${inr(lc.appliedTermLoan+lc.appliedWc)}), कुल आवेदित ऋण (${inr(lc.appliedTotal)}) से मेल नहीं खाता। यह डेटा में विसंगति की सूचना मात्र है — कोई भी आंकड़ा स्वतः बदला नहीं गया है।`
-    : `The entered Term Loan (${inr(lc.appliedTermLoan)}) and WC Finance (${inr(lc.appliedWc)}) add up to ${inr(lc.appliedTermLoan+lc.appliedWc)}, which does not match the Total Loan Requested (${inr(lc.appliedTotal)}). This is only a data-consistency notice — nothing has been automatically changed.`}</div>` : ''}`;
+  <div class="note-box">${hi
+    ?'यह पंक्ति कोई बेमेल, पात्रता जाँच अथवा ऋण मूल्यांकन निर्णय नहीं है। "कार्यशील पूंजी वित्त आवेदित" और "सांकेतिक टर्नओवर पद्धति कार्यशील पूंजी" दो पूर्णतः भिन्न अवधारणाएँ हैं — यह किसी भी रूप में यह संकेत नहीं देता कि आवेदित कार्यशील पूंजी वित्त, टर्नओवर पद्धति की राशि के बराबर होनी चाहिए। यह पूर्णतः सूचनात्मक है।'
+    :'This line is not a mismatch, an eligibility test, or an underwriting decision. "WC Finance Requested" and "Indicative Turnover Method WC" are two entirely different concepts — this does not suggest in any way that the requested WC Finance should equal the Turnover Method amount. It is purely informational.'}</div>
+  ${lc.structureMismatch ? `<div class="mismatch-box"><b>${hi?'डेटा-संगति सूचना:':'Data-consistency notice:'}</b> ${hi
+    ? `दर्ज किया गया मीयादी ऋण (${inr(lc.appliedTermLoan)}) व कार्यशील पूंजी वित्त (${inr(lc.appliedWc)}) का योग (${inr(lc.appliedTermLoan+lc.appliedWc)}), कुल आवेदित ऋण (${inr(lc.appliedTotal)}) से मेल नहीं खाता। यह केवल आवेदक के अपने आंकड़ों की आंतरिक संगति की सूचना है, कोई त्रुटि, पात्रता जाँच या ऋण मूल्यांकन निर्णय नहीं — कोई भी आंकड़ा स्वतः नहीं बदला गया है।`
+    : `The entered Term Loan (${inr(lc.appliedTermLoan)}) and WC Finance (${inr(lc.appliedWc)}) add up to ${inr(lc.appliedTermLoan+lc.appliedWc)}, which does not match the Total Loan Requested (${inr(lc.appliedTotal)}). This is only a notice about the internal consistency of the applicant\'s own figures — not an error, eligibility test or underwriting decision — and nothing has been automatically changed.`}</div>` : ''}`;
 }
 function rCost(c){
   return `<h3>${tt('projectCostTitle')}</h3>
