@@ -580,7 +580,32 @@ function calculate(p){
     return {sales:S,cos,gp,employee,rent,elec,transport,admin,selling,repairs,other,totalOpex,ebitda};
   });
 
-  const termLoan = num(p.loan.termLoan) || num(p.loan.total);
+  /* Working Capital (Turnover Method) is computed from sales alone, independent of the loan
+     split entered — needed below to work out an Indicative Term Loan whenever the applicant
+     has not explicitly split their Total Loan Requested. */
+  const y1Sales = sales[0];
+  const wcReq = y1Sales*s.wcTurnoverPct/100;
+  const wcNwc = y1Sales*s.wcNwcPct/100;
+  const wcBank = y1Sales*s.wcBankPct/100;
+
+  /* Loan structure: Total Loan Requested = Term Loan + Working Capital Finance.
+     - If the applicant gives Term Loan (with or without WC), that figure is preserved as-is.
+     - If only WC Finance is given, the Indicative Term Loan is the remainder of the Total.
+     - If neither is given, the Indicative Term Loan is the Total minus the Indicative Working
+       Capital Finance (Turnover Method) — the entire requested amount is never silently
+       treated as Term Loan. The applicant's original Total Loan Requested is never altered. */
+  const appliedTotal = num(p.loan.total);
+  const appliedTermLoan = num(p.loan.termLoan);
+  const appliedWc = num(p.loan.wcLoan);
+  let termLoan;
+  if(appliedTermLoan>0){
+    termLoan = appliedTermLoan;
+  } else if(appliedWc>0){
+    termLoan = Math.max(appliedTotal-appliedWc, 0);
+  } else {
+    termLoan = Math.max(appliedTotal-wcBank, 0);
+  }
+
   const fixedAssetReq = s.promoterMarginFixedPct<100 ? termLoan/(1-s.promoterMarginFixedPct/100) : termLoan;
   const promoterMarginFixed = fixedAssetReq - termLoan;
   const split = s.fixedAssetSplit;
@@ -590,12 +615,11 @@ function calculate(p){
     vehicle: fixedAssetReq*split.vehicle/100, preliminary: fixedAssetReq*split.preliminary/100,
     other: fixedAssetReq*split.other/100
   };
-  const grossBlock = fixedAssetReq - fa.land;
-
-  const y1Sales = sales[0];
-  const wcReq = y1Sales*s.wcTurnoverPct/100;
-  const wcNwc = y1Sales*s.wcNwcPct/100;
-  const wcBank = y1Sales*s.wcBankPct/100;
+  /* Land and Preliminary Expenses are both non-depreciable — excluded from the depreciable
+     block (grossBlock). Land is never written off; Preliminary Expenses are shown separately
+     in Project Cost and are never silently folded into Building/Machinery/Other Fixed Assets
+     or depreciated alongside them (see Methodology section for disclosure). */
+  const grossBlock = fixedAssetReq - fa.land - fa.preliminary;
 
   /* Project Cost takes only the Margin Money for Working Capital (the borrower's own
      contribution, wcNwc) — not the full Working Capital Requirement (wcReq). The bank's
@@ -611,14 +635,10 @@ function calculate(p){
     wcFinanceMemo: wcBank
   };
 
-  /* Loan Applied (what the borrower asked for in Step 3) vs Loan Assessed (what this report
-     works out from the fixed-asset requirement and the Turnover Method) — flagged in red
-     wherever they differ by more than the tolerance, so the preparer can reconcile before
-     the report is submitted to the bank. */
+  /* Loan Amount Requested vs Indicative Term Loan / Indicative Working Capital Finance —
+     informational only ("for applicant/bank review; not an eligibility or sanction decision"),
+     flagged wherever they differ by more than the tolerance so the preparer can reconcile. */
   const tolerancePct = (s.loanMismatchTolerancePct===undefined?5:s.loanMismatchTolerancePct);
-  const appliedTotal = num(p.loan.total);
-  const appliedTermLoan = num(p.loan.termLoan);
-  const appliedWc = num(p.loan.wcLoan);
   const assessedTotal = termLoan + wcBank;
   function differs(applied, assessed){
     if(!applied) return false;
@@ -628,6 +648,7 @@ function calculate(p){
   const loanCheck = {
     appliedTotal, appliedTermLoan, appliedWc,
     assessedTermLoan: termLoan, assessedWc: wcBank, assessedTotal,
+    difference: appliedTotal - assessedTotal,
     totalMismatch: differs(appliedTotal, assessedTotal),
     wcMismatch: differs(appliedWc, wcBank),
     splitMismatch: (appliedTermLoan>0 && appliedWc>0) && Math.abs((appliedTermLoan+appliedWc)-appliedTotal) > Math.max(appliedTotal*0.01,1),
@@ -791,7 +812,9 @@ function calculate(p){
   }
 
   const balanceSheet = [0,1,2].map(i=>{
-    const assets = { nfa: nfaYearly[i].close, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
+    /* Net Fixed Assets = Land + Preliminary Expenses (both carried at cost, never depreciated)
+       + the depreciable block net of accumulated depreciation. */
+    const assets = { nfa: nfaYearly[i].close + fa.land + fa.preliminary, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
       cash: cashFlow[i].closing, otherCA: opCycle[i].otherCA };
     assets.total = assets.nfa+assets.inventory+assets.receivables+assets.cash+assets.otherCA;
     const promoterCapital = promoterContributionTotal;
@@ -850,17 +873,36 @@ function calculate(p){
      Sheet, Cash Flow, Project Cost = Means of Finance, working capital, repayment schedule,
      ratios computed). This gates whether the final report can be generated; it is not a
      credit, eligibility or sanction judgment — those remain with the lending bank. */
+  /* Internal Report Calculation Check — pure arithmetic/data-integrity checks (P&L, Balance
+     Sheet, Cash Flow, Project Cost = Means of Finance, loan structure, Land/Preliminary
+     treatment, working capital, repayment schedule, ratios computed). This gates whether the
+     final report can be generated; it is not a credit, eligibility or sanction judgment —
+     those remain with the lending bank. */
+  function validNum(v){ return v===null || (typeof v==='number' && isFinite(v)); }
+  const RATIO_KEYS = ['currentRatio','debtEquity','tolTnw','gpMargin','ebitdaMargin','npMargin','interestCoverage','stockDays','debtorDays','creditorDays','wcCycle'];
+  const ratiosValid = ratios.every(r => RATIO_KEYS.every(k=>validNum(r[k])));
+  const noNaNAcrossReport =
+    pnlFull.every(r=>Object.values(r).every(v=>typeof v!=='number'||isFinite(v))) &&
+    balanceSheet.every(b=>isFinite(b.assets.total) && isFinite(b.liabilities.total)) &&
+    cashFlow.every(c=>isFinite(c.closing)) &&
+    schedule.every(r=>isFinite(r.close)&&isFinite(r.interest)) &&
+    dscrYearly.every(d=>d.dscr===null||isFinite(d.dscr)) &&
+    isFinite(emi);
+
   const checklist = [];
   checklist.push({key:"chkBorrower", pass: !!(p.borrower.name && p.activityModel)});
   checklist.push({key:"chkSales", pass: sales.every(v=>v>0)});
   checklist.push({key:"chkAssump", pass:true});
   checklist.push({key:"chkCost", pass: Math.abs(totalProjectCost-meansOfFinance.total)<1});
+  checklist.push({key:"chkLoanStructure", pass: termLoan>=0 && wcBank>=0 && isFinite(termLoan) && isFinite(wcBank) && Math.abs((termLoan+wcBank)-assessedTotal)<1});
+  checklist.push({key:"chkLandPrelim", pass: fa.land>=0 && fa.preliminary>=0 && grossBlock>=0 && deprYearly.every(d=>isFinite(d)&&d>=0)});
   checklist.push({key:"chkWC", pass: wcReq>0});
   checklist.push({key:"chkPnl", pass: pnlFull.every(r=>!isNaN(r.pat))});
   checklist.push({key:"chkBS", pass: balanceSheet.every(b=>Math.abs(b.diff)<2)});
   checklist.push({key:"chkCF", pass: cashFlow.every(c=>!isNaN(c.closing))});
   checklist.push({key:"chkRepay", pass: termLoan>=0 && schedule.every(r=>!isNaN(r.close)) && Math.abs(schedule[schedule.length-1].close)<1});
-  checklist.push({key:"chkRatios", pass: ratios.every(r=>r!==null)});
+  checklist.push({key:"chkRatios", pass: ratiosValid});
+  checklist.push({key:"chkNoNaN", pass: noNaNAcrossReport});
   const allPass = checklist.every(c=>c.pass);
   checklist.push({key:"chkReady", pass: allPass});
 
@@ -1060,7 +1102,10 @@ function openSettingsScreen(){
     <div><label>Other Current Assets (% of Sales)</label><input type="number" id="s_otherCA" value="${s.otherCurrentAssetsPct}"></div>
     <div><label>Other Current Liabilities (% of Sales)</label><input type="number" id="s_otherCL" value="${s.otherCurrentLiabPct}"></div>
     <div><label>Owner Drawings (% of Profit After Tax)</label><input type="number" id="s_drawings" value="${s.ownerDrawingsPct}"></div>
-    <div><label>Tax Rate (%)</label><input type="number" id="s_tax" value="${s.taxRatePct}"></div>
+    <div><label>${LANG==='hi'?'अनुमानित कर दर (%)':'Estimated Tax Rate (%)'}</label><input type="number" id="s_tax" value="${s.taxRatePct}"></div>
+  </div>
+  <p class="muted small">${LANG==='hi'?'लागू अनुमानित दर दर्ज करें। 0% का अर्थ है कि कर का अनुमान नहीं लगाया गया है, इसका मतलब यह नहीं कि व्यवसाय कर-मुक्त है।':'Enter the applicable estimated rate. 0% means tax has not been estimated and must not be interpreted as tax-free.'}</p>
+  <div class="grid default-zone">
     <div><label>Default Interest Rate (% p.a.)</label><input type="number" id="s_rate" value="${s.interestRatePct}"></div>
     <div><label>Default Tenure (Years)</label><input type="number" id="s_tenure" value="${s.tenureYears}"></div>
     <div><label>Default Moratorium (Months)</label><input type="number" id="s_mora" value="${s.moratoriumMonths}"></div>
@@ -1672,15 +1717,14 @@ function rApplication(c){
   const termLoan = c.termLoan, wcAmt = c.wcBank;
   let letterEn = `<p>To,<br>The Branch Manager,<br><b>${escapeHtml(app.bankName)||'[Bank Name]'}</b>,<br>${escapeHtml(app.place)||'[Branch / Place]'}</p>
     <p>Date: ${dateDisp||'[Date]'}</p>
-    <p><b>Subject: Application for sanction of ${escapeHtml(current.loan.purpose)} loan of ${inr(current.loan.total)}</b></p>
+    <p><b>Subject: Application for ${escapeHtml(current.loan.purpose)} loan of ${inr(current.loan.total)}</b></p>
     <p>Sir / Madam,</p>
     <p>I, <b>${escapeHtml(b.name)}</b>, proprietor of <b>${escapeHtml(b.business)}</b>, residing at ${escapeHtml(b.address)||'[Address]'}, Mobile: ${escapeHtml(b.mobile)||'[Mobile]'},
-    respectfully request sanction of a loan of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>.</p>
-    <p>Loan break-up requested: Term Loan ${inr(termLoan)} and Working Capital ${inr(wcAmt)}.</p>
+    request consideration of a loan requirement of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>, subject to the bank's appraisal, verification and terms.</p>
+    <p>Indicative loan break-up: Term Loan ${inr(termLoan)} and Working Capital Finance ${inr(wcAmt)}.</p>
     <p>I propose to contribute ${inr(c.meansOfFinance.promoterContribution)} from my own sources towards the total project cost of ${inr(c.totalProjectCost)}.
-    Based on the projected turnover and profitability enclosed in the Project Report, I propose to service the term loan through a monthly instalment (EMI)
-    of approximately <b>${inr(c.emi)} per month</b>, over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
-    <p>I enclose herewith the detailed Project Report containing the projected financials, working capital assessment and other particulars for your kind perusal and favourable consideration.
+    Based on the projected turnover and profitability enclosed in the Project Report, an Indicative EMI for the term loan works out to approximately <b>${inr(c.emi)} per month</b> (shown as an alternative illustration; the detailed schedule uses the selected repayment structure), over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
+    <p>I enclose herewith the detailed Project Report containing the projected financials, working capital assessment and other particulars for your kind perusal.
     ${b.udyam?('Udyam Registration: '+escapeHtml(b.udyam)+'.'):''} ${b.gstin?('GSTIN: '+escapeHtml(b.gstin)+'.'):''}</p>
     <p>Thanking you,</p>
     <p>Yours faithfully,</p>
@@ -1688,15 +1732,14 @@ function rApplication(c){
 
   let letterHi = `<p>सेवा में,<br>शाखा प्रबंधक,<br><b>${escapeHtml(app.bankName)||'[बैंक का नाम]'}</b>,<br>${escapeHtml(app.place)||'[शाखा / स्थान]'}</p>
     <p>दिनांक: ${dateDisp||'[दिनांक]'}</p>
-    <p><b>विषय: ${escapeHtml(current.loan.purpose)} हेतु ${inr(current.loan.total)} ऋण स्वीकृति हेतु आवेदन</b></p>
+    <p><b>विषय: ${escapeHtml(current.loan.purpose)} हेतु ${inr(current.loan.total)} ऋण हेतु आवेदन</b></p>
     <p>महोदय / महोदया,</p>
     <p>मैं, <b>${escapeHtml(b.name)}</b>, प्रोप्राइटर <b>${escapeHtml(b.business)}</b>, निवासी ${escapeHtml(b.address)||'[पता]'}, मोबाइल: ${escapeHtml(b.mobile)||'[मोबाइल]'},
-    सादर निवेदन करता/करती हूँ कि मेरी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> का ऋण <b>${escapeHtml(current.loan.purpose)}</b> के लिए स्वीकृत किया जाए।</p>
-    <p>ऋण विवरण: मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी ${inr(wcAmt)}।</p>
+    अपनी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> की ऋण आवश्यकता को <b>${escapeHtml(current.loan.purpose)}</b> के लिए, बैंक के मूल्यांकन, सत्यापन व शर्तों के अधीन, विचारार्थ प्रस्तुत करता/करती हूँ।</p>
+    <p>सांकेतिक ऋण विवरण: मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी वित्त ${inr(wcAmt)}।</p>
     <p>मैं कुल परियोजना लागत ${inr(c.totalProjectCost)} में से ${inr(c.meansOfFinance.promoterContribution)} की राशि स्वयं के स्रोतों से देने हेतु सहमत हूँ।
-    संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मैं मीयादी ऋण की चुकौती लगभग <b>${inr(c.emi)} प्रति माह</b> की समान मासिक किस्त (ईएमआई) के रूप में,
-    ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन करने का प्रस्ताव करता/करती हूँ।</p>
-    <p>अनुमानित वित्तीय विवरण, कार्यशील पूंजी आकलन एवं अन्य विवरण सहित विस्तृत परियोजना रिपोर्ट संलग्न है, कृपया अवलोकन कर अनुकूल विचार करें।
+    संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मीयादी ऋण की सांकेतिक ईएमआई लगभग <b>${inr(c.emi)} प्रति माह</b> है (यह एक वैकल्पिक उदाहरण मात्र है; विस्तृत अनुसूची चयनित चुकौती संरचना पर आधारित है), जो ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन प्रस्तावित है।</p>
+    <p>अनुमानित वित्तीय विवरण, कार्यशील पूंजी आकलन एवं अन्य विवरण सहित विस्तृत परियोजना रिपोर्ट संलग्न है, कृपया अवलोकन करें।
     ${b.udyam?('उद्यम पंजीकरण: '+escapeHtml(b.udyam)+'।'):''} ${b.gstin?('जीएसटीएन: '+escapeHtml(b.gstin)+'।'):''}</p>
     <p>धन्यवाद सहित,</p>
     <p>भवदीय,</p>
@@ -2072,23 +2115,29 @@ function rInterpretation(c){
 function rMethodology(){
   const a = getAssumptions(current);
   const s = current.settings;
-  return `<h3>${LANG==='hi'?'मुख्य मान्यताएँ व पद्धति':'Key Assumptions & Methodology'}</h3>
-  <p>${LANG==='hi'?'वित्तीय अनुमान उधारकर्ता द्वारा दिए गए बिक्री अनुमान एवं ऐप में चयनित गतिविधि-विशिष्ट मान्यताओं के आधार पर तैयार किए गए हैं। वास्तविक व्यावसायिक जानकारी उपलब्ध होने पर मान्यताओं की समीक्षा व संशोधन किया जाना चाहिए।'
+  const hi = LANG==='hi';
+  return `<h3>${hi?'मुख्य मान्यताएँ व पद्धति':'Key Assumptions & Methodology'}</h3>
+  <p>${hi?'वित्तीय अनुमान उधारकर्ता द्वारा दिए गए बिक्री अनुमान एवं ऐप में चयनित गतिविधि-विशिष्ट मान्यताओं के आधार पर तैयार किए गए हैं। वास्तविक व्यावसायिक जानकारी उपलब्ध होने पर मान्यताओं की समीक्षा व संशोधन किया जाना चाहिए।'
     :'The financial projections have been prepared using the sales estimates provided by the borrower and the activity-specific assumptions selected in the application. The assumptions should be reviewed and modified wherever actual business information is available.'}</p>
-  <table><tr><th>${LANG==='hi'?'मापदंड':'Parameter'}</th><th>${LANG==='hi'?'मूल्य':'Value'}</th></tr>
-  ${ASSUMPTION_FIELDS.map(row=>`<tr><td>${afLabel(row)}</td><td>${a[row[0]]}${row[0].includes('Days')?(LANG==='hi'?' दिन':' days'):'%'}</td></tr>`).join('')}
-  <tr><td>${LANG==='hi'?'कार्यशील पूंजी – टर्नओवर पद्धति':'Working Capital – Turnover Method'}</td><td>${s.wcTurnoverPct}% / ${s.wcNwcPct}% / ${s.wcBankPct}%</td></tr>
-  <tr><td>${LANG==='hi'?'स्थिर संपत्ति पर प्रवर्तक मार्जिन':'Promoter Margin on Fixed Assets'}</td><td>${s.promoterMarginFixedPct}%</td></tr>
-  <tr><td>${LANG==='hi'?'स्वामी आहरण':'Owner Drawings'}</td><td>${s.ownerDrawingsPct}% ${LANG==='hi'?'कर पश्चात लाभ का':'of Profit After Tax'}</td></tr>
-  <tr><td>${LANG==='hi'?'कर दर':'Tax Rate'}</td><td>${s.taxRatePct}%</td></tr>
-  <tr><td>${LANG==='hi'?'ब्याज दर':'Interest Rate'}</td><td>${current.loanTerms.interestRatePct}% ${LANG==='hi'?'वार्षिक':'p.a.'}</td></tr>
-  </table>`;
+  <table><tr><th>${hi?'मापदंड':'Parameter'}</th><th>${hi?'मूल्य':'Value'}</th></tr>
+  ${ASSUMPTION_FIELDS.map(row=>`<tr><td>${afLabel(row)}</td><td>${a[row[0]]}${row[0].includes('Days')?(hi?' दिन':' days'):'%'}</td></tr>`).join('')}
+  <tr><td>${hi?'कार्यशील पूंजी – टर्नओवर पद्धति':'Working Capital – Turnover Method'}</td><td>${s.wcTurnoverPct}% / ${s.wcNwcPct}% / ${s.wcBankPct}%</td></tr>
+  <tr><td>${hi?'स्थिर संपत्ति पर प्रवर्तक मार्जिन':'Promoter Margin on Fixed Assets'}</td><td>${s.promoterMarginFixedPct}%</td></tr>
+  <tr><td>${hi?'स्वामी आहरण':'Owner Drawings'}</td><td>${s.ownerDrawingsPct}% ${hi?'कर पश्चात लाभ का':'of Profit After Tax'}</td></tr>
+  <tr><td>${hi?'अनुमानित कर दर':'Estimated Tax Rate'}</td><td>${s.taxRatePct}%</td></tr>
+  <tr><td>${hi?'ब्याज दर':'Interest Rate'}</td><td>${current.loanTerms.interestRatePct}% ${hi?'वार्षिक':'p.a.'}</td></tr>
+  </table>
+  <p class="small muted">${hi?'अनुमानित कर दर: लागू अनुमानित दर दर्ज करें। 0% का अर्थ है कि कर का अनुमान नहीं लगाया गया है, इसका मतलब यह नहीं कि व्यवसाय कर-मुक्त है।':'Estimated Tax Rate: enter the applicable estimated rate. 0% means tax has not been estimated and must not be interpreted as tax-free.'}</p>
+  <p class="small muted">${hi?'भूमि व प्रारंभिक व्यय दोनों गैर-मूल्यह्रास योग्य हैं — इन्हें भवन/मशीनरी/अन्य स्थिर संपत्तियों में शामिल नहीं किया गया है और इन पर कोई मूल्यह्रास प्रभारित नहीं किया गया है; ये लागत मूल्य पर शुद्ध स्थिर संपत्ति में शामिल रहते हैं।':'Land and Preliminary Expenses are both non-depreciable — they are not folded into Building/Machinery/Other Fixed Assets and no depreciation is charged on them; they remain included in Net Fixed Assets at cost.'}</p>`;
 }
 const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारकर्ता व गतिविधि विवरण"],chkSales:["Sales Projection Entered","बिक्री अनुमान दर्ज"],
   chkAssump:["Assumptions Reviewed","मान्यताएँ समीक्षित"],chkCost:["Project Cost = Means of Finance","परियोजना लागत = वित्त के साधन"],
+  chkLoanStructure:["Total Loan = Term Loan + Working Capital Finance","कुल ऋण = मीयादी ऋण + कार्यशील पूंजी वित्त"],
+  chkLandPrelim:["Land & Preliminary Expenses Correctly Excluded from Depreciation","भूमि व प्रारंभिक व्यय मूल्यह्रास से सही ढंग से बाहर"],
   chkWC:["Working Capital Calculated","कार्यशील पूंजी गणना"],chkPnl:["Profit & Loss Calculated","लाभ-हानि गणना"],
   chkBS:["Balance Sheet Balanced","तुलन पत्र संतुलित"],chkCF:["Cash Flow Calculated","नकदी प्रवाह गणना"],
   chkRepay:["Repayment Schedule Calculated","चुकौती अनुसूची गणना"],chkRatios:["Ratios Calculated","अनुपात गणना"],
+  chkNoNaN:["No Invalid (NaN/Infinity) Values","कोई अमान्य (NaN/Infinity) मान नहीं"],
   chkReady:["All Internal Calculations Verified","सभी आंतरिक गणनाएँ सत्यापित"]};
 function rChecklist(c){
   return `<h3>${LANG==='hi'?'रिपोर्ट गणना जाँच':'Report Calculation Check'}</h3>
