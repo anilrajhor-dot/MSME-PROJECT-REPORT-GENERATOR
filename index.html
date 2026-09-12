@@ -802,6 +802,7 @@ function calculate(p){
 
   let cash = num(p.openingCash);
   const cashFlow = [];
+  let cumulativeFunding = 0;
   for(let i=0;i<3;i++){
     const opChgInv = i===0 ? opCycle[0].inventory : (opCycle[i].inventory-opCycle[i-1].inventory);
     const opChgRec = i===0 ? opCycle[0].receivables : (opCycle[i].receivables-opCycle[i-1].receivables);
@@ -815,11 +816,21 @@ function calculate(p){
     const promoterInfusion = i===0 ? promoterContributionTotal : 0;
     const wcChg = i===0 ? wcYearly[0] : (wcYearly[i]-wcYearly[i-1]);
     const drawings = -drawingsYearly[i];
-    const financing = termLoanDisb+termPrincipalRepaid+promoterInfusion+wcChg+drawings;
+    const financingBeforeFunding = termLoanDisb+termPrincipalRepaid+promoterInfusion+wcChg+drawings;
+    const netBeforeFunding = operating+investing+financingBeforeFunding;
+    const closingBeforeFunding = cash+netBeforeFunding;
+    /* If projected cash generation is insufficient and closing cash would be negative, that
+       shortfall is shown as an indicative Additional Short-Term Funding Requirement — added
+       here as a financing inflow so Cash/Bank never goes negative, and carried forward as a
+       cumulative liability on the Balance Sheet (see chkCashDeficit / rBS / rCF). Only the new
+       shortfall arising in a given year is counted, avoiding double-counting across years. */
+    const fundingRequired = Math.max(-closingBeforeFunding, 0);
+    const financing = financingBeforeFunding + fundingRequired;
     const net = operating+investing+financing;
     const closing = cash+net;
+    cumulativeFunding += fundingRequired;
     cashFlow.push({operating,investing,financing,net,opening:cash,closing,
-      termLoanDisb,termPrincipalRepaid,promoterInfusion,wcChg,drawings});
+      termLoanDisb,termPrincipalRepaid,promoterInfusion,wcChg,drawings,fundingRequired,cumulativeFunding});
     cash = closing;
   }
 
@@ -827,12 +838,13 @@ function calculate(p){
     /* Net Fixed Assets = Land + Preliminary Expenses (both carried at cost, never depreciated)
        + the depreciable block net of accumulated depreciation. */
     const assets = { nfa: nfaYearly[i].close + fa.land + fa.preliminary, inventory: opCycle[i].inventory, receivables: opCycle[i].receivables,
-      cash: cashFlow[i].closing, otherCA: opCycle[i].otherCA };
+      cash: Math.max(cashFlow[i].closing,0), otherCA: opCycle[i].otherCA };
     assets.total = assets.nfa+assets.inventory+assets.receivables+assets.cash+assets.otherCA;
     const promoterCapital = promoterContributionTotal;
+    const additionalFunding = cashFlow[i].cumulativeFunding;
     const liabilities = { promoterCapital, retainedEarnings: reYearly[i], termLoan: tlYearly[i].closeBal,
-      wcBorrowing: wcYearly[i], creditors: opCycle[i].creditors, otherCL: opCycle[i].otherCL };
-    liabilities.total = promoterCapital+reYearly[i]+tlYearly[i].closeBal+wcYearly[i]+opCycle[i].creditors+opCycle[i].otherCL;
+      wcBorrowing: wcYearly[i], creditors: opCycle[i].creditors, otherCL: opCycle[i].otherCL, additionalFunding };
+    liabilities.total = promoterCapital+reYearly[i]+tlYearly[i].closeBal+wcYearly[i]+opCycle[i].creditors+opCycle[i].otherCL+additionalFunding;
     return {assets, liabilities, diff: assets.total-liabilities.total};
   });
 
@@ -849,10 +861,10 @@ function calculate(p){
   const ratios = [0,1,2].map(i=>{
     const bs = balanceSheet[i], r = pnlFull[i];
     const ca = bs.assets.inventory+bs.assets.receivables+bs.assets.cash+bs.assets.otherCA;
-    const cl = bs.liabilities.wcBorrowing+bs.liabilities.creditors+bs.liabilities.otherCL;
+    const cl = bs.liabilities.wcBorrowing+bs.liabilities.creditors+bs.liabilities.otherCL+bs.liabilities.additionalFunding;
     const currentRatio = cl>0? ca/cl : null;
     const tnw = bs.liabilities.promoterCapital+bs.liabilities.retainedEarnings;
-    const totalDebt = bs.liabilities.termLoan+bs.liabilities.wcBorrowing;
+    const totalDebt = bs.liabilities.termLoan+bs.liabilities.wcBorrowing+bs.liabilities.additionalFunding;
     const tol = totalDebt+bs.liabilities.creditors+bs.liabilities.otherCL;
     const debtEquity = tnw>0? totalDebt/tnw : null;
     const tolTnw = tnw>0? tol/tnw : null;
@@ -895,8 +907,8 @@ function calculate(p){
   const ratiosValid = ratios.every(r => RATIO_KEYS.every(k=>validNum(r[k])));
   const noNaNAcrossReport =
     pnlFull.every(r=>Object.values(r).every(v=>typeof v!=='number'||isFinite(v))) &&
-    balanceSheet.every(b=>isFinite(b.assets.total) && isFinite(b.liabilities.total)) &&
-    cashFlow.every(c=>isFinite(c.closing)) &&
+    balanceSheet.every(b=>isFinite(b.assets.total) && isFinite(b.liabilities.total) && b.assets.cash>=0 && isFinite(b.liabilities.additionalFunding) && b.liabilities.additionalFunding>=0) &&
+    cashFlow.every(c=>isFinite(c.closing) && isFinite(c.fundingRequired) && c.fundingRequired>=0) &&
     schedule.every(r=>isFinite(r.close)&&isFinite(r.interest)) &&
     dscrYearly.every(d=>d.dscr===null||isFinite(d.dscr)) &&
     isFinite(emi);
@@ -1980,30 +1992,43 @@ function rPnl(c){
 const BS_LABELS = {nfa:["Net Fixed Assets","शुद्ध स्थिर संपत्ति"],inventory:["Inventory","स्टॉक"],receivables:["Receivables","प्राप्य"],
   cash:["Cash / Bank","नकद / बैंक"],otherCA:["Other Current Assets","अन्य चालू संपत्तियाँ"],total:["Total","कुल"],
   promoterCapital:["Promoter Capital","प्रवर्तक पूंजी"],retainedEarnings:["Retained Earnings","संचित लाभ"],termLoan:["Term Loan","मीयादी ऋण"],
-  wcBorrowing:["Working Capital Borrowing","कार्यशील पूंजी उधार"],creditors:["Trade Creditors","व्यापारिक लेनदार"],otherCL:["Other Current Liabilities","अन्य चालू देनदारियाँ"]};
+  wcBorrowing:["Working Capital Borrowing","कार्यशील पूंजी उधार"],creditors:["Trade Creditors","व्यापारिक लेनदार"],otherCL:["Other Current Liabilities","अन्य चालू देनदारियाँ"],
+  additionalFunding:["Additional Short-Term Funding Requirement (Indicative, Cumulative)","अतिरिक्त अल्पकालिक वित्त आवश्यकता (सांकेतिक, संचयी)"]};
 function bl(k){ return BS_LABELS[k][LANG==='hi'?1:0]; }
+function cashDeficitNote(){
+  return LANG==='hi'
+    ? 'जहाँ अनुमानित नकदी सृजन अपर्याप्त हो, वहाँ उत्पन्न नकद घाटे को एक सांकेतिक अतिरिक्त अल्पकालिक वित्त आवश्यकता के रूप में दर्शाया गया है। यह कोई स्वीकृति संस्तुति नहीं है; अंतिम वित्त आवश्यकता व संरचना ऋणदाता बैंक के मूल्यांकन व शर्तों के अधीन है।'
+    : 'Where projected cash generation is insufficient, the resulting cash deficit is shown as an indicative additional short-term funding requirement. This is not a sanction recommendation; the final funding requirement and structure are subject to the lending bank\'s appraisal and terms.';
+}
 function rBS(c){
   const rows = [["nfa","assets"],["inventory","assets"],["receivables","assets"],["cash","assets"],["otherCA","assets"],["total","assets"]];
-  const liab = [["promoterCapital","liabilities"],["retainedEarnings","liabilities"],["termLoan","liabilities"],["wcBorrowing","liabilities"],["creditors","liabilities"],["otherCL","liabilities"],["total","liabilities"]];
+  const liab = [["promoterCapital","liabilities"],["retainedEarnings","liabilities"],["termLoan","liabilities"],["wcBorrowing","liabilities"],["creditors","liabilities"],["otherCL","liabilities"],["additionalFunding","liabilities"],["total","liabilities"]];
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  const anyFunding = c.balanceSheet.some(b=>b.liabilities.additionalFunding>0);
   return `<h3>${LANG==='hi'?'अनुमानित तुलन पत्र':'Projected Balance Sheet'}</h3>
   <table><tr><th>${LANG==='hi'?'संपत्ति':'Assets'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
   ${rows.map(([k,g])=>`<tr class="${k==='total'?'total':''}"><td>${bl(k)}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
   </table>
   <table><tr><th>${LANG==='hi'?'देनदारियाँ':'Liabilities'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
-  ${liab.map(([k,g])=>`<tr class="${k==='total'?'total':''}"><td>${bl(k)}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
-  </table><p class="small muted">${LANG==='hi'?'नकद / बैंक, अनुमानित नकदी प्रवाह विवरण से प्राप्त किया गया है — कोई अस्पष्ट संतुलन आंकड़ा उपयोग नहीं किया गया है।':'Cash / Bank is derived from the Projected Cash Flow Statement — the Balance Sheet is not force-tallied using any unexplained figure.'}</p>`;
+  ${liab.map(([k,g])=>`<tr class="${k==='total'?'total':(k==='additionalFunding'&&anyFunding?'mismatch-row':'')}"><td>${bl(k)}</td><td>${inr(c.balanceSheet[0][g][k])}</td><td>${inr(c.balanceSheet[1][g][k])}</td><td>${inr(c.balanceSheet[2][g][k])}</td></tr>`).join('')}
+  </table>
+  <p class="small muted">${LANG==='hi'?'नकद / बैंक, अनुमानित नकदी प्रवाह विवरण से प्राप्त किया गया है — कोई अस्पष्ट संतुलन आंकड़ा उपयोग नहीं किया गया है। नकद / बैंक कभी ऋणात्मक नहीं दिखाया जाता; कोई घाटा उत्पन्न होने पर वह "अतिरिक्त अल्पकालिक वित्त आवश्यकता" के रूप में देनदारियों में अलग से दर्शाया जाता है।':'Cash / Bank is derived from the Projected Cash Flow Statement — the Balance Sheet is not force-tallied using any unexplained figure. Cash / Bank is never shown as negative; any shortfall instead appears separately under liabilities as an "Additional Short-Term Funding Requirement".'}</p>
+  ${anyFunding ? `<div class="note-box">${cashDeficitNote()}</div>` : ''}`;
 }
 function rCF(c){
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
+  const anyFunding = c.cashFlow.some(cf=>cf.fundingRequired>0);
   return `<h3>${LANG==='hi'?'अनुमानित नकदी प्रवाह':'Projected Cash Flow'}</h3><table><tr><th>${LANG==='hi'?'विवरण':'Particulars'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
   <tr><td>${LANG==='hi'?'परिचालन गतिविधियों से नकदी':'Cash from Operating Activities'}</td><td>${inr(c.cashFlow[0].operating)}</td><td>${inr(c.cashFlow[1].operating)}</td><td>${inr(c.cashFlow[2].operating)}</td></tr>
   <tr><td>${LANG==='hi'?'निवेश गतिविधियों से नकदी':'Cash from Investing Activities'}</td><td>${inr(c.cashFlow[0].investing)}</td><td>${inr(c.cashFlow[1].investing)}</td><td>${inr(c.cashFlow[2].investing)}</td></tr>
-  <tr><td>${LANG==='hi'?'वित्तपोषण गतिविधियों से नकदी':'Cash from Financing Activities'}</td><td>${inr(c.cashFlow[0].financing)}</td><td>${inr(c.cashFlow[1].financing)}</td><td>${inr(c.cashFlow[2].financing)}</td></tr>
+  <tr><td>${LANG==='hi'?'वित्तपोषण गतिविधियों से नकदी (सम्मिलित, नीचे देखें)':'Cash from Financing Activities (includes funding below, if any)'}</td><td>${inr(c.cashFlow[0].financing)}</td><td>${inr(c.cashFlow[1].financing)}</td><td>${inr(c.cashFlow[2].financing)}</td></tr>
+  <tr class="${anyFunding?'mismatch-row':''}"><td>${LANG==='hi'?'— जिसमें: सांकेतिक अतिरिक्त अल्पकालिक वित्त आवश्यकता':'— of which: Indicative Additional Short-Term Funding Requirement'}</td><td>${inr(c.cashFlow[0].fundingRequired)}</td><td>${inr(c.cashFlow[1].fundingRequired)}</td><td>${inr(c.cashFlow[2].fundingRequired)}</td></tr>
   <tr class="total"><td>${LANG==='hi'?'शुद्ध नकदी प्रवाह':'Net Cash Flow'}</td><td>${inr(c.cashFlow[0].net)}</td><td>${inr(c.cashFlow[1].net)}</td><td>${inr(c.cashFlow[2].net)}</td></tr>
   <tr><td>${LANG==='hi'?'प्रारंभिक नकद':'Opening Cash'}</td><td>${inr(c.cashFlow[0].opening)}</td><td>${inr(c.cashFlow[1].opening)}</td><td>${inr(c.cashFlow[2].opening)}</td></tr>
   <tr class="total"><td>${LANG==='hi'?'अंतिम नकद':'Closing Cash'}</td><td>${inr(c.cashFlow[0].closing)}</td><td>${inr(c.cashFlow[1].closing)}</td><td>${inr(c.cashFlow[2].closing)}</td></tr>
-  </table>`;
+  </table>
+  <p class="small muted">${LANG==='hi'?'अंतिम नकद कभी ऋणात्मक नहीं दिखाया जाता — किसी वर्ष में नकदी की कमी होने पर, उतनी राशि उसी वर्ष एक सांकेतिक अतिरिक्त अल्पकालिक वित्त आवश्यकता (वित्तपोषण अंतर्वाह के रूप में) मानकर अंतिम नकद को शून्य तक लाया जाता है; यह राशि तुलन पत्र में संचयी रूप से देनदारियों में भी दर्शाई जाती है।':'Closing Cash is never shown as negative — if a year would otherwise run short, that shortfall is assumed as an indicative additional short-term funding inflow for that year (bringing Closing Cash to zero), and the same amount is carried cumulatively into the Balance Sheet as a liability.'}</p>
+  ${anyFunding ? `<div class="note-box">${cashDeficitNote()}</div>` : ''}`;
 }
 function rWC(c){
   const hi = LANG==='hi';
