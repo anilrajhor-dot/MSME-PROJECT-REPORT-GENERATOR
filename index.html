@@ -1521,10 +1521,29 @@ function goToProjectCost(){ renderProjectCost(); }
 function renderProjectCost(){
   currentScreenRenderer = renderProjectCost;
   const c = calculate(current);
+  const hi = LANG==='hi';
+  const split = current.settings.fixedAssetSplit;
+  const splitSum = split.land+split.building+split.machinery+split.furniture+split.vehicle+split.preliminary+split.other;
+  const sumOff = Math.abs(splitSum-100)>0.5;
   const html = `<div class="card">
     <h2>${tt('projectCostTitle')} & ${tt('meansOfFinanceTitle')}</h2>
     ${colorLegend()}
     <p class="note-box">${tt('indicativeNote')}</p>
+    <h3>${hi?'परियोजना लागत मान्यताएँ (केवल इस परियोजना हेतु)':'Project Cost Assumptions (This Project Only)'}</h3>
+    <p class="muted small">${hi?'ये केवल इस परियोजना पर लागू होती हैं — वैश्विक डिफ़ॉल्ट (सेटिंग्स में) व अन्य परियोजनाएँ अप्रभावित रहती हैं।':'These apply only to this project — the global defaults in Settings, and any other project, are unaffected.'}</p>
+    <div class="grid default-zone">
+      <div><label>${tt('land')} (%)</label><input type="number" step="1" id="pc_land" value="${split.land}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('building')} (%)</label><input type="number" step="1" id="pc_building" value="${split.building}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('machinery')} (%)</label><input type="number" step="1" id="pc_machinery" value="${split.machinery}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('furniture')} (%)</label><input type="number" step="1" id="pc_furniture" value="${split.furniture}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('vehicle')} (%)</label><input type="number" step="1" id="pc_vehicle" value="${split.vehicle}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('preliminary')} (%)</label><input type="number" step="1" id="pc_preliminary" value="${split.preliminary}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${tt('otherFixedAssets')} (%)</label><input type="number" step="1" id="pc_other" value="${split.other}" onchange="updateProjectCostSettings()"></div>
+      <div><label>${hi?'स्थिर संपत्ति पर प्रवर्तक मार्जिन (%)':'Promoter Margin on Fixed Assets (%)'}</label><input type="number" step="1" id="pc_promoterMargin" value="${current.settings.promoterMarginFixedPct}" onchange="updateProjectCostSettings()"></div>
+    </div>
+    <p class="small ${sumOff?'mismatch':'muted'}">${hi?'घटकों का योग:':'Components add up to:'} ${splitSum.toFixed(0)}% ${sumOff?(hi?'— यह 100% होना चाहिए, अन्यथा नीचे दिए गए मदवार आंकड़े कुल स्थिर संपत्ति आवश्यकता के बराबर नहीं होंगे।':'— this should total 100%, otherwise the itemised figures below will not add up to the Fixed Asset Requirement.'):''}</p>
+    <p class="small muted">${hi?'ध्यान दें: भवन, मशीनरी, फर्नीचर व वाहन एक ही मूल्यह्रास दर साझा करते हैं, अतः इनके बीच प्रतिशत बदलने से लाभ-हानि अथवा तुलन पत्र में कोई परिवर्तन नहीं होता — केवल भूमि %, प्रारंभिक व्यय % (दोनों गैर-मूल्यह्रास योग्य) व प्रवर्तक मार्जिन % ही मूल्यह्रास व लाभप्रदता को प्रभावित करते हैं। मूल्यह्रास दर स्वयं "मान्यताएँ" स्क्रीन पर संपादित की जा सकती है।':'Note: Building, Machinery, Furniture and Vehicle share a single depreciation rate for this activity, so shifting the split between them does not itself change P&L or Balance Sheet figures — only Land %, Preliminary % (both non-depreciable) and Promoter Margin % affect depreciation and profitability. The Depreciation Rate itself can be edited on the Assumptions screen.'}</p>
+    <div class="btnrow"><button class="btn secondary" onclick="resetProjectCostSettings()">${hi?'वैश्विक डिफ़ॉल्ट पर रीसेट करें':'Reset to Global Defaults'}</button></div>
     <h3>${tt('projectCostTitle')}</h3>
     <table>
       <tr><th>${tt('componentHdr')}</th><th>${tt('amountHdr')}</th></tr>
@@ -1556,6 +1575,20 @@ function renderProjectCost(){
     </div>
   </div>`;
   document.getElementById('mainArea').innerHTML = html;
+}
+function updateProjectCostSettings(){
+  current.settings.fixedAssetSplit = {
+    land:+val('pc_land')||0, building:+val('pc_building')||0, machinery:+val('pc_machinery')||0,
+    furniture:+val('pc_furniture')||0, vehicle:+val('pc_vehicle')||0, preliminary:+val('pc_preliminary')||0, other:+val('pc_other')||0
+  };
+  current.settings.promoterMarginFixedPct = +val('pc_promoterMargin')||0;
+  renderProjectCost();
+}
+function resetProjectCostSettings(){
+  const g = getSettings();
+  current.settings.fixedAssetSplit = JSON.parse(JSON.stringify(g.fixedAssetSplit));
+  current.settings.promoterMarginFixedPct = g.promoterMarginFixedPct;
+  renderProjectCost();
 }
 
 /* ============================================================
