@@ -642,26 +642,26 @@ function calculate(p){
     wcFinanceMemo: wcFinance
   };
 
-  /* Loan Amount Requested vs Indicative Term Loan / Indicative Working Capital Finance —
-     informational only ("for applicant/bank review; not an eligibility or sanction decision"),
-     flagged wherever they differ by more than the tolerance so the preparer can reconcile. */
+  /* Loan Reconciliation — two genuinely different concepts, kept separate and never
+     conflated as a "mismatch":
+       (a) Structure check: if the applicant entered Total, Term AND WC Finance, do their
+           own three numbers add up (Term + WC = Total)? This is a genuine, informational
+           warning about the applicant's own entered data — never auto-corrected.
+       (b) Indicative comparison: the Turnover Method's independently-calculated WC estimate,
+           shown purely as a reference figure alongside whatever WC Finance was requested —
+           the two are different concepts by design and a difference between them is not an
+           error of any kind. */
   const tolerancePct = (s.loanMismatchTolerancePct===undefined?5:s.loanMismatchTolerancePct);
-  const assessedTotal = termLoan + wcBank;
-  function differs(applied, assessed){
-    if(!applied) return false;
-    const base = Math.max(Math.abs(applied), Math.abs(assessed), 1);
-    return Math.abs(applied-assessed) > base*tolerancePct/100;
-  }
+  const structureTolerance = Math.max(appliedTotal*tolerancePct/100, 1);
   const loanCheck = {
     appliedTotal, appliedTermLoan, appliedWc,
-    assessedTermLoan: termLoan, assessedWc: wcBank, assessedTotal,
-    difference: appliedTotal - assessedTotal,
-    totalMismatch: differs(appliedTotal, assessedTotal),
-    wcMismatch: differs(appliedWc, wcBank),
-    splitMismatch: (appliedTermLoan>0 && appliedWc>0) && Math.abs((appliedTermLoan+appliedWc)-appliedTotal) > Math.max(appliedTotal*0.01,1),
+    termLoanUsed: termLoan, wcFinanceUsed: wcFinance,
+    indicativeWc: wcBank,
+    indicativeDifference: appliedTotal - (termLoan + wcFinance),
+    structureMismatch: (appliedTermLoan>0 && appliedWc>0) && Math.abs((appliedTermLoan+appliedWc)-appliedTotal) > structureTolerance,
     tolerancePct
   };
-  loanCheck.anyMismatch = loanCheck.totalMismatch || loanCheck.wcMismatch || loanCheck.splitMismatch;
+  loanCheck.anyMismatch = loanCheck.structureMismatch;
 
   /* Last Year's Actuals (existing units only) — a full actual P&L and Balance Sheet, used to
      (a) compare against this year's Year-1 projection and flag an unusually large sales jump,
@@ -906,7 +906,15 @@ function calculate(p){
   checklist.push({key:"chkSales", pass: sales.every(v=>v>0)});
   checklist.push({key:"chkAssump", pass:true});
   checklist.push({key:"chkCost", pass: Math.abs(totalProjectCost-meansOfFinance.total)<1});
-  checklist.push({key:"chkLoanStructure", pass: termLoan>=0 && wcBank>=0 && isFinite(termLoan) && isFinite(wcBank) && Math.abs((termLoan+wcBank)-assessedTotal)<1});
+  checklist.push({key:"chkLoanStructure", pass:
+    isFinite(appliedTotal) && appliedTotal>=0 &&
+    isFinite(appliedTermLoan) && appliedTermLoan>=0 &&
+    isFinite(appliedWc) && appliedWc>=0 &&
+    isFinite(termLoan) && termLoan>=0 &&
+    isFinite(wcFinance) && wcFinance>=0 &&
+    isFinite(wcBank) && wcBank>=0
+  });
+  checklist.push({key:"chkLoanReconcile", pass: !loanCheck.structureMismatch, info:true});
   checklist.push({key:"chkLandPrelim", pass: fa.land>=0 && fa.preliminary>=0 && grossBlock>=0 && deprYearly.every(d=>isFinite(d)&&d>=0)});
   checklist.push({key:"chkWC", pass: wcReq>0});
   checklist.push({key:"chkPnl", pass: pnlFull.every(r=>!isNaN(r.pat))});
@@ -915,7 +923,7 @@ function calculate(p){
   checklist.push({key:"chkRepay", pass: termLoan>=0 && schedule.every(r=>!isNaN(r.close)) && Math.abs(schedule[schedule.length-1].close)<1});
   checklist.push({key:"chkRatios", pass: ratiosValid});
   checklist.push({key:"chkNoNaN", pass: noNaNAcrossReport});
-  const allPass = checklist.every(c=>c.pass);
+  const allPass = checklist.filter(c=>!c.info).every(c=>c.pass);
   checklist.push({key:"chkReady", pass: allPass});
 
   return {
@@ -1122,8 +1130,8 @@ function openSettingsScreen(){
     <div><label>Default Tenure (Years)</label><input type="number" id="s_tenure" value="${s.tenureYears}"></div>
     <div><label>Default Moratorium (Months)</label><input type="number" id="s_mora" value="${s.moratoriumMonths}"></div>
   </div>
-  <h3>${LANG==='hi'?'ऋण राशि जाँच':'Loan Amount Check'}</h3>
-  <p class="muted small">${LANG==='hi'?'यदि उधारकर्ता द्वारा आवेदित ऋण राशि, इस सहनशीलता से अधिक इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता से भिन्न हो, तो अंतर प्रदर्शित किया जाता है — यह केवल समाधान हेतु सूचना है, कोई पात्रता निर्णय नहीं।':'If the loan amount the borrower applied for differs from this report\'s indicative project requirement by more than this tolerance, the difference is displayed — this is informational, for reconciliation, not an eligibility decision.'}</p>
+  <h3>${LANG==='hi'?'ऋण संरचना जाँच':'Loan Structure Check'}</h3>
+  <p class="muted small">${LANG==='hi'?'यदि आवेदक द्वारा दर्ज मीयादी ऋण व कार्यशील पूंजी वित्त का योग, इस सहनशीलता से अधिक कुल आवेदित ऋण से भिन्न हो, तो एक सूचनात्मक चेतावनी दिखाई जाती है — यह केवल आवेदक के अपने आंकड़ों की आंतरिक संगति की जाँच है, टर्नओवर पद्धति से तुलना नहीं।':'If the applicant\'s entered Term Loan + WC Finance differ from the Total Loan Requested by more than this tolerance, an informational warning is shown — this checks only the internal consistency of the applicant\'s own figures, not a comparison against the Turnover Method.'}</p>
   <div class="grid default-zone">
     <div><label>${LANG==='hi'?'सहनशीलता (%)':'Tolerance (%)'}</label><input type="number" step="1" id="s_loanTol" value="${s.loanMismatchTolerancePct}"></div>
     <div><label>${LANG==='hi'?'अधिकतम उचित बिक्री वृद्धि (%, पिछले वर्ष के वास्तविक की तुलना में)':'Maximum reasonable sales jump (%, vs last year\'s actual)'}</label><input type="number" step="1" id="s_maxGrowth" value="${s.maxSalesGrowthPct}"></div>
@@ -1620,7 +1628,7 @@ function drawReport(){
     case 'conclusion': body = rConclusion(c); break;
   }
   const calcOk = c.checklist.find(x=>x.key==='chkReady').pass;
-  const failedLabels = c.checklist.filter(x=>!x.pass && x.key!=='chkReady').map(x=>CHK_LABELS[x.key][hi?1:0]);
+  const failedLabels = c.checklist.filter(x=>!x.pass && !x.info && x.key!=='chkReady').map(x=>CHK_LABELS[x.key][hi?1:0]);
   const actionButtons = calcOk
     ? `<button class="btn gold" onclick="printReport()">${tt('printSave')}</button>
        <button class="btn gold" onclick="shareReport()">${tt('shareBtn')}</button>
@@ -1763,9 +1771,9 @@ function rApplication(c){
   return `${demoNote()}<h3>${LANG==='hi'?'बैंक हेतु ऋण आवेदन':'Loan Application to Bank'}</h3>
   ${editForm}
   <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${tt('emiFullNote')}</div>
-  ${c.loanCheck.anyMismatch ? `<div class="mismatch-box"><b>${LANG==='hi'?'ऋण राशि समाधान:':'Loan Amount Reconciliation:'}</b> ${LANG==='hi'
-    ? `ऊपर आवेदित ऋण राशि (${inr(c.loanCheck.appliedTotal)}), इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता (मीयादी ऋण ${inr(c.loanCheck.assessedTermLoan)} + कार्यशील पूंजी ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}) से भिन्न है। आवेदक/बैंक इस आवश्यकता की समीक्षा व समाधान कर सकते हैं — देखें "ऋण का उद्देश्य" खंड।`
-    : `The loan amount applied for above (${inr(c.loanCheck.appliedTotal)}) differs from this report's indicative project requirement (Term Loan ${inr(c.loanCheck.assessedTermLoan)} + Working Capital ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}). The applicant/bank may review and reconcile the requirement — see the "Purpose of Loan" section.`}</div>` : ''}
+  ${c.loanCheck.structureMismatch ? `<div class="mismatch-box"><b>${LANG==='hi'?'ऋण संरचना की समीक्षा करें:':'Please review the loan structure:'}</b> ${LANG==='hi'
+    ? `दर्ज किया गया मीयादी ऋण (${inr(c.loanCheck.appliedTermLoan)}) व कार्यशील पूंजी वित्त (${inr(c.loanCheck.appliedWc)}) का योग, कुल आवेदित ऋण (${inr(c.loanCheck.appliedTotal)}) से मेल नहीं खाता। यह केवल एक सूचनात्मक जाँच है — देखें "ऋण का उद्देश्य" खंड।`
+    : `The entered Term Loan (${inr(c.loanCheck.appliedTermLoan)}) and WC Finance (${inr(c.loanCheck.appliedWc)}) do not add up to the Total Loan Requested (${inr(c.loanCheck.appliedTotal)}). This is an informational notice only — see the "Purpose of Loan" section.`}</div>` : ''}
   <div class="letter-block">${LANG==='hi'?letterHi:letterEn}</div>
   <p class="small muted">${LANG==='hi'?'बैंक का नाम, शाखा/स्थान व दिनांक ऊपर बदले जा सकते हैं; पत्र स्वतः अद्यतन हो जाएगा।':'Bank name, branch/place and date above are editable — the letter updates automatically.'}</p>`;
 }
@@ -1904,20 +1912,18 @@ function rPurpose(c){
   <tr><td>${tt('purposeOfLoan')}</td><td>${escapeHtml(current.loan.purpose)}</td></tr>
   <tr><td>${tt('totalLoanRequired').replace(' *','')}</td><td>${inr(current.loan.total)}</td></tr>
   </table>
-  <h3>${hi?'आवेदित राशि बनाम सांकेतिक परियोजना आवश्यकता':'Loan Amount Applied vs Indicative Project Requirement'}</h3>
-  <table><tr><th>${hi?'':''}</th><th>${hi?'उधारकर्ता द्वारा आवेदित':'Applied by Borrower'}</th><th>${hi?'सांकेतिक परियोजना आवश्यकता':'Indicative Project Requirement'}</th></tr>
-  <tr><td>${tt('termLoanRow')}</td><td>${lc.appliedTermLoan?inr(lc.appliedTermLoan):'—'}</td><td>${inr(lc.assessedTermLoan)}</td></tr>
-  <tr class="${lc.wcMismatch?'mismatch-row':''}"><td>${hi?'कार्यशील पूंजी':'Working Capital'}</td><td>${lc.appliedWc?`<span class="${lc.wcMismatch?'mismatch':''}">${inr(lc.appliedWc)}</span>`:'—'}</td><td>${inr(lc.assessedWc)}</td></tr>
-  <tr class="total ${lc.totalMismatch?'mismatch-row':''}"><td>${hi?'कुल':'Total'}</td><td><span class="${lc.totalMismatch?'mismatch':''}">${inr(lc.appliedTotal)}</span></td><td><span class="${lc.totalMismatch?'mismatch':''}">${inr(lc.assessedTotal)}</span></td></tr>
+  <h3>${hi?'ऋण संरचना — आवेदित राशि व सांकेतिक टर्नओवर पद्धति':'Loan Structure — Requested Amounts & Indicative Turnover Method'}</h3>
+  <table><tr><th></th><th>${hi?'राशि':'Amount'}</th></tr>
+  <tr><td>${hi?'कुल ऋण आवेदित':'Total Loan Requested'}</td><td>${inr(lc.appliedTotal)}</td></tr>
+  <tr><td>${hi?'मीयादी ऋण आवेदित':'Term Loan Requested'}</td><td>${lc.appliedTermLoan?inr(lc.appliedTermLoan):(hi?'दर्ज नहीं (सांकेतिक: '+inr(lc.termLoanUsed)+')':'Not entered (indicative: '+inr(lc.termLoanUsed)+')')}</td></tr>
+  <tr><td>${hi?'कार्यशील पूंजी वित्त आवेदित':'WC Finance Requested'}</td><td>${lc.appliedWc?inr(lc.appliedWc):(hi?'दर्ज नहीं (सांकेतिक: '+inr(lc.wcFinanceUsed)+')':'Not entered (indicative: '+inr(lc.wcFinanceUsed)+')')}</td></tr>
+  <tr><td>${hi?'सांकेतिक टर्नओवर पद्धति कार्यशील पूंजी (केवल संदर्भ हेतु)':'Indicative Turnover Method WC (reference only)'}</td><td>${inr(lc.indicativeWc)}</td></tr>
+  <tr class="total"><td>${hi?'सांकेतिक अंतर (कुल आवेदित − [प्रयुक्त मीयादी ऋण + प्रयुक्त कार्यशील पूंजी])':'Indicative Difference (Total Requested − [Term Loan Used + WC Finance Used])'}</td><td>${inr(lc.indicativeDifference)}</td></tr>
   </table>
-  ${lc.anyMismatch ? `<div class="mismatch-box"><b>${hi?'राशि में अंतर:':'Amount differs:'}</b> ${
-    [
-      lc.totalMismatch ? (hi?`आवेदित कुल ऋण (${inr(lc.appliedTotal)}) इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता (${inr(lc.assessedTotal)}) से भिन्न है।`:`The total loan applied for (${inr(lc.appliedTotal)}) differs from this report's indicative project requirement (${inr(lc.assessedTotal)}).`) : '',
-      lc.wcMismatch ? (hi?`आवेदित कार्यशील पूंजी (${inr(lc.appliedWc)}) टर्नओवर पद्धति द्वारा सांकेतिक राशि (${inr(lc.assessedWc)}) से भिन्न है।`:`The working capital applied for (${inr(lc.appliedWc)}) differs from the Turnover Method's indicative figure (${inr(lc.assessedWc)}).`) : '',
-      lc.splitMismatch ? (hi?'दर्ज किया गया मीयादी ऋण व कार्यशील पूंजी का योग, कुल आवश्यक ऋण से मेल नहीं खाता।':'The Term Loan + Working Capital entered does not add up to the Total Loan Required entered.') : ''
-    ].filter(Boolean).join(' ')
-  } ${hi?'आवेदक/बैंक इस आवश्यकता की समीक्षा व समाधान कर सकते हैं।':'The applicant/bank may review and reconcile the requirement.'}</div>`
-  : `<div class="note-box">${hi?'आवेदित ऋण राशि इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता से मेल खाती है।':'The loan amount applied for matches this report\'s indicative project requirement.'}</div>`}`;
+  <div class="note-box">${hi?'"सांकेतिक अंतर" केवल सूचनात्मक तुलना है, कोई त्रुटि या पात्रता निर्णय नहीं। कार्यशील पूंजी वित्त (आवेदित) व टर्नओवर पद्धति की सांकेतिक कार्यशील पूंजी दो भिन्न अवधारणाएँ हैं — इनके बीच अंतर होना स्वाभाविक है।':'The "Indicative Difference" is an informational comparison only — not an error or an eligibility decision. WC Finance Requested and the Turnover Method\'s indicative WC are two different concepts by design; a difference between them is expected and normal.'}</div>
+  ${lc.structureMismatch ? `<div class="mismatch-box"><b>${hi?'आवेदक द्वारा दर्ज ऋण संरचना की समीक्षा करें:':'Please review the applicant\'s entered loan structure:'}</b> ${hi
+    ? `दर्ज किया गया मीयादी ऋण (${inr(lc.appliedTermLoan)}) व कार्यशील पूंजी वित्त (${inr(lc.appliedWc)}) का योग (${inr(lc.appliedTermLoan+lc.appliedWc)}), कुल आवेदित ऋण (${inr(lc.appliedTotal)}) से मेल नहीं खाता। यह डेटा में विसंगति की सूचना मात्र है — कोई भी आंकड़ा स्वतः बदला नहीं गया है।`
+    : `The entered Term Loan (${inr(lc.appliedTermLoan)}) and WC Finance (${inr(lc.appliedWc)}) add up to ${inr(lc.appliedTermLoan+lc.appliedWc)}, which does not match the Total Loan Requested (${inr(lc.appliedTotal)}). This is only a data-consistency notice — nothing has been automatically changed.`}</div>` : ''}`;
 }
 function rCost(c){
   return `<h3>${tt('projectCostTitle')}</h3>
@@ -2098,12 +2104,12 @@ function rScenario(c){
 function rInterpretation(c){
   const s = c.sales;
   const profitable = c.pnl.every(r=>r.pat>0);
-  const loanLineHi = c.loanCheck.anyMismatch
-    ? `<p><b>ऋण राशि समाधान:</b> आवेदित ऋण राशि, इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता से भिन्न है। आवेदक/बैंक इस आवश्यकता की समीक्षा व समाधान कर सकते हैं — विवरण हेतु "ऋण का उद्देश्य" खंड देखें।</p>`
-    : `<p><b>ऋण राशि समाधान:</b> आवेदित ऋण राशि इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता से मेल खाती है।</p>`;
-  const loanLineEn = c.loanCheck.anyMismatch
-    ? `<p><b>Loan Amount Reconciliation:</b> The loan amount applied for differs from this report's indicative project requirement. The applicant/bank may review and reconcile the requirement — see the "Purpose of Loan" section for details.</p>`
-    : `<p><b>Loan Amount Reconciliation:</b> The loan amount applied for matches this report's indicative project requirement.</p>`;
+  const loanLineHi = c.loanCheck.structureMismatch
+    ? `<p><b>ऋण संरचना:</b> दर्ज किया गया मीयादी ऋण व कार्यशील पूंजी वित्त, कुल आवेदित ऋण से मेल नहीं खाता — विवरण हेतु "ऋण का उद्देश्य" खंड देखें। यह केवल एक सूचनात्मक जाँच है।</p>`
+    : `<p><b>ऋण संरचना:</b> आवेदित मीयादी ऋण व कार्यशील पूंजी वित्त, कुल आवेदित ऋण के अनुरूप हैं।</p>`;
+  const loanLineEn = c.loanCheck.structureMismatch
+    ? `<p><b>Loan Structure:</b> The entered Term Loan and WC Finance do not add up to the Total Loan Requested — see the "Purpose of Loan" section for details. This is an informational notice only.</p>`
+    : `<p><b>Loan Structure:</b> The requested Term Loan and WC Finance are consistent with the Total Loan Requested.</p>`;
   const wcLineHi = c.wcMethodsDiverge
     ? `<p><b>कार्यशील पूंजी पद्धति:</b> टर्नओवर पद्धति व परिचालन चक्र पद्धति भिन्न सांकेतिक आवश्यकताएँ दर्शाती हैं — मान्यताओं की समीक्षा करें। देखें "कार्यशील पूंजी आकलन" खंड।</p>`
     : `<p><b>कार्यशील पूंजी पद्धति:</b> टर्नओवर पद्धति व परिचालन चक्र पद्धति की सांकेतिक आवश्यकताएँ अपेक्षाकृत निकट हैं।</p>`;
@@ -2149,7 +2155,8 @@ function rMethodology(){
 }
 const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारकर्ता व गतिविधि विवरण"],chkSales:["Sales Projection Entered","बिक्री अनुमान दर्ज"],
   chkAssump:["Assumptions Reviewed","मान्यताएँ समीक्षित"],chkCost:["Project Cost = Means of Finance","परियोजना लागत = वित्त के साधन"],
-  chkLoanStructure:["Total Loan = Term Loan + Working Capital Finance","कुल ऋण = मीयादी ऋण + कार्यशील पूंजी वित्त"],
+  chkLoanStructure:["Applicant Loan Figures Valid (Total/Term/WC)","आवेदक के ऋण आंकड़े मान्य (कुल/मीयादी/कार्यशील पूंजी)"],
+  chkLoanReconcile:["Applicant's Term Loan + WC Finance = Total Loan","आवेदक का मीयादी ऋण + कार्यशील पूंजी वित्त = कुल ऋण"],
   chkLandPrelim:["Land & Preliminary Expenses Correctly Excluded from Depreciation","भूमि व प्रारंभिक व्यय मूल्यह्रास से सही ढंग से बाहर"],
   chkWC:["Working Capital Calculated","कार्यशील पूंजी गणना"],chkPnl:["Profit & Loss Calculated","लाभ-हानि गणना"],
   chkBS:["Balance Sheet Balanced","तुलन पत्र संतुलित"],chkCF:["Cash Flow Calculated","नकदी प्रवाह गणना"],
@@ -2158,9 +2165,9 @@ const CHK_LABELS = {chkBorrower:["Borrower & Activity Details","उधारक�
   chkReady:["All Internal Calculations Verified","सभी आंतरिक गणनाएँ सत्यापित"]};
 function rChecklist(c){
   return `<h3>${LANG==='hi'?'रिपोर्ट गणना जाँच':'Report Calculation Check'}</h3>
-  <p class="muted small">${LANG==='hi'?'यह एक आंतरिक अंकगणितीय संगति जाँच है (कोई ऋण मूल्यांकन अथवा पात्रता निर्णय नहीं)। यदि कोई गणना विफल होती है, तो रिपोर्ट को अंतिम रूप देने से पहले उसे ठीक किया जाना चाहिए।':'This is an internal arithmetic consistency check (not a credit appraisal or eligibility decision). If any calculation fails, it should be corrected before the report is finalised.'}</p>
+  <p class="muted small">${LANG==='hi'?'यह एक आंतरिक अंकगणितीय संगति जाँच है (कोई ऋण मूल्यांकन अथवा पात्रता निर्णय नहीं)। यदि कोई गणना विफल होती है, तो रिपोर्ट को अंतिम रूप देने से पहले उसे ठीक किया जाना चाहिए। एम्बर आइकन वाली पंक्तियाँ केवल सूचनात्मक हैं और रिपोर्ट तैयार करने में बाधा नहीं डालतीं।':'This is an internal arithmetic consistency check (not a credit appraisal or eligibility decision). If any calculation fails, it should be corrected before the report is finalised. Amber-flagged lines are informational only and do not block report generation.'}</p>
   <ul class="check-list">
-  ${c.checklist.map(x=>`<li class="${x.pass?'pass':'fail'}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
+  ${c.checklist.map(x=>`<li class="${x.pass?'pass':(x.info?'warn':'fail')}">${CHK_LABELS[x.key][LANG==='hi'?1:0]}</li>`).join('')}
   </ul>`;
 }
 function rConclusion(c){
