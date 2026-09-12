@@ -242,8 +242,9 @@ const I18N = {
   repaymentPeriod:["Repayment Period (Years)","चुकौती अवधि (वर्ष)"],
   moratorium:["Moratorium (Months)","स्थगन अवधि (महीने)"],
   instalmentFreq:["Instalment Frequency","किस्त आवृत्ति"],
-  loanTermsNote:["These are editable defaults. The Repayment Schedule uses equal-principal instalments for full transparency; an equivalent Equal Monthly Instalment (EMI) figure is also shown below.","ये संपादन-योग्य डिफ़ॉल्ट मान हैं। चुकौती अनुसूची पूर्ण पारदर्शिता हेतु समान-मूलधन किस्तों पर आधारित है; समतुल्य समान मासिक किस्त (ईएमआई) राशि नीचे दर्शाई गई है।"],
-  emiPreview:["Indicative Equal Monthly Instalment (EMI)","अनुमानित समान मासिक किस्त (ईएमआई)"],
+  loanTermsNote:["These are editable defaults. The detailed Repayment Schedule uses the selected Monthly/Quarterly equal-principal instalments for full transparency; an Indicative Equivalent EMI is also shown below, for illustration only — it is not the actual scheduled instalment.","ये संपादन-योग्य डिफ़ॉल्ट मान हैं। विस्तृत चुकौती अनुसूची चयनित मासिक/त्रैमासिक समान-मूलधन किस्तों पर आधारित है; नीचे एक सांकेतिक समतुल्य ईएमआई भी केवल उदाहरण हेतु दर्शाई गई है — यह वास्तविक अनुसूचित किस्त नहीं है।"],
+  emiPreview:["Indicative Equivalent EMI","सांकेतिक समतुल्य ईएमआई"],
+  emiFullNote:["shown for illustration only. The detailed repayment schedule uses the selected Monthly/Quarterly equal-principal repayment structure.","केवल उदाहरण हेतु दर्शाया गया है। विस्तृत चुकौती अनुसूची चयनित मासिक/त्रैमासिक समान-मूलधन चुकौती संरचना पर आधारित है।"],
   perMonth:["per month","प्रति माह"],
   assumptionsUsed:["Assumptions Used","उपयोग की गई मान्यताएँ"],
   modelLabel:["Model:","मॉडल:"], activityLabel:["Activity:","गतिविधि:"],
@@ -549,8 +550,9 @@ function isModified(p, key){
 }
 function getSalesSeries(p){
   if(p.sales.mode==='growth'){
-    const c = num(p.sales.currentSales), g = num(p.sales.growthPct)/100;
-    const y1 = c*(1+g), y2=y1*(1+g), y3=y2*(1+g);
+    /* Year 1 = Current Sales exactly, as entered — growth is applied only from Year 2 onward. */
+    const y1 = num(p.sales.currentSales), g = num(p.sales.growthPct)/100;
+    const y2 = y1*(1+g), y3 = y2*(1+g);
     return [y1,y2,y3];
   }
   return [num(p.sales.y1), num(p.sales.y2), num(p.sales.y3)];
@@ -605,6 +607,11 @@ function calculate(p){
   } else {
     termLoan = Math.max(appliedTotal-wcBank, 0);
   }
+  /* If the applicant explicitly entered Working Capital Finance, that figure — not the
+     generic Turnover Method estimate — is what drives the projected Balance Sheet, interest
+     calculation and financing logic below. The Turnover Method assessment (wcBank) remains
+     separately available throughout the report purely as an indicative reference. */
+  const wcFinance = appliedWc>0 ? appliedWc : wcBank;
 
   const fixedAssetReq = s.promoterMarginFixedPct<100 ? termLoan/(1-s.promoterMarginFixedPct/100) : termLoan;
   const promoterMarginFixed = fixedAssetReq - termLoan;
@@ -632,7 +639,7 @@ function calculate(p){
     promoterContribution: promoterContributionTotal, termLoan: termLoan,
     otherSources:0, subsidy:0,
     total: promoterContributionTotal+termLoan,
-    wcFinanceMemo: wcBank
+    wcFinanceMemo: wcFinance
   };
 
   /* Loan Amount Requested vs Indicative Term Loan / Indicative Working Capital Finance —
@@ -762,7 +769,12 @@ function calculate(p){
   const tlYearly = [1,2,3].map(yearBucket);
   const emi = computeEMI(termLoan, p.loanTerms.interestRatePct, repayMonths);
 
-  const wcYearly = sales.map(S=> S*s.wcBankPct/100);
+  /* Working Capital borrowing modeled in the Balance Sheet/Cash Flow/interest calculation is
+     anchored to wcFinance (the applicant's entered WC Finance if given, else the Turnover
+     Method estimate for Year 1) and scaled in later years in proportion to projected sales
+     growth — never silently replaced by the generic turnover-method figure when the
+     applicant has stated their own. */
+  const wcYearly = sales.map(S=> wcFinance*(S/y1Sales));
   const wcInterestYearly = wcYearly.map(w=> w*num(p.loanTerms.interestRatePct)/100);
 
   let wdv = grossBlock;
@@ -912,7 +924,7 @@ function calculate(p){
     schedule, tlYearly, wcYearly, wcInterestYearly, deprYearly, nfaYearly,
     drawingsYearly, reYearly, cashFlow, balanceSheet, dscrYearly, avgDscr, minDscr,
     ratios, breakeven, checklist, termLoan, tenureMonths, moraMonths, emi, repayMonths,
-    freq, periodMonths, wcDivPct, wcMethodsDiverge, loanCheck, actualsCheck
+    freq, periodMonths, wcDivPct, wcMethodsDiverge, wcFinance, loanCheck, actualsCheck
   };
 }
 
@@ -1171,8 +1183,8 @@ function openHelpScreen(){
        :`<p>This is the single most important input in the whole report. Two modes are available: (a) enter all three years' sales directly, or (b) give current sales plus an expected annual growth % and let the app calculate the rest.</p>
        <div class="staff-box"><b>Tip for field staff:</b> If the borrower keeps no written books, ask for a normal day's or week's sales and multiply by a reasonable factor (e.g. 30 or 52), or average a good season and a slow season.</div>`],
     ["h_terms", hi?"चरण 5: ऋण शर्तें व ईएमआई":"Step 5: Loan Terms & EMI",
-      hi?`<p>ब्याज दर, चुकौती अवधि व स्थगन अवधि दर्ज करें। ऐप तुरंत <b>अनुमानित समान मासिक किस्त (ईएमआई)</b> दिखाता है — यह वह राशि है जो उधारकर्ता को हर महीने चुकानी होगी।</p>`
-       :`<p>Enter the interest rate, repayment period and moratorium. The app instantly shows the <b>indicative Equal Monthly Instalment (EMI)</b> — this is the amount the borrower would pay every month.</p>`],
+      hi?`<p>ब्याज दर, चुकौती अवधि व स्थगन अवधि दर्ज करें। ऐप तुरंत <b>सांकेतिक समतुल्य ईएमआई</b> दिखाता है — यह केवल उदाहरण हेतु है। विस्तृत चुकौती अनुसूची चयनित मासिक/त्रैमासिक समान-मूलधन चुकौती संरचना पर आधारित है, न कि इस ईएमआई पर।</p>`
+       :`<p>Enter the interest rate, repayment period and moratorium. The app instantly shows an <b>Indicative Equivalent EMI</b> — shown for illustration only. The detailed repayment schedule uses the selected Monthly/Quarterly equal-principal repayment structure, not this EMI figure.</p>`],
     ["h_assump", hi?"मान्यताएँ (Assumptions)":"Assumptions",
       hi?`<p>चुनी गई गतिविधि के आधार पर, ऐप कर्मचारी लागत, किराया, बिजली, स्टॉक अवधि जैसी मान्यताएँ स्वतः भर देता है (नीले रंग में)। यदि वास्तविक आंकड़े अलग हों तो इन्हें बदला जा सकता है — बदलते ही पूरी रिपोर्ट तुरंत पुनर्गणित हो जाती है।</p>`
        :`<p>Based on the selected activity, the app fills in assumptions like employee cost, rent, electricity and stock days automatically (shown in blue). These can be changed if actual figures differ — the whole report recalculates instantly.</p>`],
@@ -1347,13 +1359,13 @@ function stepLoanTerms(){
     </select></div>
   </div>
   <p class="muted small">${tt('loanTermsNote')}</p>
-  <div class="emi-box" id="emiPreviewBox">${tt('emiPreview')}: ${inr(previewEmi)} ${tt('perMonth')}</div>`;
+  <div class="emi-box" id="emiPreviewBox">${tt('emiPreview')}: ${inr(previewEmi)} ${tt('perMonth')} — ${tt('emiFullNote')}</div>`;
 }
 function wizardTermsPreview(){
   const rate = +val('w_rate')||0, tenure = +val('w_tenure')||1, mora = +val('w_mora')||0;
   const months = Math.max(tenure*12-mora,1);
   const emi = computeEMI(current.loan.termLoan||current.loan.total, rate, months);
-  document.getElementById('emiPreviewBox').textContent = tt('emiPreview')+': '+inr(emi)+' '+tt('perMonth');
+  document.getElementById('emiPreviewBox').textContent = tt('emiPreview')+': '+inr(emi)+' '+tt('perMonth')+' — '+tt('emiFullNote');
 }
 function wizardBack(){ persistWizardStep(); wizardStep--; renderWizard(); }
 function wizardNext(){
@@ -1383,8 +1395,11 @@ function persistWizardStep(){
   } else if(wizardStep===2){
     if(current.customActivity){ current.activityName = val('w_customActName'); current.activityModel = val('w_customModel'); }
   } else if(wizardStep===3){
+    /* Preserve exactly what the applicant entered. Term Loan and WC Finance are left at 0
+       when not entered — the calculation engine derives an Indicative Term Loan and
+       Indicative Working Capital Finance from these; the Total Loan Requested itself is
+       never silently converted into a Term Loan. */
     current.loan = { total:+val('w_loanTotal')||0, purpose:val('w_purpose'), termLoan:+val('w_termLoan')||0, wcLoan:+val('w_wcLoan')||0 };
-    if(!current.loan.termLoan && !current.loan.wcLoan){ current.loan.termLoan = current.loan.total; }
   } else if(wizardStep===4){
     if(current.sales.mode==='direct'){
       current.sales.y1=+val('w_y1')||0; current.sales.y2=+val('w_y2')||0; current.sales.y3=+val('w_y3')||0;
@@ -1513,7 +1528,7 @@ function renderProjectCost(){
       <tr class="total"><td>${tt('totalMeansRow')}</td><td>${inr(c.meansOfFinance.total)}</td></tr>
     </table>
     <p class="muted small">${wcMemoNote(c.meansOfFinance.wcFinanceMemo)}</p>
-    <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
+    <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${tt('emiFullNote')}</div>
     <p class="muted small">${tt('balanceNote')}</p>
     <div class="btnrow">
       <button class="btn secondary" onclick="renderAssumptions()">${tt('back')}</button>
@@ -1723,7 +1738,7 @@ function rApplication(c){
     request consideration of a loan requirement of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>, subject to the bank's appraisal, verification and terms.</p>
     <p>Indicative loan break-up: Term Loan ${inr(termLoan)} and Working Capital Finance ${inr(wcAmt)}.</p>
     <p>I propose to contribute ${inr(c.meansOfFinance.promoterContribution)} from my own sources towards the total project cost of ${inr(c.totalProjectCost)}.
-    Based on the projected turnover and profitability enclosed in the Project Report, an Indicative EMI for the term loan works out to approximately <b>${inr(c.emi)} per month</b> (shown as an alternative illustration; the detailed schedule uses the selected repayment structure), over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
+    Based on the projected turnover and profitability enclosed in the Project Report, an Indicative Equivalent EMI for the term loan works out to approximately <b>${inr(c.emi)} per month</b> (shown for illustration only — the detailed repayment schedule uses the selected Monthly/Quarterly equal-principal repayment structure), over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
     <p>I enclose herewith the detailed Project Report containing the projected financials, working capital assessment and other particulars for your kind perusal.
     ${b.udyam?('Udyam Registration: '+escapeHtml(b.udyam)+'.'):''} ${b.gstin?('GSTIN: '+escapeHtml(b.gstin)+'.'):''}</p>
     <p>Thanking you,</p>
@@ -1738,7 +1753,7 @@ function rApplication(c){
     अपनी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> की ऋण आवश्यकता को <b>${escapeHtml(current.loan.purpose)}</b> के लिए, बैंक के मूल्यांकन, सत्यापन व शर्तों के अधीन, विचारार्थ प्रस्तुत करता/करती हूँ।</p>
     <p>सांकेतिक ऋण विवरण: मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी वित्त ${inr(wcAmt)}।</p>
     <p>मैं कुल परियोजना लागत ${inr(c.totalProjectCost)} में से ${inr(c.meansOfFinance.promoterContribution)} की राशि स्वयं के स्रोतों से देने हेतु सहमत हूँ।
-    संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मीयादी ऋण की सांकेतिक ईएमआई लगभग <b>${inr(c.emi)} प्रति माह</b> है (यह एक वैकल्पिक उदाहरण मात्र है; विस्तृत अनुसूची चयनित चुकौती संरचना पर आधारित है), जो ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन प्रस्तावित है।</p>
+    संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मीयादी ऋण की सांकेतिक समतुल्य ईएमआई लगभग <b>${inr(c.emi)} प्रति माह</b> है (यह केवल उदाहरण हेतु दर्शाई गई है; विस्तृत चुकौती अनुसूची चयनित मासिक/त्रैमासिक समान-मूलधन संरचना पर आधारित है), जो ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन प्रस्तावित है।</p>
     <p>अनुमानित वित्तीय विवरण, कार्यशील पूंजी आकलन एवं अन्य विवरण सहित विस्तृत परियोजना रिपोर्ट संलग्न है, कृपया अवलोकन करें।
     ${b.udyam?('उद्यम पंजीकरण: '+escapeHtml(b.udyam)+'।'):''} ${b.gstin?('जीएसटीएन: '+escapeHtml(b.gstin)+'।'):''}</p>
     <p>धन्यवाद सहित,</p>
@@ -1747,7 +1762,7 @@ function rApplication(c){
 
   return `${demoNote()}<h3>${LANG==='hi'?'बैंक हेतु ऋण आवेदन':'Loan Application to Bank'}</h3>
   ${editForm}
-  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')}</div>
+  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${tt('emiFullNote')}</div>
   ${c.loanCheck.anyMismatch ? `<div class="mismatch-box"><b>${LANG==='hi'?'ऋण राशि समाधान:':'Loan Amount Reconciliation:'}</b> ${LANG==='hi'
     ? `ऊपर आवेदित ऋण राशि (${inr(c.loanCheck.appliedTotal)}), इस रिपोर्ट की सांकेतिक परियोजना आवश्यकता (मीयादी ऋण ${inr(c.loanCheck.assessedTermLoan)} + कार्यशील पूंजी ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}) से भिन्न है। आवेदक/बैंक इस आवश्यकता की समीक्षा व समाधान कर सकते हैं — देखें "ऋण का उद्देश्य" खंड।`
     : `The loan amount applied for above (${inr(c.loanCheck.appliedTotal)}) differs from this report's indicative project requirement (Term Loan ${inr(c.loanCheck.assessedTermLoan)} + Working Capital ${inr(c.loanCheck.assessedWc)} = ${inr(c.loanCheck.assessedTotal)}). The applicant/bank may review and reconcile the requirement — see the "Purpose of Loan" section.`}</div>` : ''}
@@ -1984,13 +1999,15 @@ function rCF(c){
 }
 function rWC(c){
   const hi = LANG==='hi';
+  const appliedWc = c.loanCheck.appliedWc;
   return `<h3>${hi?'कार्यशील पूंजी आकलन':'Working Capital Assessment'}</h3>
   <table><tr><th></th><th>${hi?'टर्नओवर पद्धति':'Turnover Method'}</th><th>${hi?'परिचालन चक्र पद्धति (वर्ष 1)':'Operating Cycle Method (Yr 1)'}</th></tr>
   <tr class="${c.wcMethodsDiverge?'mismatch-row':''}"><td>${hi?'कार्यशील पूंजी आवश्यकता':'Working Capital Requirement'}</td><td><span class="${c.wcMethodsDiverge?'mismatch':''}">${inr(c.wcReq)}</span></td><td><span class="${c.wcMethodsDiverge?'mismatch':''}">${inr(c.opCycle[0].gap)}</span></td></tr>
   <tr><td>${hi?'उधारकर्ता का अंशदान':"Borrower's Contribution"}</td><td>${inr(c.wcNwc)}</td><td>${inr(c.opCycle[0].borrowerContribution)}</td></tr>
-  <tr><td>${hi?'बैंक वित्त':'Bank Finance'}</td><td>${inr(c.wcBank)}</td><td>${inr(c.opCycle[0].bankFinance)}</td></tr>
+  <tr><td>${hi?'बैंक वित्त (सांकेतिक संदर्भ)':'Bank Finance (indicative reference)'}</td><td>${inr(c.wcBank)}</td><td>${inr(c.opCycle[0].bankFinance)}</td></tr>
   </table>
   ${c.wcMethodsDiverge ? `<div class="mismatch-box">${hi?'टर्नओवर पद्धति व परिचालन चक्र पद्धति भिन्न सांकेतिक आवश्यकताएँ दर्शाती हैं — मान्यताओं की समीक्षा करें।':'Methods produce different indicative requirements — review assumptions.'}</div>` : ''}
+  ${appliedWc>0 ? `<div class="note-box">${hi?`आवेदक द्वारा दर्ज की गई कार्यशील पूंजी वित्त राशि (${inr(appliedWc)}) — न कि ऊपर दी गई टर्नओवर पद्धति का सांकेतिक आंकड़ा — इस रिपोर्ट के प्रक्षेपित तुलन पत्र, नकदी प्रवाह व ब्याज गणना में उपयोग की गई है। ऊपर की तालिका केवल सांकेतिक संदर्भ हेतु है।`:`The Working Capital Finance amount entered by the applicant (${inr(appliedWc)}) — not the Turnover Method figure shown above — has been used in this report's projected Balance Sheet, Cash Flow and interest calculations. The table above is shown purely as an indicative reference.`}</div>` : ''}
   <div class="note-box">${hi?'दोनों पद्धतियाँ केवल तुलना हेतु दिखाई गई हैं; अधिक राशि स्वतः नहीं चुनी जाती। लागू पद्धति व अंतिम कार्यशील पूंजी सीमा बैंक की प्रचलित नीति व लागू नियामक आवश्यकताओं के अधीन है — यह ऐप कोई सिफारिश नहीं करता।':'The two methods are shown for comparison only; the higher amount is not automatically selected. The applicable method and final working-capital limit remain subject to the lending bank\'s prevailing policy and applicable regulatory requirements — this app does not make a recommendation.'}</div>`;
 }
 function rMPBF(c){
@@ -2012,11 +2029,11 @@ function rRepayment(c){
   const yearRows = c.tlYearly.map((y,i)=>`<tr><td>${yrLbl} ${i+1}</td><td>${inr(y.openBal)}</td><td>${inr(y.principal)}</td><td>${inr(y.interest)}</td><td>${inr(y.principal+y.interest)}</td><td>${inr(y.closeBal)}</td></tr>`).join('');
   const freqLabel = c.freq==='Quarterly' ? (hi?'त्रैमासिक':'Quarterly') : (hi?'मासिक':'Monthly');
   return `<h3>${hi?'ऋण चुकौती अनुसूची (वार्षिक सारांश)':'Loan Repayment Schedule (Annual Summary)'}</h3>
-  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${hi?'एक वैकल्पिक उदाहरण के रूप में':'shown as an alternative illustration'}</div>
+  <div class="emi-box">${tt('emiPreview')}: ${inr(c.emi)} ${tt('perMonth')} — ${tt('emiFullNote')}</div>
   <table><tr><th>${yrLbl}</th><th>${hi?'प्रारंभिक शेष':'Opening Balance'}</th><th>${hi?'मूलधन चुकौती':'Principal Repayment'}</th><th>${hi?'ब्याज':'Interest'}</th><th>${hi?'कुल ऋण सेवा':'Total Debt Service'}</th><th>${hi?'अंतिम शेष':'Closing Balance'}</th></tr>
   ${yearRows}</table>
-  <p class="small muted">${hi?`मीयादी ऋण: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% वार्षिक, अवधि ${current.loanTerms.tenureYears} वर्ष, स्थगन ${current.loanTerms.moratoriumMonths} माह, किस्त आवृत्ति: ${freqLabel}। मूलधन इसी चयनित आवृत्ति पर चुकाया गया है; ऊपर दी गई ईएमआई एक समतुल्य समान मासिक किस्त है, जो एक वैकल्पिक उदाहरण मात्र है। कार्यशील पूंजी एक चक्रीय सीमा है और इस अनुसूची से नहीं चुकाई जाती।`
-    :`Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years, moratorium ${current.loanTerms.moratoriumMonths} months, instalment frequency: ${freqLabel}. Principal is repaid at this selected frequency; the EMI shown above is an equivalent equal-monthly-instalment figure, shown only as an alternative illustration. Working Capital is a revolving fund-based limit and is not repaid through this schedule.`}</p>
+  <p class="small muted">${hi?`मीयादी ऋण: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% वार्षिक, अवधि ${current.loanTerms.tenureYears} वर्ष, स्थगन ${current.loanTerms.moratoriumMonths} माह, किस्त आवृत्ति: ${freqLabel}। मूलधन इसी चयनित आवृत्ति (मासिक/त्रैमासिक) पर समान-मूलधन आधार पर चुकाया गया है — यही विस्तृत चुकौती अनुसूची है। ऊपर दी गई ईएमआई इस विस्तृत अनुसूची की वास्तविक किस्त नहीं है, यह केवल एक सांकेतिक समतुल्य उदाहरण है। कार्यशील पूंजी एक चक्रीय सीमा है और इस अनुसूची से नहीं चुकाई जाती।`
+    :`Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years, moratorium ${current.loanTerms.moratoriumMonths} months, instalment frequency: ${freqLabel}. Principal is repaid on an equal-principal basis at this selected frequency (Monthly/Quarterly) — that is the detailed repayment schedule. The EMI shown above is not the actual scheduled instalment; it is only an Indicative Equivalent EMI shown for illustration. Working Capital is a revolving fund-based limit and is not repaid through this schedule.`}</p>
   <div class="note-box">${hi?'सांकेतिक अनुसूची; अंतिम चुकौती शर्तें ऋणदाता बैंक द्वारा निर्धारित की जाएँगी।':'Indicative schedule; final repayment terms will be as decided by the lending bank.'}</div>`;
 }
 function rRatios(c){
@@ -2097,7 +2114,7 @@ function rInterpretation(c){
     return `<h3>वित्तीय व्याख्या</h3>
     <p><b>बिक्री:</b> अनुमानित बिक्री ${inr(s[0])} से बढ़कर ${inr(s[1])} व ${inr(s[2])} होने की संभावना है।</p>
     <p><b>लाभप्रदता:</b> उपयोग की गई मान्यताओं के अंतर्गत प्रस्तावित व्यवसाय ${profitable?'लाभप्रद बना रहता है':'कम से कम एक वर्ष में हानि दर्शाता है'}, ईबीआईटीडीए मार्जिन ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} व ${pct(c.ratios[2].ebitdaMargin,1)} है।</p>
-    <p><b>चुकौती:</b> अनुमानित नकदी संचयन एवं औसत डीएससीआर ${c.avgDscr!==null?c.avgDscr.toFixed(2):'लागू नहीं'} ऋण चुकौती क्षमता का अनुमानित संकेत देते हैं। सांकेतिक मासिक किस्त (ईएमआई) एक वैकल्पिक उदाहरण के रूप में लगभग ${inr(c.emi)} प्रति माह है।</p>
+    <p><b>चुकौती:</b> अनुमानित नकदी संचयन एवं औसत डीएससीआर ${c.avgDscr!==null?c.avgDscr.toFixed(2):'लागू नहीं'} ऋण चुकौती क्षमता का अनुमानित संकेत देते हैं। सांकेतिक समतुल्य ईएमआई केवल उदाहरण हेतु लगभग ${inr(c.emi)} प्रति माह है (यह वास्तविक अनुसूचित किस्त नहीं है)।</p>
     <p><b>कार्यशील पूंजी:</b> कार्यशील पूंजी का आकलन टर्नओवर पद्धति द्वारा किया गया है, जिसे परिचालन चक्र पद्धति से क्रॉस-चेक किया गया है।</p>
     ${wcLineHi}
     ${loanLineHi}
@@ -2106,7 +2123,7 @@ function rInterpretation(c){
   return `<h3>Financial Interpretation</h3>
   <p><b>Sales:</b> Sales are projected to move from ${inr(s[0])} to ${inr(s[1])} and ${inr(s[2])} over three years.</p>
   <p><b>Profitability:</b> The projected business ${profitable?'remains profitable':'shows losses in at least one projected year'} under the assumptions used, with EBITDA margins of ${pct(c.ratios[0].ebitdaMargin,1)}, ${pct(c.ratios[1].ebitdaMargin,1)} and ${pct(c.ratios[2].ebitdaMargin,1)}.</p>
-  <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} give an indicative sense of debt-servicing capacity. An indicative monthly instalment (EMI) is shown as an alternative illustration at approximately ${inr(c.emi)} per month.</p>
+  <p><b>Repayment:</b> Projected cash accrual and an average DSCR of ${c.avgDscr!==null?c.avgDscr.toFixed(2):'Not Applicable'} give an indicative sense of debt-servicing capacity. An Indicative Equivalent EMI is shown for illustration only at approximately ${inr(c.emi)} per month (this is not the actual scheduled instalment).</p>
   <p><b>Working Capital:</b> Working capital is assessed using the Turnover Method, cross-checked against the Operating Cycle Method.</p>
   ${wcLineEn}
   ${loanLineEn}
@@ -2153,14 +2170,14 @@ function rConclusion(c){
     return `<h3>निष्कर्ष</h3>
     <p>गतिविधि-विशिष्ट मान्यताओं एवं दिए गए बिक्री अनुमान के आधार पर, ${escapeHtml(current.borrower.business)} हेतु प्रस्तावित परियोजना
     ${c.checklist[c.checklist.length-1].pass?'गणितीय रूप से सुसंगत व पूर्ण':'अपूर्ण'} अनुमानित वित्तीय विवरण प्रस्तुत करती है।
-    एक वैकल्पिक उदाहरण के रूप में, सांकेतिक मासिक किस्त (ईएमआई) लगभग ${inr(c.emi)} प्रति माह है।</p>
+    सांकेतिक समतुल्य ईएमआई केवल उदाहरण हेतु लगभग ${inr(c.emi)} प्रति माह है (यह वास्तविक अनुसूचित किस्त नहीं है)।</p>
     <div class="note-box"><b>${LANG==='hi'?'अस्वीकरण:':'Disclaimer:'}</b> ${disclaimerHi}</div>
     <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — ${new Date().toLocaleString('hi-IN')} को ऑफलाइन तैयार किया गया</div>`;
   }
   return `<h3>Conclusion</h3>
   <p>Based on the activity-specific assumptions and the sales projection provided, the proposed project for ${escapeHtml(current.borrower.business)}
   presents ${c.checklist[c.checklist.length-1].pass?'a mathematically consistent and complete':'an incomplete'} set of projected financials.
-  As an alternative illustration, an indicative monthly instalment (EMI) is approximately ${inr(c.emi)} per month.</p>
+  An Indicative Equivalent EMI, shown for illustration only, is approximately ${inr(c.emi)} per month (this is not the actual scheduled instalment).</p>
   <div class="note-box"><b>Disclaimer:</b> ${disclaimerEn}</div>
   <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
 }
