@@ -1785,11 +1785,10 @@ function rApplication(c){
   const termLoan = c.termLoan, wcAmt = c.wcBank;
   let letterEn = `<p>To,<br>The Branch Manager,<br><b>${escapeHtml(app.bankName)||'[Bank Name]'}</b>,<br>${escapeHtml(app.place)||'[Branch / Place]'}</p>
     <p>Date: ${dateDisp||'[Date]'}</p>
-    <p><b>Subject: Application for ${escapeHtml(current.loan.purpose)} loan of ${inr(current.loan.total)}</b></p>
+    <p><b>Subject: Application for credit facilities of ${inr(current.loan.total)} (Term Loan of ${inr(termLoan)} and Working Capital Finance of ${inr(wcAmt)}) for ${escapeHtml(current.loan.purpose)}</b></p>
     <p>Sir / Madam,</p>
     <p>I, <b>${escapeHtml(b.name)}</b>, proprietor of <b>${escapeHtml(b.business)}</b>, residing at ${escapeHtml(b.address)||'[Address]'}, Mobile: ${escapeHtml(b.mobile)||'[Mobile]'},
-    request consideration of a loan requirement of <b>${inr(current.loan.total)}</b> for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>, subject to the bank's appraisal, verification and terms.</p>
-    <p>Indicative loan break-up: Term Loan ${inr(termLoan)} and Working Capital Finance ${inr(wcAmt)}.</p>
+    request consideration of credit facilities aggregating <b>${inr(current.loan.total)}</b>, comprising a Term Loan of <b>${inr(termLoan)}</b> for fixed assets and Working Capital Finance of <b>${inr(wcAmt)}</b> for day-to-day operations, for <b>${escapeHtml(current.loan.purpose)}</b> under my business activity of <b>${escapeHtml(current.activityName)}</b>, subject to the bank's appraisal, verification and terms.</p>
     <p>I propose to contribute ${inr(c.meansOfFinance.promoterContribution)} from my own sources towards the total project cost of ${inr(c.totalProjectCost)}.
     Based on the projected turnover and profitability enclosed in the Project Report, an Indicative Equivalent EMI for the term loan works out to approximately <b>${inr(c.emi)} per month</b> (shown for illustration only — the detailed repayment schedule uses the selected Monthly/Quarterly equal-principal repayment structure), over a repayment period of ${current.loanTerms.tenureYears} years, subject to a moratorium of ${current.loanTerms.moratoriumMonths} months.</p>
     <p>I enclose herewith the detailed Project Report containing the projected financials, working capital assessment and other particulars for your kind perusal.
@@ -1800,11 +1799,10 @@ function rApplication(c){
 
   let letterHi = `<p>सेवा में,<br>शाखा प्रबंधक,<br><b>${escapeHtml(app.bankName)||'[बैंक का नाम]'}</b>,<br>${escapeHtml(app.place)||'[शाखा / स्थान]'}</p>
     <p>दिनांक: ${dateDisp||'[दिनांक]'}</p>
-    <p><b>विषय: ${escapeHtml(current.loan.purpose)} हेतु ${inr(current.loan.total)} ऋण हेतु आवेदन</b></p>
+    <p><b>विषय: ${escapeHtml(current.loan.purpose)} हेतु कुल ${inr(current.loan.total)} की ऋण सुविधा (मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी वित्त ${inr(wcAmt)}) हेतु आवेदन</b></p>
     <p>महोदय / महोदया,</p>
     <p>मैं, <b>${escapeHtml(b.name)}</b>, प्रोप्राइटर <b>${escapeHtml(b.business)}</b>, निवासी ${escapeHtml(b.address)||'[पता]'}, मोबाइल: ${escapeHtml(b.mobile)||'[मोबाइल]'},
-    अपनी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> की ऋण आवश्यकता को <b>${escapeHtml(current.loan.purpose)}</b> के लिए, बैंक के मूल्यांकन, सत्यापन व शर्तों के अधीन, विचारार्थ प्रस्तुत करता/करती हूँ।</p>
-    <p>सांकेतिक ऋण विवरण: मीयादी ऋण ${inr(termLoan)} एवं कार्यशील पूंजी वित्त ${inr(wcAmt)}।</p>
+    अपनी व्यवसाय गतिविधि <b>${escapeHtml(current.activityName)}</b> हेतु <b>${inr(current.loan.total)}</b> की कुल ऋण सुविधा — स्थिर संपत्तियों हेतु मीयादी ऋण <b>${inr(termLoan)}</b> एवं रोज़मर्रा के परिचालन हेतु कार्यशील पूंजी वित्त <b>${inr(wcAmt)}</b> — को <b>${escapeHtml(current.loan.purpose)}</b> के लिए, बैंक के मूल्यांकन, सत्यापन व शर्तों के अधीन, विचारार्थ प्रस्तुत करता/करती हूँ।</p>
     <p>मैं कुल परियोजना लागत ${inr(c.totalProjectCost)} में से ${inr(c.meansOfFinance.promoterContribution)} की राशि स्वयं के स्रोतों से देने हेतु सहमत हूँ।
     संलग्न परियोजना रिपोर्ट में दिए गए अनुमानित टर्नओवर व लाभप्रदता के आधार पर, मीयादी ऋण की सांकेतिक समतुल्य ईएमआई लगभग <b>${inr(c.emi)} प्रति माह</b> है (यह केवल उदाहरण हेतु दर्शाई गई है; विस्तृत चुकौती अनुसूची चयनित मासिक/त्रैमासिक समान-मूलधन संरचना पर आधारित है), जो ${current.loanTerms.tenureYears} वर्ष की अवधि में, ${current.loanTerms.moratoriumMonths} माह के स्थगन (मोरेटोरियम) के अधीन प्रस्तावित है।</p>
     <p>अनुमानित वित्तीय विवरण, कार्यशील पूंजी आकलन एवं अन्य विवरण सहित विस्तृत परियोजना रिपोर्ट संलग्न है, कृपया अवलोकन करें।
@@ -2237,14 +2235,16 @@ function rConclusion(c){
     return `<h3>निष्कर्ष</h3>
     <p>गतिविधि-विशिष्ट मान्यताओं एवं दिए गए बिक्री अनुमान के आधार पर, ${escapeHtml(current.borrower.business)} हेतु प्रस्तावित परियोजना
     ${c.checklist[c.checklist.length-1].pass?'गणितीय रूप से सुसंगत व पूर्ण':'अपूर्ण'} अनुमानित वित्तीय विवरण प्रस्तुत करती है।
-    सांकेतिक समतुल्य ईएमआई केवल उदाहरण हेतु लगभग ${inr(c.emi)} प्रति माह है (यह वास्तविक अनुसूचित किस्त नहीं है)।</p>
+    कुल ऋण आवश्यकता ${inr(current.loan.total)} में स्थिर संपत्तियों हेतु मीयादी ऋण ${inr(c.termLoan)} एवं रोज़मर्रा के परिचालन हेतु कार्यशील पूंजी वित्त ${inr(c.wcBank)} सम्मिलित है।
+    मीयादी ऋण की सांकेतिक समतुल्य ईएमआई केवल उदाहरण हेतु लगभग ${inr(c.emi)} प्रति माह है (यह वास्तविक अनुसूचित किस्त नहीं है); कार्यशील पूंजी वित्त एक परिक्रामी निधि-आधारित सीमा है तथा इस अनुसूची के माध्यम से चुकाई नहीं जाती।</p>
     <div class="note-box"><b>${LANG==='hi'?'अस्वीकरण:':'Disclaimer:'}</b> ${disclaimerHi}</div>
     <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — ${new Date().toLocaleString('hi-IN')} को ऑफलाइन तैयार किया गया</div>`;
   }
   return `<h3>Conclusion</h3>
   <p>Based on the activity-specific assumptions and the sales projection provided, the proposed project for ${escapeHtml(current.borrower.business)}
   presents ${c.checklist[c.checklist.length-1].pass?'a mathematically consistent and complete':'an incomplete'} set of projected financials.
-  An Indicative Equivalent EMI, shown for illustration only, is approximately ${inr(c.emi)} per month (this is not the actual scheduled instalment).</p>
+  The total credit requirement of ${inr(current.loan.total)} comprises a Term Loan of ${inr(c.termLoan)} for fixed assets and Working Capital Finance of ${inr(c.wcBank)} for day-to-day operations.
+  An Indicative Equivalent EMI for the term loan, shown for illustration only, is approximately ${inr(c.emi)} per month (this is not the actual scheduled instalment); Working Capital Finance is a revolving fund-based limit and is not repaid through this schedule.</p>
   <div class="note-box"><b>Disclaimer:</b> ${disclaimerEn}</div>
   <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
 }
