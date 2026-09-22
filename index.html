@@ -193,6 +193,7 @@ const I18N = {
   appTitle:["MSME Project Report Generator","एमएसएमई परियोजना रिपोर्ट जनरेटर"],
   newProject:["+ New Project","+ नई परियोजना"],
   loadSamples:["Load Sample Projects","नमूना परियोजनाएँ लोड करें"],
+  removeSamples:["Remove Demo Projects","नमूना परियोजनाएँ हटाएँ"],
   importProject:["Import Project","परियोजना आयात करें"],
   settingsBtn:["Settings / Default Assumptions","सेटिंग्स / डिफ़ॉल्ट मान्यताएँ"],
   savedProjects:["Saved Projects","सहेजी गई परियोजनाएँ"],
@@ -485,13 +486,29 @@ function getSettings(){
   try{ const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)); return s?Object.assign(defaultSettings(),s):defaultSettings(); }
   catch(e){ return defaultSettings(); }
 }
-function saveSettingsObj(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+function saveSettingsObj(s){
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); return true; }
+  catch(e){
+    alert(LANG==='hi'
+      ? "सेटिंग्स सहेजी नहीं जा सकीं — हो सकता है ब्राउज़र निजी/गुप्त मोड में हो या भंडारण भर गया हो। सेटिंग्स केवल इसी सत्र के लिए लागू रहेंगी।"
+      : "Could not save settings — the browser may be in private/incognito mode or storage is full. Settings will apply for this session only.");
+    return false;
+  }
+}
 
 /* ---------------- Storage helpers ---------------- */
 function loadAllProjects(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }catch(e){ return []; }
 }
-function persistAllProjects(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+function persistAllProjects(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; }
+  catch(e){
+    alert(LANG==='hi'
+      ? "परियोजना सहेजी नहीं जा सकी — हो सकता है ब्राउज़र निजी/गुप्त मोड में हो अथवा डिवाइस का भंडारण भर गया हो। कृपया कुछ पुरानी परियोजनाएँ हटाएँ अथवा इस परियोजना को निर्यात/साझा करके किसी अन्य ब्राउज़र में आयात करें।"
+      : "Could not save this project — the browser may be in private/incognito mode, or the device's storage is full. Please delete some older projects, or export/share this project and import it in a different browser.");
+    return false;
+  }
+}
 function uid(){ return 'p'+Date.now()+Math.random().toString(16).slice(2,8); }
 
 /* ---------------- App State ---------------- */
@@ -968,6 +985,7 @@ function renderDashboard(){
     <div class="btnrow">
       <button class="btn gold" onclick="startNewProject()">${tt('newProject')}</button>
       <button class="btn secondary" onclick="loadSampleProjects()">${tt('loadSamples')}</button>
+      ${projects.some(p=>p.isDemo) ? `<button class="btn secondary" onclick="removeDemoProjects()">${tt('removeSamples')}</button>` : ''}
       <button class="btn secondary" onclick="document.getElementById('importFile').click()">${tt('importProject')}</button>
       <button class="btn secondary" onclick="openSettingsScreen()">${tt('settingsBtn')}</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImportFile(event)">
@@ -1069,6 +1087,16 @@ function handleImportFile(ev){
 }
 
 /* ---------------- Sample Projects ---------------- */
+function removeDemoProjects(){
+  const list = loadAllProjects();
+  const demoCount = list.filter(p=>p.isDemo).length;
+  if(demoCount===0){ alert(LANG==='hi' ? "हटाने हेतु कोई नमूना परियोजना नहीं है।" : "There are no demo projects to remove."); return; }
+  if(!confirm(LANG==='hi'
+    ? `सभी ${demoCount} नमूना (DEMO DATA) परियोजनाएँ हटाएँ? आपकी अपनी सहेजी गई परियोजनाएँ प्रभावित नहीं होंगी।`
+    : `Remove all ${demoCount} demo (DEMO DATA) project(s)? Your own saved projects will not be affected.`)) return;
+  persistAllProjects(list.filter(p=>!p.isDemo));
+  renderDashboard();
+}
 function loadSampleProjects(){
   const samples = buildSampleProjects();
   const list = loadAllProjects();
@@ -1090,16 +1118,32 @@ function buildSampleProjects(){
     ["Annapoorna Small Restaurant","Services","Restaurant","foodServices",600000,450000,150000,"Composite Loan",1300000,1600000,2000000],
     ["Kisan Farm Equipment Repair","Services","Agricultural Machinery Repair","repairServices",300000,220000,80000,"Machinery/Equipment",550000,700000,900000],
     ["Shree Furniture Works","Manufacturing","Furniture","furnitureWood",350000,280000,70000,"New Business",800000,1000000,1250000],
-    ["Gramin Local Transport Service","Services","Pickup Vehicle","transport",700000,700000,0,"Vehicle",900000,1050000,1200000]
+    ["Gramin Local Transport Service","Services","Pickup Vehicle","transport",450000,400000,50000,"Vehicle",1100000,1250000,1400000],
+    ["Fashion Point Garments","Trading","Garments","garmentFootwearRetail",500000,150000,350000,"New Business",900000,1150000,1400000],
+    ["Krishi Agro Traders","Trading","Agricultural Inputs","agriTrading",300000,80000,220000,"Expansion",1800000,2100000,2400000],
+    ["Meetha Ghar Sweets & Bakery","Manufacturing","Sweets","bakeryFood",550000,350000,200000,"New Business",800000,1000000,1250000],
+    ["Bharat Bricks & Blocks","Manufacturing","Bricks","constructionProducts",1200000,900000,300000,"Machinery/Equipment",1500000,1800000,2100000],
+    ["Glamour Beauty Parlour","Services","Beauty Parlour","personalServices",300000,180000,120000,"New Business",500000,650000,800000],
+    ["Digital Seva Kendra","Services","Digital Service Centre","digitalServices",250000,150000,100000,"Other",400000,550000,700000],
+    ["Apna Warehouse & Logistics","Services","Warehousing","rentalLogistics",1500000,1100000,400000,"Composite Loan",1600000,1900000,2200000],
+    // Existing-business sample: demonstrates the "Existing" borrower flow (last year's actual
+    // P&L/Balance Sheet), a Working-Capital-only loan request (no Term Loan), and existing:'Existing'.
+    ["Om Hardware & Building Materials","Trading","Cement / Building Material","hardwareBuilding",250000,0,250000,"Working Capital",1000000,1120000,1250000,
+      { existing:"Existing", experience:"6 years",
+        actuals:{ sales:900000, costOfSales:720000, operatingExpenses:110000, depreciation:15000, interestPaid:18000, netProfit:37000,
+          netFixedAssets:220000, inventory:90000, receivables:50000, cashBank:25000, otherCurrentAssets:10000,
+          netWorth:180000, termLoanOS:70000, wcBorrowingOS:90000, tradeCreditors:45000, otherCurrentLiab:10000 } }]
   ];
   return defs.map(d=>{
     const p = blankProject();
+    const extra = d[11] || {};
     p.isDemo = true;
     p.borrower = {name:"Demo Borrower", business:d[0], constitution:"Proprietorship", address:"Sample Village, Sample District",
-      mobile:"9800000000", existing:"New", experience:"2 years", udyam:"", gstin:"", bank:""};
+      mobile:"9800000000", existing:extra.existing||"New", experience:extra.experience||"2 years", udyam:"", gstin:"", bank:""};
     p.activityCategory = d[1]; p.activityName = d[2]; p.activityModel = d[3];
     p.loan.total = d[4]; p.loan.termLoan = d[5]; p.loan.wcLoan = d[6]; p.loan.purpose = d[7];
     p.sales.mode = 'direct'; p.sales.y1 = d[8]; p.sales.y2 = d[9]; p.sales.y3 = d[10];
+    if(extra.actuals) p.actuals = Object.assign({}, p.actuals, extra.actuals);
     p.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
     return p;
   });
@@ -1338,12 +1382,12 @@ function filterActivityList(){
 function stepLoan(){
   const l = current.loan;
   return `${colorLegend()}<div class="grid fill-zone">
-    <div><label>${tt('totalLoanRequired')}</label><input type="number" id="w_loanTotal" value="${l.total||''}">${hint('totalLoanRequired')}</div>
+    <div><label>${tt('totalLoanRequired')}</label><input type="number" min="0" id="w_loanTotal" value="${l.total||''}">${hint('totalLoanRequired')}</div>
     <div><label>${tt('purposeOfLoan')}</label><select id="w_purpose">
       ${["New Business","Expansion","Working Capital","Machinery/Equipment","Vehicle","Composite Loan","Other"].map(o=>`<option ${l.purpose===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
-    <div><label>${tt('termLoanAmount')}</label><input type="number" id="w_termLoan" value="${l.termLoan||''}">${hint('termLoanAmount')}</div>
-    <div><label>${tt('wcAmount')}</label><input type="number" id="w_wcLoan" value="${l.wcLoan||''}">${hint('wcAmount')}</div>
+    <div><label>${tt('termLoanAmount')}</label><input type="number" min="0" id="w_termLoan" value="${l.termLoan||''}">${hint('termLoanAmount')}</div>
+    <div><label>${tt('wcAmount')}</label><input type="number" min="0" id="w_wcLoan" value="${l.wcLoan||''}">${hint('wcAmount')}</div>
   </div>
   <p class="muted small">${tt('loanSplitNote')}</p>`;
 }
@@ -1355,12 +1399,12 @@ function stepSales(){
   </div>
   ${s.mode==='direct' ? `
   <div class="grid fill-zone">
-    <div><label>${tt('currentYearSales')}</label><input type="number" id="w_y1" value="${s.y1||''}">${hint('currentYearSales')}</div>
-    <div><label>${tt('followingYearSales')}</label><input type="number" id="w_y2" value="${s.y2||''}"></div>
-    <div><label>${tt('nextYearSales')}</label><input type="number" id="w_y3" value="${s.y3||''}"></div>
+    <div><label>${tt('currentYearSales')}</label><input type="number" min="0" id="w_y1" value="${s.y1||''}">${hint('currentYearSales')}</div>
+    <div><label>${tt('followingYearSales')}</label><input type="number" min="0" id="w_y2" value="${s.y2||''}"></div>
+    <div><label>${tt('nextYearSales')}</label><input type="number" min="0" id="w_y3" value="${s.y3||''}"></div>
   </div>` : `
   <div class="grid fill-zone">
-    <div><label>${tt('currentAnnualSales')}</label><input type="number" id="w_currentSales" value="${s.currentSales||''}">${hint('currentAnnualSales')}</div>
+    <div><label>${tt('currentAnnualSales')}</label><input type="number" min="0" id="w_currentSales" value="${s.currentSales||''}">${hint('currentAnnualSales')}</div>
     <div><label>${tt('growthPctLabel')}</label><input type="number" id="w_growth" value="${s.growthPct||10}">${hint('growthPctLabel')}</div>
   </div>
   <p class="muted small">${tt('growthNote')}</p>`}`;
@@ -1371,9 +1415,9 @@ function stepLoanTerms(){
   const previewMonths = Math.max(t.tenureYears*12 - t.moratoriumMonths,1);
   const previewEmi = computeEMI(current.loan.termLoan||current.loan.total, t.interestRatePct, previewMonths);
   return `${colorLegend()}<div class="grid fill-zone">
-    <div><label>${tt('interestRate')}</label><input type="number" id="w_rate" value="${t.interestRatePct}" onchange="wizardTermsPreview()">${hint('interestRate')}</div>
-    <div><label>${tt('repaymentPeriod')}</label><input type="number" id="w_tenure" value="${t.tenureYears}" onchange="wizardTermsPreview()">${hint('repaymentPeriod')}</div>
-    <div><label>${tt('moratorium')}</label><input type="number" id="w_mora" value="${t.moratoriumMonths}" onchange="wizardTermsPreview()">${hint('moratorium')}</div>
+    <div><label>${tt('interestRate')}</label><input type="number" min="0" id="w_rate" value="${t.interestRatePct}" onchange="wizardTermsPreview()">${hint('interestRate')}</div>
+    <div><label>${tt('repaymentPeriod')}</label><input type="number" min="1" id="w_tenure" value="${t.tenureYears}" onchange="wizardTermsPreview()">${hint('repaymentPeriod')}</div>
+    <div><label>${tt('moratorium')}</label><input type="number" min="0" id="w_mora" value="${t.moratoriumMonths}" onchange="wizardTermsPreview()">${hint('moratorium')}</div>
     <div><label>${tt('instalmentFreq')}</label><select id="w_freq">
       ${["Monthly","Quarterly"].map(o=>`<option ${t.instalmentFreq===o?'selected':''}>${o}</option>`).join('')}
     </select></div>
@@ -1418,16 +1462,18 @@ function persistWizardStep(){
     /* Preserve exactly what the applicant entered. Term Loan and WC Finance are left at 0
        when not entered — the calculation engine derives an Indicative Term Loan and
        Indicative Working Capital Finance from these; the Total Loan Requested itself is
-       never silently converted into a Term Loan. */
-    current.loan = { total:+val('w_loanTotal')||0, purpose:val('w_purpose'), termLoan:+val('w_termLoan')||0, wcLoan:+val('w_wcLoan')||0 };
+       never silently converted into a Term Loan. Amounts are clamped to non-negative since
+       a negative loan or sales figure is never valid and would silently corrupt every
+       downstream calculation. */
+    current.loan = { total:Math.max(0,+val('w_loanTotal')||0), purpose:val('w_purpose'), termLoan:Math.max(0,+val('w_termLoan')||0), wcLoan:Math.max(0,+val('w_wcLoan')||0) };
   } else if(wizardStep===4){
     if(current.sales.mode==='direct'){
-      current.sales.y1=+val('w_y1')||0; current.sales.y2=+val('w_y2')||0; current.sales.y3=+val('w_y3')||0;
+      current.sales.y1=Math.max(0,+val('w_y1')||0); current.sales.y2=Math.max(0,+val('w_y2')||0); current.sales.y3=Math.max(0,+val('w_y3')||0);
     } else {
-      current.sales.currentSales=+val('w_currentSales')||0; current.sales.growthPct=+val('w_growth')||0;
+      current.sales.currentSales=Math.max(0,+val('w_currentSales')||0); current.sales.growthPct=+val('w_growth')||0;
     }
   } else if(wizardStep===5){
-    current.loanTerms = { interestRatePct:+val('w_rate')||0, tenureYears:+val('w_tenure')||1, moratoriumMonths:+val('w_mora')||0, instalmentFreq:val('w_freq') };
+    current.loanTerms = { interestRatePct:Math.max(0,+val('w_rate')||0), tenureYears:Math.max(1,+val('w_tenure')||1), moratoriumMonths:Math.max(0,+val('w_mora')||0), instalmentFreq:val('w_freq') };
   }
 }
 function goToAssumptions(){ persistWizardStep(); renderAssumptions(); }
