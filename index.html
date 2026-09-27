@@ -82,6 +82,7 @@ table tr.total td{font-weight:700;background:#f3efe2;}
 .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
 .badge.default{background:#e4eee7;color:var(--green);}
 .badge.modified{background:#fbe9d8;color:var(--gold-dark);}
+.badge.bad{background:#fdeceb;color:var(--red);}
 .check-list{list-style:none;padding:0;margin:8px 0;}
 .check-list li{padding:5px 0;font-size:14px;display:flex;gap:8px;align-items:flex-start;}
 .check-list li.pass:before{content:"✓";color:var(--green);font-weight:900;}
@@ -1132,17 +1133,42 @@ function buildSampleProjects(){
       { existing:"Existing", experience:"6 years",
         actuals:{ sales:900000, costOfSales:720000, operatingExpenses:110000, depreciation:15000, interestPaid:18000, netProfit:37000,
           netFixedAssets:220000, inventory:90000, receivables:50000, cashBank:25000, otherCurrentAssets:10000,
-          netWorth:180000, termLoanOS:70000, wcBorrowingOS:90000, tradeCreditors:45000, otherCurrentLiab:10000 } }]
+          netWorth:180000, termLoanOS:70000, wcBorrowingOS:90000, tradeCreditors:45000, otherCurrentLiab:10000 } }],
+    // Growth-mode sales projection (Current Sales + Growth %), rather than direct Y1/Y2/Y3 entry.
+    ["Saraswati Xerox & DTP Centre","Services","Photocopy","digitalServices",200000,130000,70000,"New Business",0,0,0,
+      { salesMode:"growth", currentSales:450000, growthPct:18 }],
+    // Not-listed / custom activity: applicant's activity isn't in the built-in library, so the
+    // preparer types a free-text name and picks the closest-fitting model manually.
+    ["Mushroom Cultivation Unit","Manufacturing","Mushroom Cultivation Unit","foodProcessing",250000,150000,100000,"Machinery/Equipment",600000,750000,950000,
+      { customActivity:true }],
+    // SHG/JLG-constituted micro enterprise — a DAY-NRLM-style individual/group enterprise loan.
+    ["Saheli Mahila SHG Papad Udyog","Manufacturing","Papad","bakeryFood",150000,90000,60000,"New Business",300000,400000,520000,
+      { constitution:"SHG/JLG" }],
+    // Partnership constitution, mid-size Expansion loan.
+    ["Vishal Traders & Co.","Trading","Wholesale Grocery","fastMovingRetail",700000,200000,500000,"Expansion",3800000,4300000,4900000,
+      { constitution:"Partnership" }],
+    // Private Limited constitution, larger-ticket manufacturing — exercises bigger numbers/formatting.
+    ["Precision Engineering Pvt Ltd","Manufacturing","Machine Components","engineeringFab",2000000,1400000,600000,"Machinery/Equipment",7000000,8200000,9500000,
+      { constitution:"Private Limited" }],
+    // A second Existing-business demo (different activity/purpose from Om Hardware above), showing
+    // an Expansion loan for a unit already running, with its own last-year actuals.
+    ["Anand Rice Mill","Manufacturing","Rice Mill","foodProcessing",900000,600000,300000,"Expansion",2500000,2900000,3300000,
+      { existing:"Existing", experience:"9 years",
+        actuals:{ sales:2200000, costOfSales:1430000, operatingExpenses:330000, depreciation:60000, interestPaid:70000, netProfit:120000,
+          netFixedAssets:500000, inventory:200000, receivables:150000, cashBank:60000, otherCurrentAssets:20000,
+          netWorth:600000, termLoanOS:250000, wcBorrowingOS:180000, tradeCreditors:110000, otherCurrentLiab:20000 } }]
   ];
   return defs.map(d=>{
     const p = blankProject();
     const extra = d[11] || {};
     p.isDemo = true;
-    p.borrower = {name:"Demo Borrower", business:d[0], constitution:"Proprietorship", address:"Sample Village, Sample District",
+    p.customActivity = !!extra.customActivity;
+    p.borrower = {name:"Demo Borrower", business:d[0], constitution:extra.constitution||"Proprietorship", address:"Sample Village, Sample District",
       mobile:"9800000000", existing:extra.existing||"New", experience:extra.experience||"2 years", udyam:"", gstin:"", bank:""};
     p.activityCategory = d[1]; p.activityName = d[2]; p.activityModel = d[3];
     p.loan.total = d[4]; p.loan.termLoan = d[5]; p.loan.wcLoan = d[6]; p.loan.purpose = d[7];
-    p.sales.mode = 'direct'; p.sales.y1 = d[8]; p.sales.y2 = d[9]; p.sales.y3 = d[10];
+    if(extra.salesMode==='growth'){ p.sales.mode='growth'; p.sales.currentSales=extra.currentSales; p.sales.growthPct=extra.growthPct; }
+    else { p.sales.mode = 'direct'; p.sales.y1 = d[8]; p.sales.y2 = d[9]; p.sales.y3 = d[10]; }
     if(extra.actuals) p.actuals = Object.assign({}, p.actuals, extra.actuals);
     p.application = { bankName:"", place:"", date:new Date().toISOString().slice(0,10) };
     return p;
@@ -2146,6 +2172,72 @@ function rRepayment(c){
     :`Term Loan: ${inr(c.termLoan)} @ ${current.loanTerms.interestRatePct}% p.a., tenure ${current.loanTerms.tenureYears} years, moratorium ${current.loanTerms.moratoriumMonths} months, instalment frequency: ${freqLabel}. Principal is repaid on an equal-principal basis at this selected frequency (Monthly/Quarterly) — that is the detailed repayment schedule. The EMI shown above is not the actual scheduled instalment; it is only an Indicative Equivalent EMI shown for illustration. Working Capital is a revolving fund-based limit and is not repaid through this schedule.`}</p>
   <div class="note-box">${hi?'सांकेतिक अनुसूची; अंतिम चुकौती शर्तें ऋणदाता बैंक द्वारा निर्धारित की जाएँगी।':'Indicative schedule; final repayment terms will be as decided by the lending bank.'}</div>`;
 }
+/* ---------------- Indicative Benchmarking (Commonly Used Bank Norms) ----------------
+   These thresholds are widely used, commonly-applied indicative norms in Indian bank credit
+   appraisal (broadly drawn from Tandon/Nayak Committee working-capital conventions and common
+   term-lending practice) — they are NOT statutory RBI limits and are NOT a substitute for the
+   lending bank's own credit policy, which may set different thresholds. They exist purely to
+   help the applicant/preparer see, at a glance, where the projected figures may need
+   strengthening before the report goes to the bank, and to suggest ways to do that — the final
+   view on eligibility, sanction and terms remains entirely the lending bank's. */
+const RATIO_NORMS = {
+  currentRatio:     { dir:'higher', threshold:1.33, label:["Current Ratio","धारा अनुपात"] },
+  debtEquity:       { dir:'lower',  threshold:3,    label:["Debt-Equity Ratio","ऋण इक्विटी अनुपात"] },
+  tolTnw:           { dir:'lower',  threshold:4,    label:["TOL/TNW","टीओएल/टीएनडब्ल्यू"] },
+  interestCoverage: { dir:'higher', threshold:1.5,  label:["Interest Coverage Ratio","ब्याज कवरेज अनुपात"] }
+};
+const RATIO_SUGGESTIONS = {
+  currentRatio:["Increase the promoter's margin money brought into working capital; examine whether stock and receivable days can be tightened; and check whether the Turnover Method's indicative bank finance (see Working Capital Assessment) suggests a different Working Capital Finance figure than currently entered.",
+    "कार्यशील पूंजी में प्रवर्तक द्वारा लाई जाने वाली मार्जिन राशि बढ़ाएँ; स्टॉक व प्राप्य अवधि घटाने की संभावना जाँचें; तथा देखें कि क्या टर्नओवर पद्धति का सांकेतिक बैंक वित्त (कार्यशील पूंजी आकलन देखें) वर्तमान में दर्ज कार्यशील पूंजी वित्त से भिन्न आंकड़ा सुझाता है।"],
+  debtEquity:["Consider increasing the promoter's own contribution (equity), or reducing the Term Loan amount requested — either will directly improve this ratio. Raising the Promoter Margin on Fixed Assets in Settings has the same effect.",
+    "प्रवर्तक के स्वयं के अंशदान (इक्विटी) को बढ़ाने, अथवा मीयादी ऋण राशि घटाने पर विचार करें — दोनों में से कोई भी यह अनुपात सीधे बेहतर करेगा। सेटिंग्स में स्थिर संपत्ति पर प्रवर्तक मार्जिन बढ़ाने का भी यही प्रभाव है।"],
+  tolTnw:["Increase net worth by raising promoter capital, or reduce total outside liabilities by lowering the loan quantum requested or the reliance on trade creditors.",
+    "प्रवर्तक पूंजी बढ़ाकर निवल मूल्य बढ़ाएँ, अथवा ऋण राशि या व्यापारिक लेनदारों पर निर्भरता घटाकर कुल बाह्य देनदारियाँ कम करें।"],
+  interestCoverage:["Consider a lower loan quantum, or a longer repayment tenure/moratorium (Loan Terms step) to reduce the annual interest burden; also revisit the sales and cost assumptions (Assumptions Review) to see if a more achievable EBITDA can be shown.",
+    "कम ऋण राशि, अथवा वार्षिक ब्याज भार घटाने हेतु लंबी चुकौती अवधि/स्थगन (ऋण शर्तें चरण) पर विचार करें; ईबीआईटीडीए को अधिक प्राप्य दिखाने हेतु बिक्री व लागत मान्यताओं (मान्यताएँ समीक्षा) की भी पुनः समीक्षा करें।"],
+  dscr:["Extend the repayment period or moratorium (Loan Terms step) to reduce the annual instalment, reconsider the loan quantum, or review the sales/cost assumptions for a more realistic cash accrual.",
+    "वार्षिक किस्त घटाने हेतु चुकौती अवधि अथवा स्थगन (ऋण शर्तें चरण) बढ़ाएँ, ऋण राशि पर पुनर्विचार करें, अथवा अधिक यथार्थवादी नकदी संचयन हेतु बिक्री/लागत मान्यताओं की समीक्षा करें।"],
+  margin:["Review the Cost of Sales % and operating expense assumptions (Assumptions Review) for realism as the business scales up — margins that shrink year-on-year usually mean costs have been assumed to grow faster than sales.",
+    "जैसे-जैसे व्यवसाय बढ़ता है, बिक्री लागत % व परिचालन व्यय मान्यताओं (मान्यताएँ समीक्षा) की यथार्थता की पुनः समीक्षा करें — वर्ष-दर-वर्ष घटता मार्जिन प्रायः यह दर्शाता है कि लागतों को बिक्री से अधिक तेज़ी से बढ़ने की मान्यता दी गई है।"]
+};
+function benchmarkAnalysis(c){
+  const hi = LANG==='hi';
+  const rows = []; const flags = [];
+  Object.keys(RATIO_NORMS).forEach(key=>{
+    const norm = RATIO_NORMS[key];
+    const series = [0,1,2].map(i=>c.ratios[i][key]);
+    const valid = series.filter(v=>v!==null);
+    if(!valid.length) return;
+    const latest = valid[valid.length-1];
+    const breach = norm.dir==='higher' ? latest < norm.threshold : latest > norm.threshold;
+    const first = series[0], last = series[2];
+    const deteriorating = (!breach && first!==null && last!==null) ? (norm.dir==='higher' ? last < first : last > first) : false;
+    const status = breach ? 'bad' : (deteriorating ? 'warn' : 'good');
+    if(status!=='good') flags.push(key);
+    rows.push({ key, label:norm.label[hi?1:0], latest, dir:norm.dir, threshold:norm.threshold, status });
+  });
+  let dscrStatus = null;
+  if(c.avgDscr!==null){
+    const breach = c.avgDscr<1.5 || (c.minDscr!==null && c.minDscr<1.2);
+    const withVal = c.dscrYearly.filter(d=>d.dscr!==null);
+    const deteriorating = !breach && withVal.length>1 && withVal[withVal.length-1].dscr < withVal[0].dscr;
+    dscrStatus = breach ? 'bad' : (deteriorating ? 'warn' : 'good');
+    if(dscrStatus!=='good') flags.push('dscr');
+  }
+  ['gpMargin','ebitdaMargin','npMargin'].forEach(key=>{
+    const first=c.ratios[0][key], last=c.ratios[2][key];
+    if(first!==null && last!==null && last < first-0.5 && !flags.includes('margin')) flags.push('margin');
+  });
+  return { rows, dscrStatus, flags };
+}
+const STATUS_BADGE = { good:["Within Norm","मानक के भीतर"], warn:["Declining Trend","गिरावट की प्रवृत्ति"], bad:["Below Commonly Used Norm","सामान्य मानक से कमतर"] };
+const STATUS_BADGE_LOWER = { good:["Within Norm","मानक के भीतर"], warn:["Declining Trend","गिरावट की प्रवृत्ति"], bad:["Above Commonly Used Norm","सामान्य मानक से अधिक"] };
+function statusBadgeHtml(status, dir){
+  const hi = LANG==='hi';
+  const src = (status==='bad' && dir==='lower') ? STATUS_BADGE_LOWER : STATUS_BADGE;
+  const cls = status==='good'?'default':(status==='warn'?'modified':'bad');
+  return `<span class="badge ${cls}">${src[status][hi?1:0]}</span>`;
+}
 function rRatios(c){
   const rows = [["Current Ratio","धारा अनुपात","currentRatio",""],["Debt Equity Ratio","ऋण इक्विटी अनुपात","debtEquity",""],
     ["TOL/TNW","टीओएल/टीएनडब्ल्यू","tolTnw",""],["Gross Profit Margin","सकल लाभ मार्जिन","gpMargin","%"],
@@ -2155,16 +2247,33 @@ function rRatios(c){
     ["Working Capital Cycle","कार्यशील पूंजी चक्र","wcCycle",LANG==='hi'?' दिन':' days']];
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
   const na = LANG==='hi'?'लागू नहीं':'Not Applicable';
+  const hi = LANG==='hi';
   const dscrRows = c.dscrYearly.map((d,i)=>`<tr><td>${LANG==='hi'?'वर्ष':'Year'} ${i+1}</td><td>${inr(d.cashAccrual)}</td><td>${inr(d.interest)}</td><td>${inr(d.principal)}</td><td>${inr(d.debtService)}</td><td>${d.dscr!==null?d.dscr.toFixed(2):na}</td></tr>`).join('');
+  const bm = benchmarkAnalysis(c);
+  const bmRows = bm.rows.map(r=>{
+    const normTxt = (r.dir==='higher'?'≥ ':'≤ ')+r.threshold.toFixed(2);
+    return `<tr class="${r.status==='bad'?'mismatch-row':''}"><td>${r.label}</td><td>${r.latest.toFixed(2)}</td><td>${normTxt}</td><td>${statusBadgeHtml(r.status,r.dir)}</td></tr>`;
+  }).join('');
+  const dscrBmRow = bm.dscrStatus ? `<tr class="${bm.dscrStatus==='bad'?'mismatch-row':''}"><td>DSCR (${hi?'औसत':'Average'})</td><td>${c.avgDscr.toFixed(2)}</td><td>≥ 1.50 (${hi?'न्यूनतम वर्ष':'min. year'} ≥ 1.20)</td><td>${statusBadgeHtml(bm.dscrStatus,'higher')}</td></tr>` : '';
+  const suggestionBlock = bm.flags.length ? `<h3>${hi?'सुझाव: अनुमानित आंकड़ों को कैसे बेहतर करें':'Suggestions to Improve the Projected Figures'}</h3>
+    <ul class="check-list">${bm.flags.map(k=>{
+      const label = k==='dscr' ? 'DSCR' : (k==='margin' ? (hi?'लाभप्रदता मार्जिन (घटती प्रवृत्ति)':'Profitability Margins (declining trend)') : RATIO_NORMS[k].label[hi?1:0]);
+      return `<li class="warn"><b>${label}:</b> ${RATIO_SUGGESTIONS[k][hi?1:0]}</li>`;
+    }).join('')}</ul>` : `<p class="muted small">${hi?'सभी बेंचमार्क किए गए अनुपात सामान्यतः प्रयुक्त मानकों के भीतर हैं तथा वर्षों में स्थिर अथवा बेहतर हो रहे हैं।':'All benchmarked ratios are within commonly used norms and are stable or improving across the years.'}</p>`;
   return `<h3>${LANG==='hi'?'वित्तीय अनुपात':'Financial Ratios'}</h3>
   <table><tr><th>${LANG==='hi'?'अनुपात':'Ratio'}</th><th>${yrHdr[0]}</th><th>${yrHdr[1]}</th><th>${yrHdr[2]}</th></tr>
-  ${rows.map(([en,hi,k,suf])=>`<tr><td>${LANG==='hi'?hi:en}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?na:(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
+  ${rows.map(([en,hi2,k,suf])=>`<tr><td>${LANG==='hi'?hi2:en}</td>${[0,1,2].map(i=>{const v=c.ratios[i][k]; return `<td>${v===null?na:(typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v)+suf}</td>`;}).join('')}</tr>`).join('')}
   </table>
   <h3>DSCR</h3>
   <table><tr><th>${LANG==='hi'?'वर्ष':'Year'}</th><th>${LANG==='hi'?'नकदी संचयन':'Cash Accrual'}</th><th>${LANG==='hi'?'ब्याज':'Interest'}</th><th>${LANG==='hi'?'मूलधन चुकौती':'Principal Repayment'}</th><th>${LANG==='hi'?'कुल ऋण सेवा':'Total Debt Service'}</th><th>DSCR</th></tr>
   ${dscrRows}</table>
   <p><b>${LANG==='hi'?'औसत डीएससीआर:':'Average DSCR:'}</b> ${c.avgDscr!==null?c.avgDscr.toFixed(2):na} &nbsp; <b>${LANG==='hi'?'न्यूनतम डीएससीआर:':'Minimum DSCR:'}</b> ${c.minDscr!==null?c.minDscr.toFixed(2):na}</p>
-  <div class="note-box">${LANG==='hi'?'ये अनुपात केवल जानकारी हेतु हैं तथा ऋणदाता बैंक द्वारा समीक्षा के लिए प्रस्तुत किए गए हैं। ये किसी पात्रता, स्वीकृति अथवा ऋण जोखिम ग्रेड का संकेत नहीं देते — यह निर्णय पूर्णतः बैंक की ऋण मूल्यांकन प्रक्रिया व प्रचलित नीति के अधीन है।':'These ratios are financial information presented for the lending bank\'s review and appraisal. They do not indicate eligibility, approval or a credit risk grade — that assessment remains entirely the lending bank\'s, under its own credit appraisal process and prevailing policy.'}</div>`;
+  <h3>${hi?'सामान्यतः प्रयुक्त मानकों की तुलना में सांकेतिक बेंचमार्किंग':'Indicative Benchmarking Against Commonly Used Norms'}</h3>
+  <p class="muted small">${hi?'ये सीमाएँ भारतीय बैंकिंग में सामान्यतः प्रयुक्त संकेतक हैं (टंडन/नायक समिति की कार्यशील पूंजी परंपराओं तथा सामान्य ऋण मूल्यांकन व्यवहार पर आधारित) — ये कोई सांविधिक आरबीआई सीमा नहीं हैं तथा ऋणदाता बैंक की अपनी ऋण नीति की जगह नहीं ले सकतीं, जो भिन्न मानक अपना सकती है।':'These thresholds are commonly used indicative markers in Indian bank credit appraisal (broadly drawn from Tandon/Nayak Committee working-capital conventions and common term-lending practice) — they are not statutory RBI limits and do not substitute for the lending bank\'s own credit policy, which may apply different thresholds.'}</p>
+  <table><tr><th>${hi?'अनुपात':'Ratio'}</th><th>${hi?'नवीनतम अनुमानित मूल्य':'Latest Projected Value'}</th><th>${hi?'सामान्यतः प्रयुक्त मानक':'Commonly Used Norm'}</th><th>${hi?'स्थिति':'Status'}</th></tr>
+  ${bmRows}${dscrBmRow}</table>
+  ${suggestionBlock}
+  <div class="note-box">${LANG==='hi'?'ये अनुपात व बेंचमार्क केवल जानकारी व सुझाव हेतु हैं तथा ऋणदाता बैंक द्वारा समीक्षा के लिए प्रस्तुत किए गए हैं। ये किसी पात्रता, स्वीकृति अथवा ऋण जोखिम ग्रेड का संकेत नहीं देते — यह निर्णय पूर्णतः बैंक की ऋण मूल्यांकन प्रक्रिया व प्रचलित नीति के अधीन है।':'These ratios and benchmarks are financial information and suggestions presented for the lending bank\'s review and appraisal. They do not indicate eligibility, approval or a credit risk grade — that assessment remains entirely the lending bank\'s, under its own credit appraisal process and prevailing policy.'}</div>`;
 }
 function rBreakeven(c){
   const yrHdr = LANG==='hi' ? ["वर्ष 1","वर्ष 2","वर्ष 3"] : ["Yr 1","Yr 2","Yr 3"];
@@ -2220,6 +2329,13 @@ function rInterpretation(c){
   const wcLineEn = c.wcMethodsDiverge
     ? `<p><b>Working Capital Method:</b> The Turnover Method and Operating Cycle Method produce different indicative requirements — review the assumptions. See the "Working Capital Assessment" section.</p>`
     : `<p><b>Working Capital Method:</b> The Turnover Method and Operating Cycle Method indicative requirements are reasonably close.</p>`;
+  const bm = benchmarkAnalysis(c);
+  const bmLineHi = bm.flags.length
+    ? `<p><b>अनुपात बेंचमार्किंग:</b> ${bm.flags.length} अनुपात/संकेतक सामान्यतः प्रयुक्त बैंक मानकों से कमतर हैं अथवा घटती प्रवृत्ति दर्शाते हैं — विवरण व सुधार हेतु सुझावों के लिए "वित्तीय अनुपात" खंड देखें।</p>`
+    : `<p><b>अनुपात बेंचमार्किंग:</b> सभी बेंचमार्क किए गए अनुपात सामान्यतः प्रयुक्त मानकों के भीतर हैं।</p>`;
+  const bmLineEn = bm.flags.length
+    ? `<p><b>Ratio Benchmarking:</b> ${bm.flags.length} ratio(s)/indicator(s) fall short of commonly used bank norms or show a declining trend — see the "Financial Ratios" section for details and suggestions to improve the projected figures.</p>`
+    : `<p><b>Ratio Benchmarking:</b> All benchmarked ratios are within commonly used norms.</p>`;
   if(LANG==='hi'){
     return `<h3>वित्तीय व्याख्या</h3>
     <p><b>बिक्री:</b> अनुमानित बिक्री ${inr(s[0])} से बढ़कर ${inr(s[1])} व ${inr(s[2])} होने की संभावना है।</p>
@@ -2228,6 +2344,7 @@ function rInterpretation(c){
     <p><b>कार्यशील पूंजी:</b> कार्यशील पूंजी का आकलन टर्नओवर पद्धति द्वारा किया गया है, जिसे परिचालन चक्र पद्धति से क्रॉस-चेक किया गया है।</p>
     ${wcLineHi}
     ${loanLineHi}
+    ${bmLineHi}
     <div class="note-box">यह अनुमानित रिपोर्ट प्रदत्त सूचना व मान्यताओं पर आधारित है, बैंक द्वारा विचार/समीक्षा हेतु है। सत्यापन, ऋण मूल्यांकन, पात्रता व अंतिम निर्णय पूर्णतः ऋणदाता बैंक की जिम्मेदारी है।</div>`;
   }
   return `<h3>Financial Interpretation</h3>
@@ -2237,6 +2354,7 @@ function rInterpretation(c){
   <p><b>Working Capital:</b> Working capital is assessed using the Turnover Method, cross-checked against the Operating Cycle Method.</p>
   ${wcLineEn}
   ${loanLineEn}
+  ${bmLineEn}
   <div class="note-box">This is an indicative report based on the information and assumptions provided, for consideration/review by the lending bank. Verification, credit appraisal, eligibility and the final lending decision remain entirely the responsibility of the lending bank.</div>`;
 }
 function rMethodology(){
