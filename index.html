@@ -146,6 +146,35 @@ tr.mismatch-row td{background:#fdeceb;}
   .report-page{padding:0;}
   table{font-size:11px;}
 }
+.ai-fab{position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dark) 100%);color:#fff;border:none;
+  font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;z-index:300;line-height:1;}
+.ai-fab:active{transform:translateY(1px);}
+.ai-panel{position:fixed;bottom:84px;right:16px;left:16px;max-width:380px;margin-left:auto;
+  max-height:72vh;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);z-index:300;display:flex;flex-direction:column;overflow:hidden;}
+.ai-panel-header{background:linear-gradient(180deg,var(--navy) 0%,var(--navy-dark) 100%);color:#fff;
+  padding:10px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ai-panel-header b{font-size:14px;}
+.ai-panel-header button{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:6px;font-size:12px;padding:4px 8px;cursor:pointer;}
+.ai-tabs{display:flex;border-bottom:1px solid var(--line);flex-shrink:0;}
+.ai-tabs button{flex:1;background:#f3efe2;border:none;padding:8px;font-size:12.5px;cursor:pointer;color:var(--ink-soft);}
+.ai-tabs button.active{background:#fff;color:var(--navy);font-weight:700;border-bottom:2px solid var(--gold);}
+.ai-panel-body{padding:10px 12px;overflow-y:auto;flex:1;font-size:13px;}
+.ai-quicklist{list-style:none;padding:0;margin:0;}
+.ai-quicklist li{padding:7px 2px;border-bottom:1px solid var(--line);cursor:pointer;color:var(--navy);}
+.ai-quicklist li:hover{background:#f6f4ef;}
+.ai-context-tip{background:#eef4ee;border-left:4px solid var(--green);padding:8px 10px;
+  font-size:12.5px;border-radius:0 4px 4px 0;margin-bottom:10px;}
+.ai-msg{padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:13px;line-height:1.45;white-space:pre-wrap;}
+.ai-msg.user{background:#eaf2fb;color:var(--ink);margin-left:20px;}
+.ai-msg.bot{background:#f3efe2;color:var(--ink);margin-right:8px;}
+.ai-msg.bot .ai-src{display:block;font-size:10.5px;color:var(--ink-soft);margin-top:5px;}
+.ai-ask-row{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);flex-shrink:0;}
+.ai-ask-row input{flex:1;padding:8px;border:1px solid #c7c0ac;border-radius:6px;font-size:13px;}
+.ai-ask-row button{padding:8px 12px;border-radius:6px;border:none;background:var(--navy);color:#fff;font-size:13px;cursor:pointer;}
+@media print{ .ai-fab,.ai-panel{display:none !important;} }
 </style>
 </head>
 <body>
@@ -165,6 +194,20 @@ tr.mismatch-row td{background:#fdeceb;}
   <main id="mainArea"></main>
 </div>
 
+<button id="aiFab" class="ai-fab no-print" onclick="toggleAiPanel()" title="AI Assistant">✦</button>
+<div id="aiPanel" class="ai-panel no-print hidden">
+  <div class="ai-panel-header"><b id="aiPanelTitle">AI Assistant</b><button onclick="toggleAiPanel()">✕</button></div>
+  <div class="ai-tabs">
+    <button id="aiTabHelpBtn" onclick="aiSwitchTab('help')">Quick Help</button>
+    <button id="aiTabAskBtn" onclick="aiSwitchTab('ask')">Ask</button>
+  </div>
+  <div id="aiPanelBody" class="ai-panel-body"></div>
+  <div id="aiAskRow" class="ai-ask-row hidden">
+    <input type="text" id="aiAskInput" placeholder="Type a question…" onkeydown="if(event.key==='Enter')aiAsk();">
+    <button onclick="aiAsk()">➤</button>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    MSME OFFLINE PROJECT REPORT GENERATOR
@@ -175,6 +218,7 @@ tr.mismatch-row td{background:#fdeceb;}
 const APP_VERSION = "1.5";
 const STORAGE_KEY = "msme_prg_projects_v1";
 const SETTINGS_KEY = "msme_prg_settings_v1";
+const AI_SETTINGS_KEY = "msme_prg_ai_settings_v1";
 let LANG = 'en';
 let currentScreenRenderer = null;
 const BYLINE = {
@@ -188,6 +232,15 @@ function toggleLang(){
   document.getElementById('topbarTitle').textContent = tt('appTitle');
   document.getElementById('helpBtn').textContent = tt('helpBtn');
   if(currentScreenRenderer) currentScreenRenderer();
+  if(typeof aiSwitchTab==='function'){
+    const fab = document.getElementById('aiFab');
+    if(fab) fab.title = LANG==='hi' ? 'एआई सहायक' : 'AI Assistant';
+    const panel = document.getElementById('aiPanel');
+    if(panel && !panel.classList.contains('hidden')){
+      document.getElementById('aiPanelTitle').textContent = LANG==='hi'?'एआई सहायक':'AI Assistant';
+      aiSwitchTab(aiActiveTab);
+    }
+  }
 }
 /* ---------------- i18n dictionary: key -> [en, hi] ---------------- */
 const I18N = {
@@ -493,6 +546,24 @@ function saveSettingsObj(s){
     alert(LANG==='hi'
       ? "सेटिंग्स सहेजी नहीं जा सकीं — हो सकता है ब्राउज़र निजी/गुप्त मोड में हो या भंडारण भर गया हो। सेटिंग्स केवल इसी सत्र के लिए लागू रहेंगी।"
       : "Could not save settings — the browser may be in private/incognito mode or storage is full. Settings will apply for this session only.");
+    return false;
+  }
+}
+/* AI Assistant settings — kept separate from the report-generation Settings above since this is
+   an optional, unrelated concern (whether/how to call an external AI API), never required for
+   the app's core offline function. The API key never leaves this device except in a direct
+   request to whichever provider the person themselves configured. */
+function defaultAiSettings(){ return { enabled:false, provider:"anthropic", apiKey:"", model:"claude-sonnet-4-5", endpoint:"" }; }
+function getAiSettings(){
+  try{ const s = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY)); return s?Object.assign(defaultAiSettings(),s):defaultAiSettings(); }
+  catch(e){ return defaultAiSettings(); }
+}
+function saveAiSettingsObj(s){
+  try{ localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(s)); return true; }
+  catch(e){
+    alert(LANG==='hi'
+      ? "एआई सेटिंग्स सहेजी नहीं जा सकीं — हो सकता है ब्राउज़र निजी/गुप्त मोड में हो या भंडारण भर गया हो।"
+      : "Could not save AI settings — the browser may be in private/incognito mode or storage is full.");
     return false;
   }
 }
@@ -1223,8 +1294,49 @@ function openSettingsScreen(){
   <div class="btnrow">
     <button class="btn gold" onclick="saveSettingsScreen()">${tt('save')} Defaults</button>
     <button class="btn secondary" onclick="goDashboard()">${tt('cancel')}</button>
-  </div></div>`;
+  </div>
+  ${aiSettingsSection()}
+  </div>`;
   document.getElementById('mainArea').innerHTML = html;
+}
+function aiSettingsSection(){
+  const ai = getAiSettings();
+  const hi = LANG==='hi';
+  return `<h3 style="margin-top:26px;">${hi?'एआई सहायक (वैकल्पिक)':'AI Assistant (Optional)'}</h3>
+  <p class="muted small">${hi?'यह ऐप बिना किसी एआई के, पूरी तरह ऑफ़लाइन काम करता है — यह अनुभाग पूर्णतः वैकल्पिक है। इसे सक्षम करने पर, आपके द्वारा टाइप किए गए प्रश्न व वर्तमान परियोजना के कुछ सारांश आंकड़े आपके द्वारा चुने गए एआई प्रदाता को भेजे जाते हैं — आपकी एपीआई कुंजी केवल इसी डिवाइस पर संग्रहीत रहती है व केवल उसी प्रदाता को भेजी जाती है, कहीं और नहीं।':'The app works fully offline without any AI — this section is entirely optional. If enabled, questions you type and a brief summary of the currently open project are sent to the AI provider you choose. Your API key is stored only on this device and is sent only to that provider, nowhere else.'}</p>
+  <div class="grid default-zone">
+    <div><label>${hi?'एआई सहायक सक्षम करें':'Enable AI Assistant'}</label>
+      <select id="ai_enabled"><option value="0" ${!ai.enabled?'selected':''}>${hi?'नहीं (केवल ऑफ़लाइन)':'No (offline only)'}</option><option value="1" ${ai.enabled?'selected':''}>${hi?'हाँ':'Yes'}</option></select></div>
+    <div><label>${hi?'प्रदाता':'Provider'}</label>
+      <select id="ai_provider" onchange="aiProviderChanged()">
+        <option value="anthropic" ${ai.provider==='anthropic'?'selected':''}>Anthropic Claude API</option>
+        <option value="custom" ${ai.provider==='custom'?'selected':''}>${hi?'कस्टम (OpenAI-संगत endpoint)':'Custom (OpenAI-compatible endpoint)'}</option>
+      </select></div>
+  </div>
+  <div class="grid default-zone">
+    <div><label>${hi?'एपीआई कुंजी':'API Key'}</label><input type="password" id="ai_apiKey" value="${escapeHtml(ai.apiKey)}" placeholder="sk-…" autocomplete="off"></div>
+    <div><label>${hi?'मॉडल':'Model'}</label><input type="text" id="ai_model" value="${escapeHtml(ai.model)}"></div>
+  </div>
+  <div id="ai_endpointRow" class="grid default-zone ${ai.provider==='custom'?'':'hidden'}">
+    <div><label>${hi?'कस्टम एंडपॉइंट URL':'Custom Endpoint URL'}</label><input type="text" id="ai_endpoint" value="${escapeHtml(ai.endpoint)}" placeholder="https://your-proxy.example.com/v1/chat/completions"></div>
+  </div>
+  <div class="btnrow">
+    <button class="btn gold" onclick="saveAiSettingsScreen()">${hi?'एआई सेटिंग्स सहेजें':'Save AI Settings'}</button>
+    <button class="btn secondary" onclick="aiTestConnection('settings')">${hi?'कनेक्शन जाँचें':'Test Connection'}</button>
+  </div>
+  <p id="ai_testStatus" class="small muted"></p>
+  <div class="note-box">${hi?'यह वैकल्पिक विशेषता किसी भी प्रकार से ऋण मूल्यांकन, पात्रता अथवा अंतिम निर्णय नहीं देती — यह केवल ऐप के भीतर सामान्य जानकारी व मार्गदर्शन हेतु है।':'This optional feature never provides a credit appraisal, eligibility view or final decision of any kind — it only offers general information and guidance within the app.'}</div>`;
+}
+function aiProviderChanged(){
+  const isCustom = val('ai_provider')==='custom';
+  document.getElementById('ai_endpointRow').classList.toggle('hidden', !isCustom);
+  if(isCustom && !val('ai_model')) document.getElementById('ai_model').value = 'gpt-4o-mini';
+}
+function saveAiSettingsScreen(){
+  const s = { enabled: val('ai_enabled')==='1', provider: val('ai_provider'), apiKey: val('ai_apiKey'), model: val('ai_model'), endpoint: val('ai_endpoint') };
+  saveAiSettingsObj(s);
+  const el = document.getElementById('ai_testStatus');
+  if(el) el.textContent = LANG==='hi' ? 'एआई सेटिंग्स सहेजी गईं।' : 'AI settings saved.';
 }
 function saveSettingsScreen(){
   const s = {
@@ -2411,6 +2523,276 @@ function rConclusion(c){
   An Indicative Equivalent EMI for the term loan, shown for illustration only, is approximately ${inr(c.emi)} per month (this is not the actual scheduled instalment); Working Capital Finance is a revolving fund-based limit and is not repaid through this schedule.</p>
   <div class="note-box"><b>Disclaimer:</b> ${disclaimerEn}</div>
   <div class="footer-byline">${byline()}<br>MSME Project Report Generator v${APP_VERSION} — Generated Offline on ${new Date().toLocaleString('en-IN')}</div>`;
+}
+
+/* ============================================================
+   AI ASSISTANT (floating help) — entirely optional.
+   Two tiers, always available without any setup:
+   1. "Quick Help": a context-aware tip for whichever screen/step/tab is open right now.
+   2. "Ask": free-text question box. Answered from a built-in bilingual offline knowledge
+      base by default (AI_KB below) — works with no internet and no API key at all.
+      If the person has enabled the AI Assistant in Settings and supplied their own API key,
+      the same question is instead sent to their chosen provider (Anthropic Claude API, or a
+      custom OpenAI-compatible endpoint) along with a small, clearly-labelled summary of the
+      currently open project, for a fuller answer. Every online answer is labelled with which
+      provider produced it; every offline answer is labelled "from the built-in guide" — the
+      person always knows which one they got. This assistant never gives a credit appraisal,
+      eligibility view or lending decision — only general information and navigation help.
+   ============================================================ */
+let aiActiveTab = 'help';
+let aiChatHistory = [];
+let aiBusy = false;
+
+const AI_KB = [
+  { kw:["dscr","debt service coverage"],
+    en:"DSCR (Debt Service Coverage Ratio) = (Profit After Tax + Depreciation + Interest on Term Loan) ÷ (Term Loan Interest + Principal Repayment) for that year. It shows how comfortably projected cash accrual covers the annual loan instalment. A commonly used indicative norm is Average DSCR ≥ 1.5 and no single year below 1.2. See the Financial Ratios tab for your project's actual DSCR, year by year, and for suggestions if it's flagged.",
+    hi:"डीएससीआर (ऋण चुकौती क्षमता अनुपात) = (कर पश्चात लाभ + मूल्यह्रास + मीयादी ऋण ब्याज) ÷ (उस वर्ष का ब्याज + मूलधन चुकौती)। यह दर्शाता है कि अनुमानित नकदी संचयन वार्षिक किस्त को कितनी सहजता से पूरा करता है। सामान्यतः प्रयुक्त संकेतक: औसत डीएससीआर ≥ 1.5 तथा कोई भी वर्ष 1.2 से कम न हो। अपनी परियोजना का वास्तविक डीएससीआर व सुझाव हेतु 'वित्तीय अनुपात' खंड देखें।" },
+  { kw:["current ratio"],
+    en:"Current Ratio = Current Assets ÷ Current Liabilities. It shows short-term solvency. A commonly used indicative norm is ≥ 1.33. If yours is flagged low, the Financial Ratios tab suggests increasing the promoter's margin money in working capital or tightening stock/receivable days.",
+    hi:"धारा अनुपात = चालू संपत्ति ÷ चालू देनदारियाँ। यह अल्पकालिक शोधन क्षमता दर्शाता है। सामान्य संकेतक: ≥ 1.33। यदि कम है, तो 'वित्तीय अनुपात' खंड कार्यशील पूंजी में प्रवर्तक मार्जिन बढ़ाने अथवा स्टॉक/प्राप्य अवधि घटाने का सुझाव देता है।" },
+  { kw:["debt equity","debt-equity","d/e ratio"],
+    en:"Debt-Equity Ratio = Total Debt ÷ Net Worth (Tangible Net Worth). It shows how leveraged the business is relative to the promoter's own stake. A commonly used indicative norm is ≤ 3:1. Increasing the promoter's own contribution, or reducing the Term Loan requested, directly improves it.",
+    hi:"ऋण इक्विटी अनुपात = कुल ऋण ÷ निवल मूल्य (टीएनडब्ल्यू)। यह दर्शाता है कि प्रवर्तक के स्वयं के हिस्से की तुलना में व्यवसाय कितना उधार-आधारित है। सामान्य संकेतक: ≤ 3:1। प्रवर्तक का स्वयं का अंशदान बढ़ाना, अथवा मीयादी ऋण घटाना, इसे सीधे बेहतर करता है।" },
+  { kw:["tol/tnw","tol tnw","total outside liabilities"],
+    en:"TOL/TNW = Total Outside Liabilities ÷ Tangible Net Worth. It's a broader leverage check than Debt-Equity, including trade creditors and other current liabilities. A commonly used indicative norm is ≤ 4:1. Raising net worth or trimming total borrowings/creditor dependence improves it.",
+    hi:"टीओएल/टीएनडब्ल्यू = कुल बाह्य देनदारियाँ ÷ मूर्त निवल मूल्य। यह ऋण-इक्विटी से व्यापक उत्तोलन जाँच है, जिसमें व्यापारिक लेनदार व अन्य चालू देनदारियाँ भी शामिल हैं। सामान्य संकेतक: ≤ 4:1। निवल मूल्य बढ़ाना अथवा कुल उधार/लेनदार निर्भरता घटाना इसे बेहतर करता है।" },
+  { kw:["interest coverage","icr"],
+    en:"Interest Coverage Ratio = EBITDA ÷ Interest. It shows how many times over the business's operating profit covers its interest bill. A commonly used indicative norm is ≥ 1.5. A lower loan quantum, longer tenure/moratorium, or more realistic (higher) EBITDA assumptions all improve it.",
+    hi:"ब्याज कवरेज अनुपात = ईबीआईटीडीए ÷ ब्याज। यह दर्शाता है कि परिचालन लाभ ब्याज भार को कितने गुना कवर करता है। सामान्य संकेतक: ≥ 1.5। कम ऋण राशि, लंबी अवधि/स्थगन, अथवा अधिक यथार्थवादी (उच्च) ईबीआईटीडीए मान्यताएँ — सभी इसे बेहतर करती हैं।" },
+  { kw:["mpbf","turnover method","nayak"],
+    en:"The Turnover Method (Nayak Committee, used for MSME working capital up to the RBI-specified limit) sets indicative Working Capital Requirement as a % of projected annual turnover, split between the borrower's own margin and bank finance. See 'Working Capital – Turnover Method' in the report; the % figures are editable in Settings.",
+    hi:"टर्नओवर पद्धति (नायक समिति, आरबीआई-निर्धारित सीमा तक एमएसएमई कार्यशील पूंजी हेतु प्रयुक्त) अनुमानित वार्षिक टर्नओवर के % के रूप में सांकेतिक कार्यशील पूंजी आवश्यकता निर्धारित करती है, जो उधारकर्ता के स्वयं के मार्जिन व बैंक वित्त में विभाजित होती है। रिपोर्ट में 'कार्यशील पूंजी – टर्नओवर पद्धति' देखें; % आंकड़े सेटिंग्स में बदले जा सकते हैं।" },
+  { kw:["operating cycle"],
+    en:"The Operating Cycle Method estimates working capital from Stock Days + Debtor Days − Creditor Days, applied to your actual cost/sales figures — an independent cross-check against the Turnover Method. The report shows both side by side; a large gap between them is flagged as informational, not an error.",
+    hi:"परिचालन चक्र पद्धति कार्यशील पूंजी का अनुमान स्टॉक अवधि + देनदार अवधि − लेनदार अवधि से लगाती है, जो आपके वास्तविक लागत/बिक्री आंकड़ों पर लागू होती है — यह टर्नओवर पद्धति की स्वतंत्र क्रॉस-चेक है। रिपोर्ट में दोनों साथ दिखाए जाते हैं; बड़ा अंतर केवल सूचनात्मक रूप से चिह्नित होता है, त्रुटि नहीं।" },
+  { kw:["tandon"],
+    en:"The Tandon Committee (1975) laid the foundation for bank assessment of working capital limits in India using the current-asset/current-liability holding-period approach that this app's Operating Cycle Method reflects. The Nayak Committee (1992) later added the simpler Turnover Method for smaller borrowers.",
+    hi:"टंडन समिति (1975) ने भारत में चालू संपत्ति/चालू देनदारी धारण-अवधि दृष्टिकोण से कार्यशील पूंजी सीमा के बैंक मूल्यांकन की नींव रखी, जिसे इस ऐप की परिचालन चक्र पद्धति दर्शाती है। बाद में नायक समिति (1992) ने छोटे उधारकर्ताओं हेतु सरल टर्नओवर पद्धति जोड़ी।" },
+  { kw:["moratorium"],
+    en:"Moratorium is the initial period during which principal repayment doesn't start (interest may still accrue/be paid). A longer moratorium reduces near-term cash strain but doesn't reduce total interest much. Set it in the Loan Terms step; the DSCR and repayment schedule update automatically.",
+    hi:"स्थगन (मोरेटोरियम) वह प्रारंभिक अवधि है जिसमें मूलधन चुकौती शुरू नहीं होती (ब्याज तब भी संचित/भुगतान हो सकता है)। लंबा स्थगन निकट अवधि का नकदी दबाव घटाता है परंतु कुल ब्याज में विशेष कमी नहीं लाता। इसे 'ऋण शर्तें' चरण में सेट करें; डीएससीआर व चुकौती अनुसूची स्वतः अद्यतन होते हैं।" },
+  { kw:["emi","equivalent emi","actual instalment"],
+    en:"The Indicative Equivalent EMI shown throughout the report is for illustration only — a single smoothed monthly figure. The report's actual detailed Repayment Schedule uses equal-principal instalments at your chosen Monthly/Quarterly frequency, which is what will really be billed.",
+    hi:"रिपोर्ट में दिखाई गई सांकेतिक समतुल्य ईएमआई केवल उदाहरण हेतु है — एक सरलीकृत मासिक आंकड़ा। रिपोर्ट की वास्तविक विस्तृत चुकौती अनुसूची आपकी चयनित मासिक/त्रैमासिक आवृत्ति पर समान-मूलधन किस्तों पर आधारित है, जो वास्तव में लागू होगी।" },
+  { kw:["land","preliminary expense","depreciation"],
+    en:"Land and Preliminary Expenses are both treated as non-depreciable — they stay in Net Fixed Assets at cost but are excluded from the depreciable block, so no depreciation is charged on them. This is disclosed in the Methodology section of the report.",
+    hi:"भूमि व प्रारंभिक व्यय दोनों गैर-मूल्यह्रास योग्य माने जाते हैं — ये लागत मूल्य पर शुद्ध स्थिर संपत्ति में शामिल रहते हैं परंतु मूल्यह्रास योग्य खंड से बाहर रखे जाते हैं, अतः इन पर कोई मूल्यह्रास प्रभारित नहीं होता। यह रिपोर्ट के 'पद्धति' खंड में स्पष्ट किया गया है।" },
+  { kw:["existing business","actuals","last year"],
+    en:"Mark the borrower's status as 'Existing' in Borrower Details to unlock entry of last year's actual P&L and Balance Sheet. Once entered, the app can calibrate assumptions to real performance ('Use Actual Ratios as Assumptions') and flags if projected sales growth looks unreasonably high versus the actual.",
+    hi:"'उधारकर्ता विवरण' में स्थिति 'Existing' चुनने पर पिछले वर्ष का वास्तविक लाभ-हानि व तुलन पत्र दर्ज करने का विकल्प खुलता है। दर्ज करने पर ऐप मान्यताओं को वास्तविक प्रदर्शन के अनुरूप समायोजित कर सकता है ('वास्तविक अनुपातों को मान्यता रूप में उपयोग करें') तथा यदि अनुमानित बिक्री वृद्धि वास्तविक की तुलना में अत्यधिक लगे तो चिह्नित करता है।" },
+  { kw:["working capital margin","margin money"],
+    en:"Working Capital Margin (NWC) is the portion of the Turnover Method's Working Capital Requirement that the borrower/promoter must fund from own sources — it forms part of Project Cost / Means of Finance. The remaining portion is the Bank's Working Capital Finance, a separate revolving limit.",
+    hi:"कार्यशील पूंजी मार्जिन (एनडब्ल्यूसी) टर्नओवर पद्धति की कार्यशील पूंजी आवश्यकता का वह भाग है जो उधारकर्ता/प्रवर्तक को स्वयं के स्रोतों से देना होता है — यह परियोजना लागत/वित्त के साधन का हिस्सा बनता है। शेष भाग बैंक की कार्यशील पूंजी वित्त है, जो एक अलग परिक्रामी सीमा है।" },
+  { kw:["break-even","breakeven"],
+    en:"Break-even Sales = Fixed Cost ÷ P/V Ratio, where P/V Ratio = Contribution ÷ Sales. The Break-even Analysis tab shows this for each projected year, plus break-even as a % of projected sales — lower is safer.",
+    hi:"सम-विच्छेद बिक्री = स्थिर लागत ÷ पी/वी अनुपात, जहाँ पी/वी अनुपात = अंशदान ÷ बिक्री। 'सम-विच्छेद विश्लेषण' खंड प्रत्येक अनुमानित वर्ष हेतु यह दर्शाता है, साथ ही अनुमानित बिक्री के % के रूप में सम-विच्छेद भी — कम प्रतिशत अधिक सुरक्षित है।" },
+  { kw:["term loan","split"],
+    en:"Term Loan funds fixed assets (machinery, building, vehicle); Working Capital Finance funds day-to-day stock and receivables. If you don't know the split, leave both fields blank — the app derives an indicative split using the Turnover Method and your Total Loan Requested.",
+    hi:"मीयादी ऋण स्थिर संपत्तियों (मशीनरी, भवन, वाहन) हेतु है; कार्यशील पूंजी वित्त रोज़मर्रा के स्टॉक व प्राप्तियों हेतु। विभाजन ज्ञात न हो तो दोनों फ़ील्ड खाली छोड़ें — ऐप टर्नओवर पद्धति व कुल आवेदित ऋण के आधार पर सांकेतिक विभाजन निकाल देगा।" },
+  { kw:["sample project","demo project","load sample"],
+    en:"Dashboard → 'Load Sample Projects' adds 24 ready-made demo projects (labelled DEMO DATA), one per business type plus SHG/JLG, Partnership and Private Limited examples. Use 'Remove Demo Projects' to clear them again without touching your own saved work.",
+    hi:"डैशबोर्ड → 'नमूना परियोजनाएँ लोड करें' 24 तैयार नमूना परियोजनाएँ (DEMO DATA चिह्नित) जोड़ता है — हर व्यवसाय प्रकार हेतु एक, साथ ही SHG/JLG, Partnership व Private Limited उदाहरण भी। अपनी सहेजी गई परियोजनाओं को बिना छुए इन्हें हटाने हेतु 'नमूना परियोजनाएँ हटाएँ' उपयोग करें।" },
+  { kw:["growth mode","direct sales","sales projection"],
+    en:"Sales Projection offers two modes: 'Direct' (type Year 1/2/3 sales yourself) or 'Growth %' (type this year's sales once plus a growth rate; Years 2 and 3 are compounded automatically). Switch modes with the pill buttons at the top of that step.",
+    hi:"बिक्री अनुमान में दो विकल्प हैं: 'प्रत्यक्ष' (वर्ष 1/2/3 की बिक्री स्वयं टाइप करें) अथवा 'वृद्धि %' (केवल इस वर्ष की बिक्री व वृद्धि दर टाइप करें; वर्ष 2 व 3 स्वतः संयोजित होते हैं)। उस चरण के शीर्ष पर पिल बटनों से मोड बदलें।" },
+  { kw:["not listed","custom activity"],
+    en:"If your business activity isn't in the built-in list, tick 'My activity is not listed', type the actual name, and pick the closest-fitting financial model from the dropdown — the model drives all the expense/margin assumptions, so choose the nearest real match.",
+    hi:"यदि आपकी व्यवसाय गतिविधि सूची में नहीं है, तो 'मेरी गतिविधि सूची में नहीं है' चुनें, वास्तविक नाम टाइप करें, तथा ड्रॉपडाउन से निकटतम उपयुक्त वित्तीय मॉडल चुनें — यह मॉडल सभी व्यय/मार्जिन मान्यताओं को निर्धारित करता है, इसलिए निकटतम वास्तविक मिलान चुनें।" },
+  { kw:["constitution","shg/jlg","partnership","proprietorship","private limited"],
+    en:"Constitution options are Proprietorship, Partnership, SHG/JLG, Private Limited, LLP and Other — pick whichever legal form the borrowing entity actually has; it's a descriptive field and doesn't change the financial calculations.",
+    hi:"संविधान विकल्पों में प्रोप्राइटरशिप, पार्टनरशिप, SHG/JLG, प्राइवेट लिमिटेड, एलएलपी व अन्य शामिल हैं — उधारकर्ता संस्था का वास्तविक कानूनी स्वरूप चुनें; यह केवल विवरणात्मक फ़ील्ड है, वित्तीय गणनाओं को प्रभावित नहीं करती।" },
+  { kw:["export","share","print","pdf"],
+    en:"Use 'View Full Report' to see every section together, then Print/Save-as-PDF from your browser. Individual projects can also be exported/shared as a JSON file (Dashboard → Export/Share) to move between devices or back up.",
+    hi:"'पूर्ण रिपोर्ट देखें' से सभी खंड एक साथ देखें, फिर ब्राउज़र से Print/Save-as-PDF करें। व्यक्तिगत परियोजनाओं को JSON फ़ाइल के रूप में निर्यात/साझा भी किया जा सकता है (डैशबोर्ड → Export/Share) — डिवाइस बदलने अथवा बैकअप हेतु।" },
+  { kw:["benchmark","norm","commonly used"],
+    en:"The Financial Ratios tab compares Current Ratio, Debt-Equity, TOL/TNW, Interest Coverage Ratio and DSCR against commonly used indicative bank norms (not statutory RBI limits), flags declining trends even within norm, and lists concrete suggestions for anything flagged.",
+    hi:"'वित्तीय अनुपात' खंड धारा अनुपात, ऋण इक्विटी, टीओएल/टीएनडब्ल्यू, ब्याज कवरेज अनुपात व डीएससीआर की तुलना सामान्यतः प्रयुक्त संकेतक बैंक मानकों से करता है (सांविधिक आरबीआई सीमा नहीं), मानक के भीतर रहते हुए भी गिरावट की प्रवृत्ति चिह्नित करता है, तथा चिह्नित मदों हेतु ठोस सुझाव देता है।" }
+];
+function aiMatchOffline(query){
+  const q = (query||'').toLowerCase();
+  let best=null, bestScore=0;
+  AI_KB.forEach(entry=>{
+    let score=0;
+    entry.kw.forEach(k=>{ if(q.includes(k)) score += k.length; });
+    if(score>bestScore){ bestScore=score; best=entry; }
+  });
+  if(!best) return null;
+  return LANG==='hi' ? best.hi : best.en;
+}
+function aiContextTip(){
+  const tips = {
+    dashboard: ["Use \"Load Sample Projects\" to explore 24 ready-made examples across every activity type, or start your own with \"+ New Project\".",
+      "24 तैयार नमूना उदाहरण देखने हेतु \"नमूना परियोजनाएँ लोड करें\" का उपयोग करें, अथवा \"+ नई परियोजना\" से अपनी शुरू करें।"],
+    wizard1: ["Existing businesses should mark status \"Existing\" here to unlock last year's actual P&L/Balance Sheet entry.",
+      "यदि व्यवसाय पहले से चल रहा है, तो स्थिति \"Existing\" चुनें — इससे पिछले वर्ष के वास्तविक लाभ-हानि/तुलन पत्र दर्ज करने का विकल्प खुलेगा।"],
+    wizard2: ["Pick the closest business activity from the list; if yours isn't there, tick \"not listed\" and choose the nearest financial model.",
+      "सूची में सबसे मिलती-जुलती गतिविधि चुनें; न मिले तो \"सूची में नहीं है\" चुनकर निकटतम वित्तीय मॉडल चुनें।"],
+    wizard3: ["Term Loan funds fixed assets, Working Capital funds day-to-day stock/expenses. Leave both blank if unsure — the app estimates the split.",
+      "मीयादी ऋण स्थिर संपत्तियों हेतु, कार्यशील पूंजी रोज़मर्रा के खर्च हेतु है। अनिश्चित हों तो दोनों खाली छोड़ें — ऐप विभाजन अनुमानित कर देगा।"],
+    wizard4: ["Enter a realistic 3-year sales estimate — every other figure in the report is derived from this.",
+      "यथार्थवादी 3-वर्षीय बिक्री अनुमान दर्ज करें — रिपोर्ट के शेष सभी आंकड़े इसी से निकाले जाते हैं।"],
+    wizard5: ["A longer moratorium reduces the EMI shown here but not the total interest much. Check the DSCR after this step.",
+      "लंबा स्थगन यहाँ दिखाई गई ईएमआई घटाता है, कुल ब्याज में विशेष अंतर नहीं आता। इस चरण के बाद डीएससीआर जाँचें।"],
+    assumptions: ["These are activity-based defaults — review and edit any that don't match this specific business before moving on.",
+      "ये गतिविधि-आधारित डिफ़ॉल्ट मान्यताएँ हैं — आगे बढ़ने से पहले जो इस विशिष्ट व्यवसाय से मेल न खाएँ, उन्हें बदलें।"],
+    application: ["The bank letter states the Term Loan + Working Capital break-up automatically; edit bank name/place/date above it.",
+      "बैंक पत्र स्वतः मीयादी ऋण + कार्यशील पूंजी विवरण दर्शाता है; ऊपर बैंक का नाम/स्थान/दिनांक बदलें।"],
+    ratios: ["This tab now benchmarks against commonly used bank norms and suggests fixes for anything flagged as below-norm or declining.",
+      "यह खंड अब सामान्यतः प्रयुक्त बैंक मानकों से तुलना करता है तथा मानक से कम अथवा घटती प्रवृत्ति वाली मदों हेतु सुधार सुझाता है।"],
+    wc: ["Two working-capital estimates are shown side by side — Turnover Method and Operating Cycle Method — neither is auto-selected.",
+      "यहाँ दो कार्यशील पूंजी अनुमान साथ दिखाए गए हैं — टर्नओवर पद्धति व परिचालन चक्र पद्धति — कोई भी स्वतः चयनित नहीं है।"]
+  };
+  let key = null;
+  if(currentScreenRenderer === renderDashboard) key='dashboard';
+  else if(currentScreenRenderer === renderWizard) key='wizard'+wizardStep;
+  else if(currentScreenRenderer === renderAssumptions) key='assumptions';
+  else if(currentScreenRenderer === drawReport) key = tips[reportTab] ? reportTab : null;
+  const t = key ? tips[key] : null;
+  return t ? t[LANG==='hi'?1:0] : null;
+}
+function buildAiContext(){
+  const lines = [];
+  if(typeof current!=='undefined' && current && current.borrower && current.borrower.business){
+    lines.push('Business: '+current.borrower.business+' | Activity: '+(current.activityName||'-')+' | Constitution: '+(current.borrower.constitution||'-'));
+    lines.push('Loan Requested: Total '+inr(current.loan.total)+', Term Loan '+inr(current.loan.termLoan)+', WC Finance '+inr(current.loan.wcLoan)+', Purpose: '+current.loan.purpose);
+    const c = window._reportCalc;
+    if(c && c.ratios){
+      lines.push('Projected Sales Y1-Y3: '+c.sales.map(s=>inr(s)).join(' / '));
+      lines.push('Average DSCR: '+(c.avgDscr!==null?c.avgDscr.toFixed(2):'N/A')+', Minimum year DSCR: '+(c.minDscr!==null?c.minDscr.toFixed(2):'N/A'));
+      const r3 = c.ratios[2];
+      lines.push('Year-3 ratios — Current Ratio: '+(r3.currentRatio!==null?r3.currentRatio.toFixed(2):'N/A')+', Debt-Equity: '+(r3.debtEquity!==null?r3.debtEquity.toFixed(2):'N/A')+', TOL/TNW: '+(r3.tolTnw!==null?r3.tolTnw.toFixed(2):'N/A')+', Interest Coverage: '+(r3.interestCoverage!==null?r3.interestCoverage.toFixed(2):'N/A'));
+      const bm = benchmarkAnalysis(c);
+      lines.push(bm.flags.length ? ('Flagged (below commonly used norm or declining trend): '+bm.flags.join(', ')) : 'No ratios currently flagged.');
+    }
+  }
+  return lines.length ? lines.join('\n') : '(No project is currently open.)';
+}
+function aiSystemPrompt(){
+  return "You are a helpful assistant embedded inside an offline MSME Project Report Generator app used by Indian bank branch staff and MSME loan applicants/preparers to draft bank project reports. "+
+    "Answer questions about the app's screens/fields, and about standard Indian bank credit-appraisal concepts (DSCR, MPBF, Tandon/Nayak Committee, Current Ratio, TOL/TNW, Working Capital, moratorium, EMI vs actual repayment schedule), and about the specific project summarised below. "+
+    "Keep answers under roughly 120 words unless the person clearly asks for more detail. Reply in "+(LANG==='hi'?"Hindi":"English")+". "+
+    "Always keep it clear that you are not providing a credit appraisal, eligibility view, sanction decision or legal/financial advice — that remains entirely the lending bank's responsibility; you only give general information and navigation help.\n\nCurrent project summary:\n"+buildAiContext();
+}
+async function callAnthropicApi(apiKey, model, userMessage){
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model: model||'claude-sonnet-4-5', max_tokens:700, system: aiSystemPrompt(), messages:[{role:'user', content:userMessage}] })
+  });
+  if(!resp.ok){ let t=''; try{ t=(await resp.json()).error?.message||''; }catch(e){} throw new Error('HTTP '+resp.status+(t?': '+t:'')); }
+  const data = await resp.json();
+  const block = (data.content||[]).find(b=>b.type==='text');
+  return block ? block.text : '(empty response)';
+}
+async function callCustomApi(endpoint, apiKey, model, userMessage){
+  if(!endpoint) throw new Error(LANG==='hi'?'कस्टम एंडपॉइंट URL दर्ज नहीं है':'No custom endpoint URL configured');
+  const resp = await fetch(endpoint, {
+    method:'POST',
+    headers: Object.assign({'Content-Type':'application/json'}, apiKey?{'Authorization':'Bearer '+apiKey}:{}),
+    body: JSON.stringify({ model: model||'gpt-4o-mini', messages:[{role:'system',content:aiSystemPrompt()},{role:'user',content:userMessage}] })
+  });
+  if(!resp.ok){ throw new Error('HTTP '+resp.status); }
+  const data = await resp.json();
+  if(data.choices && data.choices[0] && data.choices[0].message) return data.choices[0].message.content;
+  if(data.content){ return typeof data.content==='string' ? data.content : ((data.content[0]&&data.content[0].text)||JSON.stringify(data).slice(0,400)); }
+  return JSON.stringify(data).slice(0,400);
+}
+async function aiCallProvider(query){
+  const ai = getAiSettings();
+  if(ai.provider==='custom') return await callCustomApi(ai.endpoint, ai.apiKey, ai.model, query);
+  return await callAnthropicApi(ai.apiKey, ai.model, query);
+}
+async function aiTestConnection(origin){
+  const ai = { enabled: val('ai_enabled')==='1', provider: val('ai_provider'), apiKey: val('ai_apiKey'), model: val('ai_model'), endpoint: document.getElementById('ai_endpoint')?val('ai_endpoint'):'' };
+  const statusEl = document.getElementById(origin==='settings' ? 'ai_testStatus' : 'aiPanelBody');
+  const label = LANG==='hi' ? 'जाँच रहे हैं…' : 'Testing…';
+  if(origin==='settings' && statusEl) statusEl.textContent = label;
+  try{
+    if(!ai.apiKey && ai.provider!=='custom') throw new Error(LANG==='hi'?'कृपया पहले एपीआई कुंजी दर्ज करें':'Please enter an API key first');
+    const test = ai.provider==='custom' ? await callCustomApi(ai.endpoint, ai.apiKey, ai.model, 'Say "OK" and nothing else.')
+                                          : await callAnthropicApi(ai.apiKey, ai.model, 'Say "OK" and nothing else.');
+    const msg = (LANG==='hi'?'✓ कनेक्शन सफल। उत्तर: ':'✓ Connection succeeded. Reply: ')+String(test).slice(0,80);
+    if(origin==='settings' && statusEl) statusEl.textContent = msg; else alert(msg);
+  }catch(e){
+    const msg = (LANG==='hi'?'✗ कनेक्शन विफल: ':'✗ Connection failed: ')+e.message;
+    if(origin==='settings' && statusEl) statusEl.textContent = msg; else alert(msg);
+  }
+}
+function toggleAiPanel(){
+  const p = document.getElementById('aiPanel');
+  const willOpen = p.classList.contains('hidden');
+  p.classList.toggle('hidden');
+  if(willOpen){
+    document.getElementById('aiPanelTitle').textContent = LANG==='hi'?'एआई सहायक':'AI Assistant';
+    aiSwitchTab(aiActiveTab);
+  }
+}
+function aiSwitchTab(tab){
+  aiActiveTab = tab;
+  document.getElementById('aiTabHelpBtn').classList.toggle('active', tab==='help');
+  document.getElementById('aiTabAskBtn').classList.toggle('active', tab==='ask');
+  document.getElementById('aiTabHelpBtn').textContent = LANG==='hi'?'त्वरित सहायता':'Quick Help';
+  document.getElementById('aiTabAskBtn').textContent = LANG==='hi'?'पूछें':'Ask';
+  document.getElementById('aiAskRow').classList.toggle('hidden', tab!=='ask');
+  if(tab==='ask') document.getElementById('aiAskInput').placeholder = LANG==='hi'?'प्रश्न टाइप करें…':'Type a question…';
+  renderAiPanel();
+}
+function renderAiPanel(){
+  const body = document.getElementById('aiPanelBody');
+  const hi = LANG==='hi';
+  if(aiActiveTab==='help'){
+    const tip = aiContextTip();
+    const tipHtml = tip ? `<div class="ai-context-tip">${escapeHtml(tip)}</div>` : '';
+    const list = AI_KB.map(e=>`<li onclick="aiAskDirect('${escapeHtml(e.kw[0]).replace(/'/g,"\\'")}')">${escapeHtml((hi?e.hi:e.en).split(/[—.]/)[0].slice(0,70))}${(hi?e.hi:e.en).length>70?'…':''}</li>`).join('');
+    body.innerHTML = `${tipHtml}<p class="muted small">${hi?'नीचे किसी भी विषय पर टैप करें, अथवा "पूछें" टैब में अपना प्रश्न टाइप करें:':'Tap any topic below, or type your own question in the "Ask" tab:'}</p><ul class="ai-quicklist">${list}</ul>`;
+  } else {
+    if(!aiChatHistory.length){
+      body.innerHTML = `<p class="muted small">${hi?'नीचे अपना प्रश्न टाइप करें। एआई सक्षम न होने पर, उत्तर ऐप की अंतर्निर्मित मार्गदर्शिका से दिया जाएगा।':'Type your question below. If the AI Assistant isn\'t enabled, the answer comes from the app\'s built-in offline guide.'}</p>`;
+    } else {
+      body.innerHTML = aiChatHistory.map(m=>{
+        if(m.role==='user') return `<div class="ai-msg user">${escapeHtml(m.text)}</div>`;
+        return `<div class="ai-msg bot">${escapeHtml(m.text)}<span class="ai-src">${escapeHtml(m.source)}</span></div>`;
+      }).join('');
+    }
+    body.scrollTop = body.scrollHeight;
+  }
+}
+function aiAskDirect(kwFirst){
+  aiSwitchTab('ask');
+  document.getElementById('aiAskInput').value = kwFirst;
+  aiAsk();
+}
+function aiAsk(){
+  if(aiBusy) return;
+  const input = document.getElementById('aiAskInput');
+  const query = (input.value||'').trim();
+  if(!query) return;
+  input.value = '';
+  aiChatHistory.push({role:'user', text:query});
+  renderAiPanel();
+  const ai = getAiSettings();
+  const hi = LANG==='hi';
+  if(ai.enabled && ai.apiKey){
+    aiBusy = true;
+    aiChatHistory.push({role:'bot', text:(hi?'सोच रहे हैं…':'Thinking…'), source:''});
+    renderAiPanel();
+    aiCallProvider(query).then(answer=>{
+      aiChatHistory[aiChatHistory.length-1] = { role:'bot', text:answer, source:(hi?'एआई (':'AI (')+(ai.provider==='custom'?(hi?'कस्टम':'custom'):'Anthropic Claude')+')' };
+      aiBusy=false; renderAiPanel();
+    }).catch(err=>{
+      const offline = aiMatchOffline(query);
+      aiChatHistory[aiChatHistory.length-1] = offline
+        ? { role:'bot', text:offline, source:(hi?'एआई विफल, अंतर्निर्मित मार्गदर्शिका से — ':'AI call failed, from built-in guide — ')+err.message }
+        : { role:'bot', text:(hi?'एआई कॉल विफल ('+err.message+'), तथा कोई ऑफ़लाइन उत्तर नहीं मिला। कृपया सेटिंग्स में एपीआई कुंजी जाँचें।':'AI call failed ('+err.message+'), and no offline answer was found either. Please check the API key in Settings.'), source:'' };
+      aiBusy=false; renderAiPanel();
+    });
+  } else {
+    const offline = aiMatchOffline(query);
+    aiChatHistory.push(offline
+      ? { role:'bot', text:offline, source:(hi?'अंतर्निर्मित मार्गदर्शिका से':'From the built-in guide') }
+      : { role:'bot', text:(hi?'इस पर मेरे पास ऑफ़लाइन उत्तर नहीं है। कृपया दोबारा शब्दों में पूछें, Help स्क्रीन देखें, अथवा सेटिंग्स में अपनी एपीआई कुंजी के साथ एआई सहायक सक्षम करें।':'I don\'t have an offline answer for that. Try rephrasing, check the Help screen, or enable the AI Assistant in Settings with your own API key for open-ended answers.'), source:'' });
+    renderAiPanel();
+  }
 }
 
 /* ---------------- Boot ---------------- */
