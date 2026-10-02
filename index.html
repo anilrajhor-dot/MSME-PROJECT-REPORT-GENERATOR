@@ -1250,14 +1250,61 @@ function buildSampleProjects(){
             netFixedAssets:480000, inventory:170000, receivables:130000, cashBank:50000, otherCurrentAssets:15000,
             netWorth:302000, termLoanOS:280000, wcBorrowingOS:150000, tradeCreditors:95000, otherCurrentLiab:18000 },
           opening:{ netFixedAssets:455000, inventory:150000, receivables:120000, cashBank:45000, otherCurrentAssets:14000,
-            netWorth:242000, termLoanOS:320000, wcBorrowingOS:135000, tradeCreditors:70000, otherCurrentLiab:17000 } } }]
+            netWorth:242000, termLoanOS:320000, wcBorrowingOS:135000, tradeCreditors:70000, otherCurrentLiab:17000 } } }],
+    // ---- Additional state-wise samples (boutique, pickle & jam, Seabuckthorn, juice & squash, handloom, SHG units etc.) ----
+    ["Nayantara Designer Boutique","Manufacturing","Boutique (Stitching & Cloth Sale)","textileGarments",500000,300000,200000,"New Business",1000000,1250000,1500000,
+      { customActivity:true, address:"C-Scheme Market Road, Jaipur, Rajasthan" }],
+    ["Himalayan Pickle & Jam Udyog","Manufacturing","Pickle & Jam Manufacturing","bakeryFood",700000,400000,300000,"Expansion",1800000,2200000,2600000,
+      { customActivity:true, address:"Village Dhaulchhina, Almora, Uttarakhand", existing:"Existing", experience:"5 years", actuals:{ sales:1400000, costOfSales:770000, operatingExpenses:360000, depreciation:40000, interestPaid:45000, netProfit:170000, netFixedAssets:320000, inventory:110000, receivables:60000, cashBank:30000, otherCurrentAssets:10000, netWorth:260000, termLoanOS:130000, wcBorrowingOS:70000, tradeCreditors:60000, otherCurrentLiab:10000 } }],
+    ["Ladakh Seabuckthorn Products","Manufacturing","Seabuckthorn Juice, Jam & Herbal Tea Processing","foodProcessing",1200000,800000,400000,"New Business",2600000,3200000,3800000,
+      { customActivity:true, address:"Choglamsar, Leh, Ladakh (UT)" }],
+    ["Lahaul Seabuckthorn Mahila SHG","Manufacturing","Seabuckthorn Leaf Tea & Pulp Packing","foodProcessing",500000,300000,200000,"New Business",900000,1150000,1400000,
+      { customActivity:true, constitution:"SHG/JLG", address:"Village Jahlma, Keylong, Lahaul & Spiti, Himachal Pradesh" }],
+    ["Shimla Hills Juice & Squash Works","Manufacturing","Fruit Juice & Squash Manufacturing","foodProcessing",1000000,650000,350000,"New Business",2000000,2500000,3000000,
+      { customActivity:true, constitution:"Partnership", address:"Theog, Shimla, Himachal Pradesh" }],
+    ["FreshSip Juice Centre","Services","Juice Centre","foodServices",300000,150000,150000,"New Business",600000,760000,920000,
+      { address:"Kothrud, Pune, Maharashtra" }],
+    ["Malabar Banana Chips & Varatti Unit","Manufacturing","Banana Chips & Jaggery Varatti","bakeryFood",600000,350000,250000,"New Business",1500000,1850000,2200000,
+      { customActivity:true, address:"Perambra, Kozhikode, Kerala" }],
+    ["Sambalpuri Handloom Weavers Group","Manufacturing","Handloom","textileGarments",400000,250000,150000,"New Business",700000,900000,1100000,
+      { constitution:"SHG/JLG", address:"Barpali, Bargarh, Odisha" }],
+    ["Murshidabad Jute Craft Unit","Manufacturing","Jute Products","textileGarments",350000,220000,130000,"New Business",650000,820000,1000000,
+      { address:"Jangipur, Murshidabad, West Bengal" }],
+    ["Kamrup Bamboo Craft & Furniture","Manufacturing","Bamboo Craft & Furniture","furnitureWood",450000,300000,150000,"New Business",800000,1000000,1250000,
+      { customActivity:true, address:"Sonapur, Kamrup, Assam" }],
+    ["Mithila Makhana Processing Unit","Manufacturing","Makhana Processing & Packing","foodProcessing",800000,500000,300000,"New Business",1600000,2000000,2400000,
+      { customActivity:true, address:"Biraul, Darbhanga, Bihar" }],
+    ["Kannauj Agarbatti & Dhoop Udyog","Manufacturing","Agarbatti","bakeryFood",500000,300000,200000,"New Business",1100000,1400000,1700000,
+      { address:"Chhibramau, Kannauj, Uttar Pradesh" }],
+    ["Dindori Vanopaj Honey Processing SHG","Manufacturing","Honey Processing / Packing","foodProcessing",450000,250000,200000,"New Business",900000,1150000,1400000,
+      { constitution:"SHG/JLG", address:"Shahpura, Dindori, Madhya Pradesh" }],
+    ["Kutch Kala Handicraft Showroom","Trading","Handicrafts","garmentFootwearRetail",500000,150000,350000,"New Business",1100000,1400000,1700000,
+      { address:"Bhujodi, Bhuj, Gujarat" }],
+    ["Ludhiana Hosiery & Knitwear Works","Manufacturing","Knitting","textileGarments",900000,600000,300000,"Machinery/Equipment",2200000,2700000,3200000,
+      { constitution:"Partnership", address:"Focal Point, Ludhiana, Punjab" }],
+    ["Coorg Spice & Coffee Grinding Unit","Manufacturing","Spice Grinding","foodProcessing",700000,450000,250000,"New Business",1500000,1900000,2300000,
+      { address:"Virajpet, Kodagu, Karnataka" }],
+    ["Green Leaf Eco Plates & Cups","Manufacturing","Paper Plates / Cups","constructionProducts",600000,450000,150000,"New Business",1000000,1300000,1600000,
+      { address:"Medchal, Hyderabad, Telangana" }],
+    ["Saraikela Tasar Silk Weavers SHG","Manufacturing","Tasar Silk Weaving & Saree Sale","textileGarments",500000,300000,200000,"New Business",900000,1150000,1400000,
+      { customActivity:true, constitution:"SHG/JLG", address:"Kharsawan, Saraikela-Kharsawan, Jharkhand" }],
+    ["Kashmir Walnut & Dry Fruit Packers","Manufacturing","Walnut & Dry Fruit Processing & Packing","foodProcessing",900000,500000,400000,"New Business",2000000,2500000,3000000,
+      { customActivity:true, address:"Pampore, Pulwama, Jammu & Kashmir (UT)" }],
+    ["Lakadong Turmeric Processing SHG","Manufacturing","Turmeric Processing & Packing","foodProcessing",400000,250000,150000,"New Business",800000,1000000,1250000,
+      { customActivity:true, constitution:"SHG/JLG", address:"Jowai, West Jaintia Hills, Meghalaya" }],
+    ["Haryana Aloe Vera & Amla Juice Unit","Manufacturing","Aloe Vera & Amla Juice Manufacturing","foodProcessing",800000,500000,300000,"New Business",1600000,2000000,2400000,
+      { customActivity:true, address:"Narnaul, Mahendragarh, Haryana" }],
+    ["Goan Cashew Processing & Packing","Manufacturing","Cashew Processing & Packing","foodProcessing",1000000,650000,350000,"New Business",2200000,2700000,3200000,
+      { customActivity:true, address:"Valpoi, North Goa, Goa" }],
+    ["Madurai Idli-Dosa Batter & Ready Mix","Manufacturing","Idli-Dosa Batter & Ready Mix","foodProcessing",450000,250000,200000,"New Business",1000000,1250000,1500000,
+      { customActivity:true, address:"Anna Nagar, Madurai, Tamil Nadu" }]
   ];
   return defs.map(d=>{
     const p = blankProject();
     const extra = d[11] || {};
     p.isDemo = true;
     p.customActivity = !!extra.customActivity;
-    p.borrower = {name:"Demo Borrower", business:d[0], constitution:extra.constitution||"Proprietorship", address:"Sample Village, Sample District",
+    p.borrower = {name:"Demo Borrower", business:d[0], constitution:extra.constitution||"Proprietorship", address:extra.address||"Sample Village, Sample District",
       mobile:"9800000000", existing:extra.existing||"New", experience:extra.experience||"2 years", udyam:"", gstin:"", bank:""};
     p.activityCategory = d[1]; p.activityName = d[2]; p.activityModel = d[3];
     p.loan.total = d[4]; p.loan.termLoan = d[5]; p.loan.wcLoan = d[6]; p.loan.purpose = d[7];
@@ -5282,8 +5329,8 @@ const AI_KB = [
     en:"Term Loan funds fixed assets (machinery, building, vehicle); Working Capital Finance funds day-to-day stock and receivables. If you don't know the split, leave both fields blank — the app derives an indicative split using the Turnover Method and your Total Loan Requested.",
     hi:"मीयादी ऋण स्थिर संपत्तियों (मशीनरी, भवन, वाहन) हेतु है; कार्यशील पूंजी वित्त रोज़मर्रा के स्टॉक व प्राप्तियों हेतु। विभाजन ज्ञात न हो तो दोनों फ़ील्ड खाली छोड़ें — ऐप टर्नओवर पद्धति व कुल आवेदित ऋण के आधार पर सांकेतिक विभाजन निकाल देगा।" },
   { kw:["sample project","demo project","load sample"],
-    en:"Dashboard → 'Load Sample Projects' adds 24 ready-made demo projects (labelled DEMO DATA), one per business type plus SHG/JLG, Partnership and Private Limited examples. Use 'Remove Demo Projects' to clear them again without touching your own saved work.",
-    hi:"डैशबोर्ड → 'नमूना परियोजनाएँ लोड करें' 24 तैयार नमूना परियोजनाएँ (DEMO DATA चिह्नित) जोड़ता है — हर व्यवसाय प्रकार हेतु एक, साथ ही SHG/JLG, Partnership व Private Limited उदाहरण भी। अपनी सहेजी गई परियोजनाओं को बिना छुए इन्हें हटाने हेतु 'नमूना परियोजनाएँ हटाएँ' उपयोग करें।" },
+    en:"Dashboard → 'Load Sample Projects' adds 47 ready-made demo projects (labelled DEMO DATA), one per business type plus SHG/JLG, Partnership and Private Limited examples. Use 'Remove Demo Projects' to clear them again without touching your own saved work.",
+    hi:"डैशबोर्ड → 'नमूना परियोजनाएँ लोड करें' 47 तैयार नमूना परियोजनाएँ (DEMO DATA चिह्नित) जोड़ता है — हर व्यवसाय प्रकार हेतु एक, साथ ही SHG/JLG, Partnership व Private Limited उदाहरण भी। अपनी सहेजी गई परियोजनाओं को बिना छुए इन्हें हटाने हेतु 'नमूना परियोजनाएँ हटाएँ' उपयोग करें।" },
   { kw:["growth mode","direct sales","sales projection"],
     en:"Sales Projection offers two modes: 'Direct' (type Year 1/2/3 sales yourself) or 'Growth %' (type this year's sales once plus a growth rate; Years 2 and 3 are compounded automatically). Switch modes with the pill buttons at the top of that step.",
     hi:"बिक्री अनुमान में दो विकल्प हैं: 'प्रत्यक्ष' (वर्ष 1/2/3 की बिक्री स्वयं टाइप करें) अथवा 'वृद्धि %' (केवल इस वर्ष की बिक्री व वृद्धि दर टाइप करें; वर्ष 2 व 3 स्वतः संयोजित होते हैं)। उस चरण के शीर्ष पर पिल बटनों से मोड बदलें।" },
@@ -5313,8 +5360,8 @@ function aiMatchOffline(query){
 }
 function aiContextTip(){
   const tips = {
-    dashboard: ["Use \"Load Sample Projects\" to explore 24 ready-made examples across every activity type, or start your own with \"+ New Project\".",
-      "24 तैयार नमूना उदाहरण देखने हेतु \"नमूना परियोजनाएँ लोड करें\" का उपयोग करें, अथवा \"+ नई परियोजना\" से अपनी शुरू करें।"],
+    dashboard: ["Use \"Load Sample Projects\" to explore 47 ready-made examples across every activity type, or start your own with \"+ New Project\".",
+      "47 तैयार नमूना उदाहरण देखने हेतु \"नमूना परियोजनाएँ लोड करें\" का उपयोग करें, अथवा \"+ नई परियोजना\" से अपनी शुरू करें।"],
     wizard1: ["Existing businesses should mark status \"Existing\" here to unlock last year's actual P&L/Balance Sheet entry.",
       "यदि व्यवसाय पहले से चल रहा है, तो स्थिति \"Existing\" चुनें — इससे पिछले वर्ष के वास्तविक लाभ-हानि/तुलन पत्र दर्ज करने का विकल्प खुलेगा।"],
     wizard2: ["Pick the closest business activity from the list; if yours isn't there, tick \"not listed\" and choose the nearest financial model.",
