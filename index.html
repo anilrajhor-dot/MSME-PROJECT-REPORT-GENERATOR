@@ -2329,6 +2329,8 @@ function parseAmt(s){
   if(s===null||s===undefined||s==='') return null;
   if(typeof s==='number') return isFinite(s) ? {v:s,tag:''} : null;
   let t = String(s).trim(); if(!t||t==='-'||t==='--') return null;
+  t = t.replace(/^[¹²³`´‘’¢]+\s*/,'');   /* PDF fonts often turn the rupee sign into ¹ or ` */
+  if(!t) return null;
   let tag = '';
   const m = t.match(/\s*\(?\s*(cr|dr)\.?\s*\)?$/i);
   if(m && /\d/.test(t)){ tag = m[1].toLowerCase(); t = t.slice(0,m.index); }
@@ -3497,7 +3499,7 @@ function fsMixOf(p){
 const FS_ITEMS = [
   ['IGNORE','— ignore this line (totals, headings) —','— यह पंक्ति छोड़ें (योग, शीर्षक) —',/^(total|sub[- ]?total|grand total|particulars|notes?|schedule|balance sheet|profit (and|&) loss|trading|as at|for the year|to\b|by\b)\s*$|^total\b|c\/f|b\/f|carried|brought|total (assets|liabilities|income|expenses)/i],
   ['SALES','Sales / revenue / service income','बिक्री / राजस्व / सेवा आय',/\b(sales?|revenue|turnover|income from operations|service (income|charges|fees?)|fees? received|professional fees|commission (received|income)|receipts? from customers|job work (income|charges)|freight income|hire charges|rental income|rent received)\b/i],
-  ['OTHER_INC','Other income (interest received, misc.)','अन्य आय (प्राप्त ब्याज, विविध)',/other income|interest (received|earned|income)|misc(ellaneous)? income|discount received|commission earned|sundry income/i],
+  ['OTHER_INC','Other income (interest received, misc.)','अन्य आय (प्राप्त ब्याज, विविध)',/other income|interest (received|earned|income)|misc(ellaneous)? income|discount received|commission earned|sundry income|subsid(y|ies)|grants?\b/i],
   ['GP','Gross profit (for cross-check)','सकल लाभ (मिलान हेतु)',/gross (profit|loss)/i],
   ['OPEN_STOCK','Opening stock','प्रारंभिक स्टॉक',/opening (stock|inventory)|stock at (the )?(beginning|start)|inventory at (the )?(beginning|start)|stock b\/f/i],
   ['CLOSE_STOCK','Closing stock / inventory','अंतिम स्टॉक / माल',/closing (stock|inventory)|stock at (the )?end|inventory at (the )?end|stock[- ]in[- ]trade|stock in hand|inventor(y|ies)|^stock\b|finished goods|raw materials?\s*(stock)?$/i],
@@ -3512,7 +3514,7 @@ const FS_ITEMS = [
   ['OP_SELL','Selling, advertising & commission','विक्रय, विज्ञापन व कमीशन',/advertis|marketing|promotion|selling|commission paid|brokerage|discount allowed|packing|packaging/i],
   ['OP_INS','Insurance','बीमा',/insurance|premium/i],
   ['OP_BANKCH','Bank charges','बैंक शुल्क',/bank charges?|bank commission|processing fee/i],
-  ['OP_OTH','Other / miscellaneous expenses','अन्य / विविध व्यय',/other expenses?|misc|sundry expenses|general expenses|establishment|operating expenses|indirect expenses|administrative and other|preliminary/i],
+  ['OP_OTH','Other / miscellaneous expenses','अन्य / विविध व्यय',/other expenses?|other expenditures?|misc|sundry expenses|general expenses|establishment|operating expenses|indirect expenses|administrative and other|preliminary/i],
   ['DEP','Depreciation','मूल्यह्रास',/depreciation|amortisation|amortization/i],
   ['INT','Interest paid / finance cost','दिया गया ब्याज / वित्त लागत',/interest (paid|on|expense|charges?)|finance (cost|charges?)|bank interest|^interest\b/i],
   ['TAX','Income tax','आयकर',/income[- ]tax|provision for tax|tax expense|current tax|\btax\b/i],
@@ -3528,9 +3530,10 @@ const FS_ITEMS = [
   ['OCL','Outstanding expenses & other liabilities','बकाया व्यय व अन्य देयताएँ',/outstanding|accrued|provisions?|other (current )?liabilit|duties|gst payable|statutory|advance from customers|expenses payable|payables?\b/i],
   ['FA','Fixed assets (net)','स्थिर संपत्ति (शुद्ध)',/fixed assets?|net block|plant|machinery|furniture|vehicles?|building|equipment|computers?|land\b|tangible|property|tools/i],
   ['DEBT','Sundry debtors / receivables','विविध देनदार / प्राप्य',/debtors?|receivables?|book debts?|accounts receivable|bills receivable/i],
-  ['CASHBANK','Cash & bank balance','नकद व बैंक शेष',/cash|bank balance|balance with bank|cash at bank|bank accounts?/i],
+  ['CASHBANK','Cash & bank balance','नकद व बैंक शेष',/cash|bank balance|balance with bank|cash at bank|bank accounts?|savings/i],
   ['OCA','Advances, deposits & other current assets','अग्रिम, जमा व अन्य चालू संपत्ति',/advance|deposits?|prepaid|loans? and advances|gst (receivable|input)|tds receivable|input (tax )?credit|other (current )?assets?|security deposit|pre-?operative/i]
 ];
+FS_ITEMS.push(['TFA','Total fixed assets (used only if fixed assets are not itemised)','कुल स्थिर संपत्ति (केवल जब मदवार न हो)',/(?!)/],['TOA','Total other assets (used only if not itemised)','कुल अन्य संपत्ति (केवल जब मदवार न हो)',/(?!)/],['TLL','Total long-term liabilities (used only if not itemised)','कुल दीर्घकालीन देयताएँ (केवल जब मदवार न हो)',/(?!)/],['TCA','Total current assets (not split — see section 4b)','कुल चालू संपत्ति (विभाजित नहीं — खंड 4b देखें)',/(?!)/],['TCL','Total current liabilities (not split — see section 4b)','कुल चालू देयताएँ (विभाजित नहीं — खंड 4b देखें)',/(?!)/]);
 const FS_ITEM = Object.fromEntries(FS_ITEMS.map(x=>[x[0],{en:x[1],hi:x[2],re:x[3]}]));
 const FS_DEDUP = new Set(['CLOSE_STOCK','NP','GP','OPEN_STOCK']);
 const FS_OPEX = ['OP_SAL','OP_RENT','OP_ELEC','OP_TRANS','OP_REPAIR','OP_ADMIN','OP_SELL','OP_INS','OP_BANKCH','OP_OTH'];
@@ -3538,6 +3541,11 @@ const FS_BSMAP = {FA:'netFixedAssets',CLOSE_STOCK:'inventory',DEBT:'receivables'
 const FS_BS_KEYS = ['netFixedAssets','inventory','receivables','cashBank','otherCurrentAssets','netWorth','termLoanOS','wcBorrowingOS','unsecuredLoans','tradeCreditors','otherCurrentLiab'];
 function fsAutoItem(label){
   const s = String(label||'').trim().replace(/^(to|by)\s+/i,'');
+  if(/^total current assets?\b/i.test(s)) return 'TCA';
+  if(/^total current liabilit/i.test(s)) return 'TCL';
+  if(/^total (long[- ]?term|non[- ]?current) liabilit/i.test(s)) return 'TLL';
+  if(/^total (net )?fixed assets?\b/i.test(s)) return 'TFA';
+  if(/^total other assets?\b/i.test(s)) return 'TOA';
   if(FS_ITEM.IGNORE.re.test(s) && !/capital|stock|inventor/i.test(s) ) return 'IGNORE';
   for(const it of FS_ITEMS){ if(it[0]==='IGNORE') continue; if(it[3].test(s)) return it[0]; }
   return '';
@@ -3577,7 +3585,7 @@ function fsLinesFromText(lines){
 
 /* ---------- state ---------- */
 function blankFs(){
-  return { lines:[], nextId:1, fyEnd:null, tpl:null, mix:null, monthSales:null, monthPurch:null, partyText:{debtors:'',creditors:''}, reviewed:false, openingConfirmed:false, openingAssumed:false,
+  return { lines:[], nextId:1, fyEnd:null, tpl:null, mix:null, monthSales:null, monthPurch:null, partyText:{debtors:'',creditors:''}, split:{debtors:0,creditors:0}, reviewed:false, openingConfirmed:false, openingAssumed:false,
     opening:{netFixedAssets:0,inventory:0,receivables:0,cashBank:0,otherCurrentAssets:0,netWorth:0,termLoanOS:0,wcBorrowingOS:0,unsecuredLoans:0,tradeCreditors:0,otherCurrentLiab:0} };
 }
 function getFs(p){
@@ -3591,7 +3599,24 @@ function fsTotals(f,col){
     const a=(it==='CAPITAL'||it==='OPEN_CAPITAL'||it==='NP'||it==='GP')?v:Math.abs(v);
     if(FS_DEDUP.has(it)){ t[it] = (t[it]===undefined) ? a : (Math.abs(a)>Math.abs(t[it]) ? a : t[it]); } else t[it]=(t[it]||0)+a;
   });
+  if(col==='a') fsExpandGroups(f,t);
   return t;
+}
+/* A balance sheet that shows only "Total current assets / liabilities": the part that is not stock / debtors / cash etc. is split using
+   the debtors / creditors the borrower enters (or the party lists). Nothing is guessed: the default is 0 and the books say what was assumed. */
+function fsGroupSplit(f){
+  const sp=f.split||{}, sum=k=>{ const l=fsParseParties(f.partyText&&f.partyText[k]); return (l.length&&l.every(x=>isFinite(x.amt)))?l.reduce((a,x)=>a+x.amt,0):0; };
+  return { debtors: +sp.debtors>0 ? +sp.debtors : sum('debtors'), creditors: +sp.creditors>0 ? +sp.creditors : sum('creditors') };
+}
+function fsExpandGroups(f,t){
+  const sp=fsGroupSplit(f), r2=x=>Math.round(x*100)/100;
+  if(t.TFA!==undefined && t.FA===undefined) t.FA=t.TFA; if(t.TOA!==undefined && t.OCA===undefined) t.OCA=t.TOA; if(t.TLL!==undefined && t.TL===undefined) t.TL=t.TLL;
+  if(t.TCA!==undefined){ const rem=r2(t.TCA-(t.CLOSE_STOCK||0)-(t.DEBT||0)-(t.CASHBANK||0));
+    if(t.DEBT===undefined&&t.CASHBANK===undefined){ const d=Math.min(sp.debtors,Math.max(0,rem)); t.DEBT=r2(d); t.CASHBANK=r2(rem-d); }
+    else if(t.DEBT===undefined) t.DEBT=rem; else if(t.CASHBANK===undefined) t.CASHBANK=rem; }
+  if(t.TCL!==undefined){ const rem=r2(t.TCL-(t.CRED||0)-(t.OCL||0)-(t.WC||0)-(t.UNSEC||0));
+    if(t.CRED===undefined&&t.OCL===undefined){ const c=Math.min(sp.creditors,Math.max(0,rem)); t.CRED=r2(c); t.OCL=r2(rem-c); }
+    else if(t.CRED===undefined) t.CRED=rem; else if(t.OCL===undefined) t.OCL=rem; }
 }
 function allocPaise(total, pcts){
   const sum=pcts.reduce((a,b)=>a+b,0)||1, raw=pcts.map(p=>total*p/sum), fl=raw.map(Math.floor);
@@ -3618,6 +3643,8 @@ function buildFsBooks(p){
   const A=fsTotals(f,'a'), B=fsTotals(f,'b');
   const priorOK = FS_BS_KEYS.filter(k=>{ const it=Object.keys(FS_BSMAP).find(x=>FS_BSMAP[x]===k); return it && B[it]!==undefined; }).length>=4 && B.CAPITAL!==undefined;
   if(!priorOK && !f.openingConfirmed) err('The statements have no prior-year balance sheet column — confirm the opening position in the workspace.','विवरण में पिछले वर्ष के तुलन पत्र का स्तंभ नहीं है — कार्यक्षेत्र में प्रारंभिक स्थिति की पुष्टि करें।');
+  if(A.TCA!==undefined && (A.CASHBANK<0||A.DEBT<0)) err('Total current assets is smaller than stock + debtors + cash entered — check the figures or the debtors amount in section 4b.','कुल चालू संपत्ति स्टॉक + देनदार + नकद से कम है — आंकड़े या खंड 4b में देनदार राशि जाँचें।');
+  if(A.TCL!==undefined && (A.CRED<0||A.OCL<0)) err('Total current liabilities is smaller than creditors + other liabilities entered — check the figures or the creditors amount in section 4b.','कुल चालू देयताएँ लेनदार + अन्य देयताओं से कम हैं — आंकड़े या खंड 4b में लेनदार राशि जाँचें।');
   if(A.SALES===undefined) err('No sales / revenue / service-income line found for the year.','वर्ष की कोई बिक्री / राजस्व / सेवा आय पंक्ति नहीं मिली।');
   const {key,T,mix}=fsMixOf(p);
   ['sales','purch','stock'].forEach(k=>{ const s=mix[k].reduce((a,b)=>a+(+b||0),0); if(Math.abs(s-100)>0.01) err(`The ${k==='sales'?'sales':k==='purch'?'purchase':'stock'} mix adds up to ${Math.round(s*100)/100}% — it must be 100%.`,`${k==='sales'?'बिक्री':k==='purch'?'क्रय':'स्टॉक'} मिश्रण का योग ${Math.round(s*100)/100}% है — यह 100% होना चाहिए।`); });
@@ -3636,7 +3663,8 @@ function buildFsBooks(p){
   const NPline=A.NP;
   const S=Q(A.SALES), OI=Q(A.OTHER_INC||0), dep=Q(A.DEP||0), intr=Q(A.INT||0);
   /* every expense line of the statements gets its own ledger account (head kept only for the statement grouping) */
-  const opexItems=[]; { let xn=0; FS_OPEX.forEach(h=>{ f.lines.forEach(l=>{ if(l.item!==h||l.a===null||l.a===undefined) return; const v=Q(Math.abs(l.a)); if(v<=0) return; const id='XL'+(++xn); const lab=String(l.label).replace(/\s+/g,' ').trim().slice(0,60)||ACC[h][0]; ACC[id]=[lab,lab]; opexItems.push({acc:id,head:h,v}); }); }); }
+  const opexItems=[]; { let xn=0; FS_OPEX.forEach(h=>{ f.lines.forEach(l=>{ if(l.item!==h||l.a===null||l.a===undefined) return; const v=Q(Math.abs(l.a)); if(v<=0) return; const id='XL'+(++xn); const lab=String(l.label).replace(/^\s*(to|by|less|add)[:\s]+/i,'').replace(/\s+/g,' ').trim().slice(0,60)||ACC[h][0]; ACC[id]=[lab,lab]; opexItems.push({acc:id,head:h,v,imp:/imputed|notional|family (labou?r|member|help)/i.test(lab)}); }); }); }
+  const impTot=opexItems.filter(x=>x.imp).reduce((t,x)=>t+x.v,0);
   const OPX_IDS=opexItems.map(x=>x.acc);
   const opexTot=opexItems.reduce((s,x)=>s+x.v,0);
   /* opening position */
@@ -3669,6 +3697,7 @@ function buildFsBooks(p){
   let capClose=Cq.netWorth;
   if(A.CAPITAL===undefined && A.OPEN_CAPITAL!==undefined){ capClose=Q(A.OPEN_CAPITAL)+NP+Q(A.CAP_INTRO||0)-Q(A.DRAWINGS||0); Cq.netWorth=capClose; }
   const sumA=b=>b.netFixedAssets+b.inventory+b.receivables+b.cashBank+b.otherCurrentAssets, sumL=b=>b.netWorth+b.termLoanOS+b.wcBorrowingOS+b.unsecuredLoans+b.tradeCreditors+b.otherCurrentLiab;
+  { const gap=sumA(Cq)-sumL(Cq); if(gap!==0 && Math.abs(gap)<=Q(5) && A.CAPITAL!==undefined){ Cq.netWorth+=gap; capClose=Cq.netWorth; w2(`${FY}: the balance sheet in the statements is out by ${money(rup(Math.abs(gap)))} (rounding in the source); the difference is adjusted in capital so that the books tally.`,`${FY}: विवरण का तुलन पत्र ${money(rup(Math.abs(gap)))} से अंतर रखता है (स्रोत में पूर्णांकन); बहीखाते मिलाने हेतु अंतर पूंजी में समायोजित किया गया है।`); } }
   if(sumA(Cq)!==sumL(Cq)) e2(`${FY}: the balance sheet does not balance — assets ${money(rup(sumA(Cq)))} vs liabilities + capital ${money(rup(sumL(Cq)))} (difference ${money(rup(sumA(Cq)-sumL(Cq)))}). A line is missing or mapped to the wrong head.`,`${FY}: तुलन पत्र संतुलित नहीं — संपत्ति ${money(rup(sumA(Cq)))} बनाम देनदारियाँ + पूंजी ${money(rup(sumL(Cq)))} (अंतर ${money(rup(sumA(Cq)-sumL(Cq)))})। कोई पंक्ति छूटी है या गलत शीर्ष से जुड़ी है।`);
   if(sumA(O)!==sumL(O)) e2(`The opening balance sheet (${res.year.openDate}) does not balance — assets ${money(rup(sumA(O)))} vs liabilities + capital ${money(rup(sumL(O)))} (difference ${money(rup(sumA(O)-sumL(O)))}).`,`प्रारंभिक तुलन पत्र (${res.year.openDate}) संतुलित नहीं — संपत्ति ${money(rup(sumA(O)))} बनाम देनदारियाँ + पूंजी ${money(rup(sumL(O)))} (अंतर ${money(rup(sumA(O)-sumL(O)))})।`);
   if(res.errors.length){ res.errors.forEach(e=>out.errors.push(e)); out.years.push(res); return out; }
@@ -3689,7 +3718,7 @@ function buildFsBooks(p){
   const dOCL=Cq.otherCurrentLiab-O.otherCurrentLiab, addFA=Cq.netFixedAssets-O.netFixedAssets+dep;
   const dTL=Cq.termLoanOS-O.termLoanOS, dWC=Cq.wcBorrowingOS-O.wcBorrowingOS, dUN=Cq.unsecuredLoans-O.unsecuredLoans, dOCA=Cq.otherCurrentAssets-O.otherCurrentAssets;
   const E=capClose-O.netWorth-NP;
-  let drawings = A.DRAWINGS!==undefined ? Q(A.DRAWINGS) : Math.max(0,-E), intro = E+drawings;
+  let drawings = A.DRAWINGS!==undefined ? Q(A.DRAWINGS) : Math.max(0,impTot-E), intro = E+drawings-impTot;
   if(collections<0) e2(`${FY}: collections from debtors work out negative (${money(rup(collections))}) — closing debtors are higher than opening debtors + credit sales. Raise the cash-sales share or check debtors/sales.`,`${FY}: देनदारों से वसूली ऋणात्मक (${money(rup(collections))}) — अंतिम देनदार प्रारंभिक देनदार + उधार बिक्री से अधिक हैं। नकद बिक्री का हिस्सा बढ़ाएँ या देनदार/बिक्री जाँचें।`);
   if(payments<0) e2(`${FY}: payments to creditors work out negative (${money(rup(payments))}) — closing creditors are higher than opening creditors + credit purchases. Raise the cash-purchase share or check creditors/purchases.`,`${FY}: लेनदारों को भुगतान ऋणात्मक (${money(rup(payments))}) — अंतिम लेनदार अधिक हैं। नकद क्रय का हिस्सा बढ़ाएँ या लेनदार/क्रय जाँचें।`);
   if(intro<0) e2(`${FY}: the capital movement (${money(rup(E))}) is smaller than the drawings shown in the statements (${money(rup(drawings))}).`,`${FY}: पूंजी में परिवर्तन (${money(rup(E))}) विवरण में दिखाए आहरण (${money(rup(drawings))}) से कम है।`);
@@ -3708,9 +3737,9 @@ function buildFsBooks(p){
 
   /* register group accounts */
   const SL=[],PU=[],ST=[];
-  T.sales.forEach((g,i)=>{ const id='SL'+(i+1); ACC[id]=[g.en+' — sales',g.hi+' — बिक्री']; SL.push(id); });
-  T.purch.forEach((g,i)=>{ const id='PU'+(i+1); ACC[id]=[g.en+' — purchases',g.hi+' — क्रय']; PU.push(id); });
-  T.stock.forEach((g,i)=>{ const id='ST'+(i+1); ACC[id]=[g.en+' — stock',g.hi+' — स्टॉक']; ST.push(id); });
+  T.sales.forEach((g,i)=>{ const id='SL'+(i+1); ACC[id]=[/sale|income|revenue|service/i.test(g.en)?g.en:g.en+' — sales',/sale|बिक्री|क्रय|स्टॉक|आय/.test(g.hi)?g.hi:g.hi+' — बिक्री']; SL.push(id); });
+  T.purch.forEach((g,i)=>{ const id='PU'+(i+1); ACC[id]=[/purchas/i.test(g.en)?g.en:g.en+' — purchases',/purchas|बिक्री|क्रय|स्टॉक|आय/.test(g.hi)?g.hi:g.hi+' — क्रय']; PU.push(id); });
+  T.stock.forEach((g,i)=>{ const id='ST'+(i+1); ACC[id]=[/stock/i.test(g.en)?g.en:g.en+' — stock',/stock|बिक्री|क्रय|स्टॉक|आय/.test(g.hi)?g.hi:g.hi+' — स्टॉक']; ST.push(id); });
   /* individual party ledgers: each debtor / creditor in the borrower's list gets its own account */
   const mkParty=(k,pre,tag)=>{ const l=schedules[k]; if(!l||!l.length||l.reduce((a,x)=>a+Q(x.amt),0)<=0) return null; return l.map((x,i)=>{ const id=pre+(i+1); const nm=String(x.name).slice(0,60); ACC[id]=[nm+' ('+tag[0]+')',nm+' ('+tag[1]+')']; return {id,name:x.name,w:Q(x.amt)}; }); };
   const DPs=mkParty('debtors','DP',['Debtor','देनदार']), CPs=mkParty('creditors','CP',['Creditor','लेनदार']);
@@ -3759,7 +3788,7 @@ function buildFsBooks(p){
     if(CPs) add('during',[`Paid — ${L} (allocated)`,`भुगतान — ${L} (आवंटित)`],CPs.map((x,i)=>[x.id,pPay[i][m],0]).concat([['CASH',0,payM[m]]]),mo.iso);
     else two([`Paid to creditors — ${L} (allocated)`,`लेनदारों को भुगतान — ${L} (आवंटित)`],'CR','CASH',payM[m],mo.iso);
     two([`Other income — ${L} (allocated equally)`,`अन्य आय — ${L} (समान आवंटन)`],'CASH','INC',oiM[m],mo.iso);
-    let ex=0; opexItems.forEach((x,k)=>{ two([`${ACC[x.acc][0]} — ${L} (allocated equally)`,`${ACC[x.acc][1]} — ${L} (समान आवंटन)`],x.acc,'CASH',opexM[k][m],mo.iso); ex+=opexM[k][m]; });
+    let ex=0; opexItems.forEach((x,k)=>{ two([`${ACC[x.acc][0]} — ${L} (${x.imp?'imputed, no cash paid — credited to capital; ':''}allocated equally)`,`${ACC[x.acc][1]} — ${L} (${x.imp?'काल्पनिक, नकद भुगतान नहीं — पूंजी में जमा; ':''}समान आवंटन)`],x.acc,x.imp?'CAP':'CASH',opexM[k][m],mo.iso); ex+=opexM[k][m]; });
     two([`Interest paid — ${L} (allocated equally)`,`ब्याज भुगतान — ${L} (समान आवंटन)`],'INT','CASH',intM[m],mo.iso);
     two([`Drawings — ${L} (allocated equally)`,`आहरण — ${L} (समान आवंटन)`],'DRW','CASH',drwM[m],mo.iso);
     monthly.push({lab:L, sales:rup(salesM[m]), purchases:rup(purM[m]), collections:rup(collM[m]), payments:rup(payM[m]), expenses:rup(ex+intM[m])});
@@ -3827,6 +3856,10 @@ function buildFsBooks(p){
   if(Math.abs(O.cashBank)<0) {}
   if(A.TAX===undefined && NPline!==undefined && tax>100) w2(`${FY}: the statements show no tax line, so income tax of ${money(rup(tax))} is taken as the difference between profit before tax and the net profit shown.`,`${FY}: विवरण में कर की पंक्ति नहीं है, अतः आयकर ${money(rup(tax))} कर-पूर्व लाभ व दर्शाए शुद्ध लाभ के अंतर के रूप में लिया गया है।`);
   if(cs===0 && S>0) w2(`${FY}: the cash-sales share is 0%, so all sales are shown as credit sales through Debtors. Set the cash-sales share under “Prepare past-year statements” if the business sells mostly for cash.`,`${FY}: नकद बिक्री का हिस्सा 0% है, अतः सारी बिक्री देनदारों के माध्यम से उधार दर्शाई गई है। यदि व्यवसाय में अधिकांश बिक्री नकद है तो हिस्सा भरें।`);
+  { const hasL=it=>f.lines.some(l=>l.item===it), sp=fsGroupSplit(f);
+    if(A.TCA!==undefined && !hasL('DEBT') && !hasL('CASHBANK')) w2(`${FY}: the balance sheet shows only a total for current assets (${money(A.TCA)}). After stock, ${money(A.DEBT)} is taken as debtors${sp.debtors>0?' (as entered / from your party list)':' (none entered)'} and ${money(A.CASHBANK)} as cash & bank — this split is an ASSUMPTION; enter the debtors amount in section 4b if different.`,`${FY}: तुलन पत्र में चालू संपत्ति केवल कुल रूप में है (${money(A.TCA)})। स्टॉक के बाद ${money(A.DEBT)} देनदार${sp.debtors>0?' (आपकी प्रविष्टि / पार्टी सूची अनुसार)':' (कोई प्रविष्टि नहीं)'} तथा ${money(A.CASHBANK)} नकद व बैंक माना गया है — यह विभाजन एक मान्यता है; भिन्न हो तो खंड 4b में देनदार राशि भरें।`);
+    if(A.TCL!==undefined && !hasL('CRED') && !hasL('OCL')) w2(`${FY}: the balance sheet shows only a total for current liabilities (${money(A.TCL)}). ${money(A.CRED)} is taken as sundry creditors${sp.creditors>0?' (as entered / from your party list)':' (none entered)'} and ${money(A.OCL)} as outstanding expenses & other liabilities — this split is an ASSUMPTION; enter the creditors amount in section 4b if different.`,`${FY}: तुलन पत्र में चालू देयताएँ केवल कुल रूप में हैं (${money(A.TCL)})। ${money(A.CRED)} विविध लेनदार${sp.creditors>0?' (आपकी प्रविष्टि / पार्टी सूची अनुसार)':' (कोई प्रविष्टि नहीं)'} तथा ${money(A.OCL)} बकाया व्यय व अन्य देयताएँ माना गया है — यह विभाजन एक मान्यता है; भिन्न हो तो खंड 4b में लेनदार राशि भरें।`); }
+  if(impTot>0) w2(`${FY}: ${money(rup(impTot))} of the expenses is imputed (notional, e.g. family labour) — no cash was paid, so it is shown as an expense with a matching credit to the owner's capital.`,`${FY}: ${money(rup(impTot))} के व्यय काल्पनिक हैं (जैसे परिवार का श्रम) — नकद नहीं चुकाया गया, अतः यह व्यय के रूप में दिखाकर स्वामी की पूंजी में जमा किया गया है।`);
   w2(`${FY}: month-wise postings are the annual statement figures apportioned by month — sales by ${wSg?'the monthly sales you entered':'equal months (no monthly pattern given)'}, purchases by ${wPg?'the monthly purchases you entered':'equal months'}, expenses equally — they are NOT actual dated invoices or vouchers. ${Object.keys(schedules).length?'':'No party-wise debtors / creditors list was given, so debtors and creditors are kept as ONE account each (no individual party ledgers). Enter “Name, amount” lines in section 4b (or the Excel “Monthly & Parties” sheet) to get a separate ledger account for every debtor and creditor.'}`,`${FY}: माहवार प्रविष्टियाँ वार्षिक विवरण के आंकड़ों का माह अनुसार आवंटन हैं — बिक्री ${wSg?'आपके दिए माहवार बिक्री':'समान माह (कोई माहवार पैटर्न नहीं दिया)'} के अनुसार, क्रय ${wPg?'आपके दिए माहवार क्रय':'समान माह'} के अनुसार, व्यय समान रूप से — ये वास्तविक दिनांकित बिल या वाउचर नहीं हैं। ${Object.keys(schedules).length?'':'पार्टी-वार देनदार / लेनदार सूची नहीं दी गई, अतः देनदार व लेनदार एक-एक कुल खाते में हैं (प्रत्येक पार्टी का अलग खाता नहीं)। हर देनदार/लेनदार का अलग खाता पाने हेतु खंड 4b (या एक्सेल की “Monthly & Parties” शीट) में “नाम, राशि” पंक्तियाँ भरें।'}`);
   w2(`${FY}: the split of sales, purchases and stock into ${key==='generic'?'groups':'product / service groups'} uses the borrower’s ESTIMATED mix — the group totals add up exactly to the statements, but the individual group figures are estimates, not item-wise records.`,`${FY}: बिक्री, क्रय व स्टॉक का उत्पाद / सेवा समूहों में विभाजन उधारकर्ता के अनुमानित मिश्रण पर आधारित है — समूहों का योग विवरण से ठीक मिलता है, पर अलग-अलग समूह के आंकड़े अनुमान हैं, मदवार रिकॉर्ड नहीं।`);
 
@@ -3861,6 +3894,23 @@ function fsAddLines(lines, replace){
   lines.forEach(l=>{ f.lines.push({id:f.nextId++, label:String(l.label).slice(0,90), a:l.a, b:(l.b===undefined?null:l.b), item:(l.item||fsAutoItem(l.label)), manual:!!l.item}); });
   f.reviewed=false; const h=getHistory(current); h.enabled=true; h.source='fs'; quietSave();
 }
+function fsNormCells(cells){
+  /* PDF text from some generators comes letter-spaced ("¹ 3 , 3 3 , 0 0 0") and an amount can be glued to the next label ("¹ 2 , 5 2 , 1 8 0 By Closing Stock") */
+  const out=[];
+  cells.forEach(raw=>{
+    let c=String(raw).replace(/[\u0000-\u001f]|\(cid:\d+\)/g,'').replace(/\s+/g,' ').trim(); if(!c) return;
+    if((c.match(/[\d,.] [\d,.]/g)||[]).length>=3) c=c.replace(/([\d,.¹₹(-])\s+(?=[\d,.)])/g,'$1').replace(/([¹₹`])\s+(?=\d)/g,'$1').replace(/\s+\)/g,')');
+    const m=c.match(/^(\(?-?[¹₹`]?\s*\(?-?\d[\d,]*(?:\.\d+)?\)?)\s+([A-Za-z(].*)$/);
+    if(m && /[A-Za-z]{3,}/.test(m[2])){ out.push(m[1]); out.push(m[2]); } else out.push(c);
+  });
+  return out;
+}
+function fsSectionFilter(items,txtOf){
+  /* an appraisal report holds the actual year and also projections, assessment and household pages - keep only the "Last Year (Actual)" statements */
+  const START=/last\s*year\s*\(actual\)/i, STOP=/projected|working capital assessment|3-year|proposed loan|household|recommend|officer|tandon|turnover method|\byear\s*[23]\b/i;
+  if(!items.some(x=>START.test(txtOf(x)))) return items;
+  let on=false; return items.filter(x=>{ const t=txtOf(x); if(STOP.test(t)){ on=false; return false; } if(START.test(t)) on=true; return on; });
+}
 async function fsReadFile(file,setStatus){
   const name=(file.name||'').toLowerCase(); const buf=await file.arrayBuffer(); const u8=new Uint8Array(buf.slice(0,8));
   const isZip=u8[0]===0x50&&u8[1]===0x4B, isOle=u8[0]===0xD0&&u8[1]===0xCF, isPdf=u8[0]===0x25&&u8[1]===0x50;
@@ -3868,17 +3918,17 @@ async function fsReadFile(file,setStatus){
   if(isPdf||name.endsWith('.pdf')){
     setStatus&&setStatus(bt('Reading PDF…','पीडीएफ पढ़ा जा रहा है…'));
     const doc=await openPdf(buf); const pages=await pdfPageLines(doc); const n=pages.flat().reduce((s,l)=>s+l.items.length,0);
-    if(n>=20){ const out=[]; pages.flat().forEach(l=>fsCellsToLines(l.items.map(i=>i.s)).forEach(x=>out.push(x))); return {lines:out}; }
+    if(n>=20){ const out=[]; fsSectionFilter(pages.flat(),l=>fsNormCells(l.items.map(i=>i.s)).join(' ')).forEach(l=>fsCellsToLines(fsNormCells(l.items.map(i=>i.s))).forEach(x=>out.push(x))); return {lines:out}; }
     setStatus&&setStatus(bt('Scanned PDF — running OCR (first run downloads the OCR engine)…','स्कैन की हुई पीडीएफ — ओसीआर चल रहा है (पहली बार ओसीआर इंजन डाउनलोड होगा)…'));
     const text=await ocrCanvasesOrImage(await pdfToCanvases(doc),p=>setStatus&&setStatus(bt('OCR… ','ओसीआर… ')+Math.round(p*100)+'%'));
-    return {lines:fsLinesFromText(text.split(/\n/)), ocr:true};
+    return {lines:fsLinesFromText(fsSectionFilter(text.split(/\n/),x=>x)), ocr:true};
   }
   if(isImg){ setStatus&&setStatus(bt('Photo — running OCR…','फोटो — ओसीआर चल रहा है…')); const text=await ocrCanvasesOrImage([file],p=>setStatus&&setStatus(bt('OCR… ','ओसीआर… ')+Math.round(p*100)+'%')); return {lines:fsLinesFromText(text.split(/\n/)), ocr:true}; }
   let grid;
   if(isZip){ const gl=await parseXlsx(buf,'list'); for(const g of gl){ const t=fsTemplateParse(g); if(t){ const mp=gl.map(fsMonthsParse).find(Boolean); if(mp) t.meta.months=mp; return {lines:t.lines,meta:t.meta,template:true}; } } grid=[]; gl.forEach(g=>g.forEach(r=>grid.push(r))); } else if(isOle) throw new Error('OLD_XLS');
   else { const text=new TextDecoder('utf-8').decode(buf); if(/^\s*<(!doctype|html|table|\?xml)/i.test(text)||/<table/i.test(text.slice(0,4000))) grid=parseHtmlTable(text); else grid=parseCSV(text); }
   { const t=fsTemplateParse(grid); if(t) return {lines:t.lines,meta:t.meta,template:true}; }
-  return {lines:fsLinesFromGrid(grid)};
+  return {lines:fsLinesFromGrid(fsSectionFilter(grid,r=>r.join(' ')))};
 }
 function fsErrMsg(e){
   const m=String(e&&e.message||e);
@@ -3930,6 +3980,7 @@ function fsSet(k,v){
 }
 function fsMixSet(kind,i,v){ const {mix}=fsMixOf(current); mix[kind][i]=Math.max(0,+v||0); getFs(current).reviewed=false; quietSave(); fsRender(['mix','party','res']); }
 function fsMixReset(){ getFs(current).mix=null; quietSave(); fsRender(['mix','party','res']); }
+function fsSplitSet(k,v){ const f=getFs(current); f.split=Object.assign({debtors:0,creditors:0},f.split||{}); f.split[k]=Math.max(0,+v||0); if(f.openingAssumed) fsOpenAssume(); else { quietSave(); fsRender(['party','open','res']); } }
 function fsOpen(k,v){ const f=getFs(current); f.opening[k]=+v||0; f.openingConfirmed=false; f.openingAssumed=false; fsRender(['res']); }
 function fsOpenAssume(){ const f=getFs(current), A=fsTotals(f,'a'); FS_BS_KEYS.forEach(k=>{ const it=Object.keys(FS_BSMAP).find(x=>FS_BSMAP[x]===k); f.opening[k]=(it&&A[it]!==undefined)?A[it]:0; }); if(A.OPEN_STOCK!==undefined) f.opening.inventory=A.OPEN_STOCK; { const o=f.opening; o.netWorth=Math.round((o.netFixedAssets+o.inventory+o.receivables+o.cashBank+o.otherCurrentAssets-o.termLoanOS-o.wcBorrowingOS-o.unsecuredLoans-o.tradeCreditors-o.otherCurrentLiab)*100)/100; } f.openingAssumed=true; f.openingConfirmed=true; quietSave(); fsRender(['open','res']); }
 function fsLeave(){ quietSave(); if(current.booksOnly){ renderBooksMenu(); return; } wizardStep=1; renderWizard(); }
@@ -3938,8 +3989,8 @@ function fsItemOptions(sel){
   const grp=(t,ids)=>`<optgroup label="${t}">${ids.map(i=>`<option value="${i}" ${sel===i?'selected':''}>${escapeHtml(LANG==='hi'?FS_ITEM[i].hi:FS_ITEM[i].en)}</option>`).join('')}</optgroup>`;
   return `<option value="" ${sel?'':'selected'}>— ${bt('choose','चुनें')} —</option><option value="IGNORE" ${sel==='IGNORE'?'selected':''}>${escapeHtml(LANG==='hi'?FS_ITEM.IGNORE.hi:FS_ITEM.IGNORE.en)}</option>`
    +grp(bt('Profit & Loss','लाभ-हानि'),['SALES','OTHER_INC','OPEN_STOCK','PURCHASES','COS','CLOSE_STOCK','OP_SAL','OP_RENT','OP_ELEC','OP_TRANS','OP_REPAIR','OP_ADMIN','OP_SELL','OP_INS','OP_BANKCH','OP_OTH','DEP','INT','TAX','GP','NP'])
-   +grp(bt('Balance Sheet — liabilities','तुलन पत्र — देनदारियाँ'),['CAPITAL','OPEN_CAPITAL','CAP_INTRO','DRAWINGS','TL','WC','UNSEC','CRED','OCL'])
-   +grp(bt('Balance Sheet — assets','तुलन पत्र — संपत्ति'),['FA','DEBT','CASHBANK','OCA']);
+   +grp(bt('Balance Sheet — liabilities','तुलन पत्र — देनदारियाँ'),['CAPITAL','OPEN_CAPITAL','CAP_INTRO','DRAWINGS','TL','WC','UNSEC','CRED','OCL','TCL','TLL'])
+   +grp(bt('Balance Sheet — assets','तुलन पत्र — संपत्ति'),['FA','DEBT','CASHBANK','OCA','TCA','TFA','TOA']);
 }
 function fsSecAdd(){
   const f=getFs(current); let body='';
@@ -4001,7 +4052,7 @@ function fsSecMix(){
 
 function fsMonthSet(kind,i,v){ const f=getFs(current), k=kind==='S'?'monthSales':'monthPurch'; if(!f[k]||f[k].length!==12) f[k]=Array(12).fill(0); f[k][i]=Math.max(0,+v||0); f.reviewed=false; quietSave(); fsRender(['party','res']); }
 function fsMonthClear(){ const f=getFs(current); f.monthSales=null; f.monthPurch=null; quietSave(); fsRender(['party','res']); }
-function fsPartySet(k,text){ const f=getFs(current); f.partyText[k]=text; f.reviewed=false; quietSave(); fsRender(['party','res']); }
+function fsPartySet(k,text){ const f=getFs(current); f.partyText[k]=text; f.reviewed=false; if(f.openingAssumed){ fsOpenAssume(); return; } quietSave(); fsRender(['party','res']); }
 function fsSecParty(){
   const f=getFs(current), A=fsTotals(f,'a'), B=fsTotals(f,'b');
   const MON=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'], fy=f.fyEnd||defaultFyEnd();
@@ -4011,7 +4062,11 @@ function fsSecParty(){
   const pl=(k,label,bal)=>{ const list=fsParseParties(f.partyText[k]), ok=list.length&&list.every(x=>isFinite(x.amt)), tot=ok?list.reduce((a,x)=>a+x.amt,0):0;
     return `<div><label>${label}</label><textarea rows="6" placeholder="Ramesh Traders, 25000&#10;Sunita Stores, 18500" onchange="fsPartySet('${k}',this.value)">${escapeHtml(f.partyText[k]||'')}</textarea>
     <div class="hint">${list.length?`${list.length} ${bt('parties','पार्टियाँ')} • ${bt('total','योग')} ${ok?money(tot):'—'} • ${bt('balance sheet','तुलन पत्र')} ${bal!==undefined?money(bal):'—'} ${ok&&bal!==undefined?(Math.round(tot*100)===Math.round(bal*100)?'✓':'<b class="mismatch">✗</b>'):''}`:bt('Optional. “Name, amount” on each line; must add up to the balance-sheet figure.','वैकल्पिक। हर पंक्ति में “नाम, राशि”; योग तुलन पत्र के आंकड़े के बराबर हो।')}</div></div>`; };
-  return `<h3>4b. ${bt('Month-wise pattern & party lists (optional, makes the books more detailed)','माहवार पैटर्न व पार्टी सूची (वैकल्पिक, बहीखाते अधिक विस्तृत बनाती है)')}</h3>
+  const grp=(A.TCA!==undefined&&!f.lines.some(l=>l.item==='DEBT'||l.item==='CASHBANK'))||(A.TCL!==undefined&&!f.lines.some(l=>l.item==='CRED'||l.item==='OCL'));
+  const sp=fsGroupSplit(f);
+  const splitCard=grp?`<div class="note-box"><b>${bt('Your balance sheet gives only totals for current assets / liabilities','आपके तुलन पत्र में चालू संपत्ति / देयताएँ केवल कुल रूप में हैं')}</b><br>${bt('Debtors and creditors cannot be read from totals. Enter them if you know them (or give the party lists below); otherwise they are taken as 0 and the rest goes to cash & bank / other liabilities — the books will say so.','कुल से देनदार व लेनदार नहीं पढ़े जा सकते। ज्ञात हों तो भरें (या नीचे पार्टी सूची दें); अन्यथा 0 माने जाएँगे और शेष नकद व बैंक / अन्य देयताओं में जाएगा — बहीखाते में यह लिखा रहेगा।')}
+    <div class="grid fill-zone" style="margin-top:6px;">${A.TCA!==undefined?`<div><label>${bt('Debtors (sundry debtors) at year end ₹','वर्षांत देनदार ₹')}</label><input type="number" step="0.01" value="${(f.split&&f.split.debtors)||''}" placeholder="${sp.debtors||0}" onchange="fsSplitSet('debtors',this.value)"></div>`:''}${A.TCL!==undefined?`<div><label>${bt('Creditors (sundry creditors) at year end ₹','वर्षांत लेनदार ₹')}</label><input type="number" step="0.01" value="${(f.split&&f.split.creditors)||''}" placeholder="${sp.creditors||0}" onchange="fsSplitSet('creditors',this.value)"></div>`:''}</div></div>`:'';
+  return `${splitCard}<h3>4b. ${bt('Month-wise pattern & party lists (optional, makes the books more detailed)','माहवार पैटर्न व पार्टी सूची (वैकल्पिक, बहीखाते अधिक विस्तृत बनाती है)')}</h3>
   <p class="muted small">${bt('A statement has only annual totals, so the books post sales, purchases and expenses month by month. If you have the actual monthly sales and purchases (GST returns, sales register) enter them — the annual statement figure is split in the same proportion. If left empty, equal months are used. Give the debtors / creditors list (name, amount at year end) if you have it — it becomes a schedule that must agree with the balance sheet. Month-wise postings are an allocation, not actual dated invoices; the books say so.','विवरण में केवल वार्षिक योग होते हैं, इसलिए बहीखाते बिक्री, क्रय व व्यय माह-दर-माह दर्शाते हैं। यदि वास्तविक माहवार बिक्री व क्रय (जीएसटी रिटर्न, बिक्री रजिस्टर) हों तो भरें — वार्षिक आंकड़ा उसी अनुपात में बँटता है। खाली छोड़ने पर समान माह लिए जाते हैं। देनदार / लेनदार सूची (नाम, वर्षांत राशि) हो तो दें — यह अनुसूची बनती है जो तुलन पत्र से मिलनी चाहिए। माहवार प्रविष्टियाँ आवंटन हैं, वास्तविक दिनांकित बिल नहीं; बहीखाते यह लिखते हैं।')}</p>
   <div style="overflow-x:auto;"><table class="tbook"><tr><th>${bt('Month','माह')}</th><th>${bt('Sales ₹','बिक्री ₹')}</th><th>${bt('Purchases ₹','क्रय ₹')}</th></tr>${rows}
   <tr class="total"><td>${bt('Total entered','भरा योग')}</td><td>${tS?money(tS):'—'}</td><td>${tP?money(tP):'—'}</td></tr>
